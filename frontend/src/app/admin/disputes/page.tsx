@@ -11,7 +11,7 @@ export default function AdminDisputes() {
     const fetchDisputes = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/disputes');
+            const res = await api.get('/admin/disputes') as any;
             setDisputes(res.disputes);
         } catch (error) {
             console.error('Failed to fetch disputes:', error);

@@ -11,7 +11,7 @@ export default function AdminOffers() {
     const fetchOffers = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/offers');
+            const res = await api.get('/admin/offers') as any;
             setOffers(res.offers);
         } catch (error) {
             console.error('Failed to fetch offers:', error);

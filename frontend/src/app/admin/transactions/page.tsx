@@ -11,7 +11,7 @@ export default function AdminTransactions() {
     const fetchTransactions = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/transactions');
+            const res = await api.get('/admin/transactions') as any;
             setTransactions(res.transactions);
         } catch (error) {
             console.error('Failed to fetch transactions:', error);
