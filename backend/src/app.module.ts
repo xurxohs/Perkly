@@ -13,6 +13,11 @@ import { AdminModule } from './admin/admin.module';
 import { SellerModule } from './seller/seller.module';
 import { BotModule } from './bot/bot.module';
 import { TelegrafModule } from 'nestjs-telegraf';
+import { ChatModule } from './chat/chat.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PaymentsModule } from './payments/payments.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -22,12 +27,29 @@ import { TelegrafModule } from 'nestjs-telegraf';
     TelegrafModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        token: configService.get<string>('TELEGRAM_BOT_TOKEN') || '8628879213:AAEjcYGFEDhgFhMQw4qZya8L1XY5Q3tUe1I',
+        token:
+          configService.get<string>('TELEGRAM_BOT_TOKEN') ||
+          '8628879213:AAEjcYGFEDhgFhMQw4qZya8L1XY5Q3tUe1I',
       }),
       inject: [ConfigService],
     }),
-    OffersModule, PrismaModule, AuthModule, TransactionsModule, UsersModule, ReviewsModule, DisputesModule, AdminModule, SellerModule, BotModule],
+    ScheduleModule.forRoot(),
+    OffersModule,
+    PrismaModule,
+    AuthModule,
+    TransactionsModule,
+    UsersModule,
+    ReviewsModule,
+    DisputesModule,
+    AdminModule,
+    SellerModule,
+    BotModule,
+    ChatModule,
+    NotificationsModule,
+    PaymentsModule,
+    AnalyticsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

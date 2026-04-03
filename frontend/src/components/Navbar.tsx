@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, LogOut, Search, X, Tag, Gem, Medal } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Search, X, Tag, Gem, Medal, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useCart } from '@/lib/CartContext';
 import { useState, useRef, useEffect } from 'react';
@@ -78,6 +78,8 @@ export function Navbar() {
                 <button onClick={() => setSearchOpen(!searchOpen)} className="md:hidden p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0">
                     {searchOpen ? <X className="w-5 h-5 text-white/70" /> : <Search className="w-5 h-5 text-white/70" />}
                 </button>
+
+
 
                 {/* Cart */}
                 <Link href="/cart" className="relative p-2 rounded-full hover:bg-white/5 transition no-underline">

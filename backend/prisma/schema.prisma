@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "library"
 }
 
@@ -8,70 +8,78 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// Enums are replaced by Strings because SQLite does not support Enum types.
-
-// User Model
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  telegramId    String?  @unique
-  passwordHash  String?
-  displayName   String?
-  avatarUrl     String?
-  role          String   @default("USER")
-  tier          String   @default("SILVER")
-  balance       Float    @default(0.0)
-  rewardPoints  Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relationships
-  offersAsSeller     Offer[]       @relation("SellerOffers")
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  passwordHash        String?
+  displayName         String?
+  avatarUrl           String?
+  role                String        @default("USER")
+  tier                String        @default("SILVER")
+  balance             Float         @default(0.0)
+  rewardPoints        Int           @default(0)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  telegramId          String?       @unique
+  phone               String?
+  messagesSent        Message[]     @relation("SenderMessages")
+  offersAsSeller      Offer[]       @relation("SellerOffers")
+  reviewsWritten      Review[]      @relation("AuthorReviews")
   transactionsAsBuyer Transaction[] @relation("BuyerTransactions")
-  reviewsWritten      Review[]     @relation("AuthorReviews")
-  messagesSent        Message[]    @relation("SenderMessages")
+  chatRooms           ChatRoom[]    @relation("ChatParticipants")
+  deposits            Deposit[]     @relation("UserDeposits")
+  subscriptions       Subscription[]
 }
 
-// Offer / Product Model
+model Deposit {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Float
+  currency  String   @default("UZS")
+  provider  String   @default("MOCK")
+  status    String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation("UserDeposits", fields: [userId], references: [id])
+}
+
 model Offer {
   id                String        @id @default(uuid())
   title             String
   description       String
-  price             Float         @default(0.0) // 0.0 means free
+  price             Float         @default(0.0)
   discountPercent   Int?          @default(0)
   vendorLogo        String?
   usageInstructions String?
   category          String
-  isExclusive       Boolean       @default(false) // If true, only for Gold/Platinum
-  hiddenData        String        // The actual promo code, link, or credentials
+  isExclusive       Boolean       @default(false)
+  hiddenData        String
   isActive          Boolean       @default(true)
   isFlashDrop       Boolean       @default(false)
-  expiresAt         DateTime?     // Expiration date for temporary promos
+  expiresAt         DateTime?
   sellerId          String
+  featuredUntil     DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
-
-  seller      User          @relation("SellerOffers", fields: [sellerId], references: [id])
-  transactions Transaction[]
-  reviews      Review[]
+  seller            User          @relation("SellerOffers", fields: [sellerId], references: [id])
+  reviews           Review[]
+  transactions      Transaction[]
 }
 
-// Transaction (Escrow & Purchase)
 model Transaction {
-  id        String            @id @default(uuid())
+  id        String     @id @default(uuid())
   offerId   String
   buyerId   String
   price     Float
-  status    String            @default("PENDING")
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-
-  offer     Offer @relation(fields: [offerId], references: [id])
-  buyer     User  @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  status    String     @default("PENDING")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  chatRooms ChatRoom[]
   dispute   Dispute?
+  buyer     User       @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  offer     Offer      @relation(fields: [offerId], references: [id])
 }
 
-// Subscription / Tier History (Optional)
 model Subscription {
   id        String   @id @default(uuid())
   userId    String
@@ -79,43 +87,68 @@ model Subscription {
   startDate DateTime @default(now())
   endDate   DateTime
   isActive  Boolean  @default(true)
+  user      User     @relation(fields: [userId], references: [id])
 }
 
-// Review Model
 model Review {
   id        String   @id @default(uuid())
-  rating    Int      @default(5) // 1 to 5
+  rating    Int      @default(5)
   comment   String?
   offerId   String
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  offer  Offer @relation(fields: [offerId], references: [id])
-  author User  @relation("AuthorReviews", fields: [authorId], references: [id])
+  author    User     @relation("AuthorReviews", fields: [authorId], references: [id])
+  offer     Offer    @relation(fields: [offerId], references: [id])
 }
 
-// Dispute Model
 model Dispute {
-  id            String   @id @default(uuid())
-  transactionId String   @unique
+  id            String      @id @default(uuid())
+  transactionId String      @unique
   reason        String
-  status        String   @default("OPEN") // OPEN, RESOLVED, CLOSED
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  status        String      @default("OPEN")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   transaction   Transaction @relation(fields: [transactionId], references: [id])
-  messages      Message[]
 }
 
-// Chat Message Model
+model ChatRoom {
+  id            String       @id @default(uuid())
+  type          String
+  transactionId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  messages      Message[]
+  participants  User[]       @relation("ChatParticipants")
+}
+
 model Message {
   id        String   @id @default(uuid())
-  disputeId String
-  senderId  String
-  text      String
+  content   String
+  roomId    String
+  senderId  String?
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+  sender    User?    @relation("SenderMessages", fields: [senderId], references: [id])
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
 
-  dispute   Dispute @relation(fields: [disputeId], references: [id])
-  sender    User    @relation("SenderMessages", fields: [senderId], references: [id])
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  action    String
+  targetId  String?
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  eventType String
+  userId    String?
+  sessionId String?
+  offerId   String?
+  metadata  String?
+  createdAt DateTime @default(now())
 }

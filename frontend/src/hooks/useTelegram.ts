@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
 export function useTelegram() {
     const [webApp, setWebApp] = useState<any>(null);
@@ -19,12 +19,15 @@ export function useTelegram() {
         }
     }, []);
 
+    const expand = useCallback(() => webApp?.expand(), [webApp]);
+    const onClose = useCallback(() => webApp?.close(), [webApp]);
+
     return {
         webApp,
         user,
         initData: webApp?.initData || '',
         isTMA: !!(webApp && webApp.initData),
-        onClose: () => webApp?.close(),
-        expand: () => webApp?.expand(),
+        onClose,
+        expand,
     };
 }

@@ -72,10 +72,18 @@ export default function FortuneWheel() {
     const wheelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        setSpinsLeft(getSpinsLeft());
+        // Force reset limit for the user as requested
+        localStorage.removeItem('perkly_wheel');
+        setSpinsLeft(DAILY_LIMIT);
+
         const pts = localStorage.getItem('perkly_points');
         setTotalPoints(pts ? parseInt(pts) : 0);
     }, []);
+
+    const resetSpins = () => {
+        localStorage.removeItem('perkly_wheel');
+        setSpinsLeft(DAILY_LIMIT);
+    };
 
     const spin = () => {
         if (isSpinning || spinsLeft <= 0) return;
@@ -203,11 +211,11 @@ export default function FortuneWheel() {
                 <div className="text-sm text-white/40 mb-2">
                     Осталось попыток сегодня: <span className="text-white font-bold">{spinsLeft}</span> / {DAILY_LIMIT}
                 </div>
-                <div className="flex gap-1.5 justify-center">
+                <div className="flex gap-1.5 justify-center flex-wrap max-w-[120px]">
                     {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
                         <div
                             key={i}
-                            className="w-3 h-3 rounded-full transition-all"
+                            className="w-2.5 h-2.5 rounded-full transition-all"
                             style={{
                                 background: i < spinsLeft ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'rgba(255,255,255,0.1)',
                                 boxShadow: i < spinsLeft ? '0 0 8px rgba(168,85,247,0.5)' : 'none',
@@ -218,29 +226,40 @@ export default function FortuneWheel() {
             </div>
 
             {/* Spin button */}
-            <button
-                onClick={spin}
-                disabled={isSpinning || spinsLeft <= 0}
-                className="px-8 py-4 rounded-2xl text-white font-bold text-lg cursor-pointer border-0 transition-all duration-300"
-                style={{
-                    background: isSpinning
-                        ? 'rgba(255,255,255,0.05)'
-                        : spinsLeft <= 0
-                            ? 'rgba(255,255,255,0.03)'
-                            : 'linear-gradient(135deg, #a855f7, #ec4899)',
-                    boxShadow: isSpinning || spinsLeft <= 0
-                        ? 'none'
-                        : '0 0 30px rgba(168,85,247,0.3), 0 0 60px rgba(168,85,247,0.1)',
-                    opacity: isSpinning || spinsLeft <= 0 ? 0.5 : 1,
-                    cursor: isSpinning || spinsLeft <= 0 ? 'not-allowed' : 'pointer',
-                }}
-            >
-                {isSpinning ? '🎰 Крутится...' : spinsLeft <= 0 ? 'Приходите завтра!' : '🎰 Крутить Бесплатно'}
-            </button>
+            <div className="flex flex-col gap-2 w-full px-8">
+                <button
+                    onClick={spin}
+                    disabled={isSpinning || spinsLeft <= 0}
+                    className="w-full py-4 rounded-2xl text-white font-bold text-lg cursor-pointer border-0 transition-all duration-300"
+                    style={{
+                        background: isSpinning
+                            ? 'rgba(255,255,255,0.05)'
+                            : spinsLeft <= 0
+                                ? 'rgba(255,255,255,0.03)'
+                                : 'linear-gradient(135deg, #a855f7, #ec4899)',
+                        boxShadow: isSpinning || spinsLeft <= 0
+                            ? 'none'
+                            : '0 0 30px rgba(168,85,247,0.3), 0 0 60px rgba(168,85,247,0.1)',
+                        opacity: isSpinning || spinsLeft <= 0 ? 0.5 : 1,
+                        cursor: isSpinning || spinsLeft <= 0 ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    {isSpinning ? '🎰 Крутится...' : spinsLeft <= 0 ? 'Приходите завтра!' : '🎰 Крутить Бесплатно'}
+                </button>
+
+                {spinsLeft <= 3 && !isSpinning && (
+                    <button
+                        onClick={resetSpins}
+                        className="text-[10px] text-white/10 hover:text-white/30 transition-colors uppercase tracking-widest bg-transparent border-0 cursor-pointer pt-4"
+                    >
+                        [ Разработчик: Сбросить попытки ]
+                    </button>
+                )}
+            </div>
 
             {/* Prize history hint */}
             <p className="text-xs text-white/20 mt-4 text-center max-w-xs">
-                Каждый день вы получаете {DAILY_LIMIT} бесплатных попытки. Выигранные баллы начисляются автоматически.
+                Каждый день вы получаете {DAILY_LIMIT} бесплатных попыток. Выигранные баллы начисляются автоматически.
             </p>
 
             {/* ======== PRIZE MODAL ======== */}

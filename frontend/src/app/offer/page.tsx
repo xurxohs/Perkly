@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ShoppingCart, Shield, Clock, User, Tag, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package, Flame, Crown, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Reviews } from '@/components/Reviews';
 import { offersApi, transactionsApi } from '@/lib/api';
 import { useCart } from '@/lib/CartContext';
@@ -94,11 +95,16 @@ function OfferDetailContent() {
             <div className="grid md:grid-cols-5 gap-8">
                 {/* Left - Image */}
                 <div className="md:col-span-2">
-                    <div className="rounded-2xl overflow-hidden aspect-square flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(59,130,246,0.1))', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div className="w-24 h-24 text-white/50">
+                    <div className="rounded-3xl overflow-hidden aspect-square flex items-center justify-center p-8 transition-transform duration-500 hover:scale-[1.02]" style={{ background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+                        {offer.vendorLogo ? (
+                            <div className="relative w-full h-full">
+                                <Image src={offer.vendorLogo} fill className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)]" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement?.classList.add('hidden'); e.currentTarget.parentElement?.nextElementSibling?.classList.remove('hidden'); }} />
+                            </div>
+                        ) : null}
+                        <div className={`w-24 h-24 text-white/50 ${offer.vendorLogo ? 'hidden' : ''}`}>
                             {(() => {
                                 const IconNode = CATEGORY_ICONS[offer.category] || Package;
-                                return <IconNode className="w-full h-full" />;
+                                return <IconNode className="w-full h-full drop-shadow-lg" />;
                             })()}
                         </div>
                     </div>

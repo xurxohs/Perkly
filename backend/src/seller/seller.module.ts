@@ -5,6 +5,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [SellerController]
+  controllers: [SellerController],
 })
-export class SellerModule { }
+export class SellerModule {}

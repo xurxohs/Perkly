@@ -7,14 +7,14 @@ import api from '@/lib/api';
 import { useState, useEffect } from 'react';
 
 function Countdown({ hours }: { hours: number }) {
-  const [timeLeft, setTimeLeft] = useState(hours * 3600);
+  const [timeLeft, setTimeLeft] = useState(Math.floor(hours * 3600));
   useEffect(() => {
     const t = setInterval(() => setTimeLeft(p => Math.max(0, p - 1)), 1000);
     return () => clearInterval(t);
   }, []);
   const h = Math.floor(timeLeft / 3600);
   const m = Math.floor((timeLeft % 3600) / 60);
-  const s = timeLeft % 60;
+  const s = Math.floor(timeLeft % 60);
   return <span>{String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}</span>;
 }
 
@@ -107,13 +107,12 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
           {flashDrops.length > 0 ? flashDrops.map((d, i) => (
-            <Link href={`/offer/?id=${d.id}`} key={d.id || i} className="flex items-center p-4 cursor-pointer rounded-2xl transition-all duration-300 no-underline" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(249,115,22,0.15)', boxShadow: '0 0 25px rgba(249,115,22,0.06), inset 0 0 30px rgba(249,115,22,0.03)' }}>
-              <div className="w-20 h-20 rounded-xl overflow-hidden relative shrink-0 mr-5" style={{ boxShadow: '0 0 15px rgba(249,115,22,0.15)', background: '#111' }}>
+            <Link href={`/offer/?id=${d.id}`} key={d.id || i} className="flex items-center p-4 cursor-pointer rounded-2xl transition-all duration-300 no-underline group hover:-translate-y-1 hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+              <div className="w-20 h-20 rounded-xl overflow-hidden relative shrink-0 mr-5 bg-white/5 flex items-center justify-center p-2" style={{ border: '1px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 0 15px rgba(255,255,255,0.02)' }}>
                 {d.vendorLogo ? (
-                  <Image src={d.vendorLogo} fill className="object-cover" alt={d.title} />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl"><Flame className="w-8 h-8 text-orange-500" /></div>
-                )}
+                  <Image src={d.vendorLogo} fill className="object-contain drop-shadow-lg p-1 transition-transform group-hover:scale-105" alt={d.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                ) : null}
+                <div className={`w-full h-full flex items-center justify-center text-2xl ${d.vendorLogo ? 'hidden' : ''}`}><Flame className="w-8 h-8 text-orange-500/80 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]" /></div>
               </div>
               <div className="flex-1 relative z-10">
                 <h3 className="text-base font-bold text-white mb-1 line-clamp-1">{d.title}</h3>
@@ -198,20 +197,21 @@ export default function Home() {
             <div className="col-span-1 md:col-span-4 text-center py-10 text-white/50">Загрузка скидок...</div>
           ) : trendingOffers.length > 0 ? (
             trendingOffers.map((o: any, i) => (
-              <Link href={`/offer/?id=${o.id}`} key={o.id || i} className="glass-card cursor-pointer block no-underline">
-                <div className="w-full h-44 relative overflow-hidden bg-white/5 flex items-center justify-center">
+              <Link href={`/offer/?id=${o.id}`} key={o.id || i} className="rounded-2xl overflow-hidden cursor-pointer block no-underline group hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+                <div className="w-full h-44 relative bg-white/5 flex items-center justify-center p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   {o.vendorLogo ? (
-                    <Image src={o.vendorLogo} fill className="object-cover transition-transform duration-500 hover:scale-105" alt={o.title} />
-                  ) : (
+                    <Image src={o.vendorLogo} fill className="object-contain p-6 drop-shadow-xl transition-transform duration-500 group-hover:scale-110" alt={o.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                  ) : null}
+                  <div className={`${o.vendorLogo ? 'hidden' : ''}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-white/20">
                       <path d="M9.375 3a1.875 1.875 0 0 0 0 3.75h1.875v4.5H3.375A1.875 1.875 0 0 1 1.5 9.375v-.75c0-1.036.84-1.875 1.875-1.875h3.193A3.375 3.375 0 0 1 12 2.753a3.375 3.375 0 0 1 5.432 3.997h3.193c1.035 0 1.875.84 1.875 1.875v.75c0 1.036-.84 1.875-1.875 1.875H12.75v-4.5h1.875a1.875 1.875 0 1 0-1.875-1.875V6.75h-1.5V4.875C11.25 3.839 10.41 3 9.375 3ZM11.25 12.75H3v6.75a2.25 2.25 0 0 0 2.25 2.25h6v-9ZM12.75 12.75v9h6.75a2.25 2.25 0 0 0 2.25-2.25v-6.75h-9Z" />
                     </svg>
-                  )}
-                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold text-white z-10" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
+                  </div>
+                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/80 z-10" style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.15)' }}>
                     {o.category}
                   </div>
                 </div>
-                <div className="p-5 relative z-10">
+                <div className="p-5 relative z-10 bg-gradient-to-b from-transparent to-black/20">
                   <h3 className="text-base font-bold text-white mb-3 leading-snug line-clamp-2" title={o.title}>{o.title}</h3>
                   <div className="flex justify-between items-center">
                     <div>

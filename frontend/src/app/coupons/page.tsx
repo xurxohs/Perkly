@@ -124,7 +124,7 @@ export default function CouponsPage() {
                             const imgUrl = couponImages[offer.category] || couponImages['DEFAULT'];
 
                             return (
-                                <Link href={`/offer/${offer.id}`} key={offer.id} className="no-underline">
+                                <Link href={`/offer/?id=${offer.id}`} key={offer.id} className="no-underline">
                                     <div className="glass-card cursor-pointer group">
                                         {/* Image */}
                                         <div className="w-full h-40 relative overflow-hidden">

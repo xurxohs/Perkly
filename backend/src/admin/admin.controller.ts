@@ -1,91 +1,101 @@
-import { Controller, Get, UseGuards, Request, ForbiddenException, Patch, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  Query,
+} from '@nestjs/common';
+import { AdminService } from './admin.service';
 import { AuthGuard } from '@nestjs/passport';
-import { PrismaService } from '../prisma/prisma.service';
-import { Role, TransactionStatus, DisputeStatus } from '../common/enums';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
-@UseGuards(AuthGuard('jwt'))
 @Controller('admin')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles('ADMIN') // Requires the 'ADMIN' role for all routes in this controller
 export class AdminController {
-    constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly adminService: AdminService) {}
 
-    // Protect all rules with an admin check
-    private checkAdmin(req: any) {
-        if (req.user.role !== Role.ADMIN) {
-            throw new ForbiddenException('Admin access required');
-        }
-    }
+  @Get('stats')
+  async getStats() {
+    return this.adminService.getDashboardStats();
+  }
 
-    @Get('stats')
-    async getGlobalStats(@Request() req: any) {
-        this.checkAdmin(req);
+  // Users
+  @Get('users')
+  async getUsers(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+    @Query('search') search: string = '',
+  ) {
+    return this.adminService.getAllUsers(Number(page), Number(limit), search);
+  }
 
-        const totalUsers = await this.prisma.user.count();
-        const totalOffers = await this.prisma.offer.count();
+  @Patch('users/:id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body() data: any,
+    @Req() req: any,
+  ) {
+    return this.adminService.updateUser(id, data, req.user.userId);
+  }
 
-        const earningsAggregate = await this.prisma.transaction.aggregate({
-            where: { status: TransactionStatus.COMPLETED },
-            _sum: { price: true }
-        });
-        const totalVolume = earningsAggregate._sum.price || 0;
+  // Offers
+  @Get('offers')
+  async getOffers(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+  ) {
+    return this.adminService.getAllOffers(Number(page), Number(limit));
+  }
 
-        const openDisputes = await this.prisma.dispute.count({
-            where: { status: DisputeStatus.OPEN }
-        });
+  @Patch('offers/:id')
+  async updateOffer(
+    @Param('id') id: string,
+    @Body() data: any,
+    @Req() req: any,
+  ) {
+    return this.adminService.updateOffer(id, data, req.user.userId);
+  }
 
-        return {
-            totalUsers,
-            totalOffers,
-            totalVolume,
-            openDisputes
-        };
-    }
+  @Delete('offers/:id')
+  async deleteOffer(@Param('id') id: string, @Req() req: any) {
+    return this.adminService.deleteOffer(id, req.user.userId);
+  }
 
-    @Get('users')
-    async getUsers(
-        @Request() req: any,
-        @Query('skip') skip = '0',
-        @Query('take') take = '20'
-    ) {
-        this.checkAdmin(req);
-        const [data, total] = await Promise.all([
-            this.prisma.user.findMany({
-                skip: parseInt(skip),
-                take: parseInt(take),
-                orderBy: { createdAt: 'desc' },
-                select: { id: true, email: true, displayName: true, role: true, balance: true, createdAt: true }
-            }),
-            this.prisma.user.count()
-        ]);
-        return { data, total };
-    }
+  // Transactions
+  @Get('transactions')
+  async getTransactions(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+  ) {
+    return this.adminService.getAllTransactions(Number(page), Number(limit));
+  }
 
-    @Patch('users/:id/role')
-    async updateUserRole(
-        @Request() req: any,
-        @Param('id') userId: string,
-        @Body() body: { role: Role }
-    ) {
-        this.checkAdmin(req);
+  @Patch('transactions/:id/refund')
+  async refundTransaction(@Param('id') id: string, @Req() req: any) {
+    return this.adminService.refundTransaction(id, req.user.userId);
+  }
 
-        // Don't allow changing your own role
-        if (req.user.userId === userId) {
-            throw new ForbiddenException('Cannot change your own role');
-        }
+  // Disputes
+  @Get('disputes')
+  async getDisputes(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+  ) {
+    return this.adminService.getAllDisputes(Number(page), Number(limit));
+  }
 
-        return this.prisma.user.update({
-            where: { id: userId },
-            data: { role: body.role },
-            select: { id: true, role: true, email: true }
-        });
-    }
-
-    @Get('disputes')
-    async getOpenDisputes(@Request() req: any) {
-        this.checkAdmin(req);
-        return this.prisma.dispute.findMany({
-            where: { status: DisputeStatus.OPEN },
-            include: { transaction: { include: { offer: true, buyer: true } } },
-            orderBy: { createdAt: 'asc' }
-        });
-    }
+  @Patch('disputes/:id/resolve')
+  async resolveDispute(
+    @Param('id') id: string,
+    @Body('resolution') resolution: 'BUYER' | 'SELLER',
+    @Req() req: any,
+  ) {
+    return this.adminService.resolveDispute(id, resolution, req.user.userId);
+  }
 }

@@ -1,11 +1,10 @@
 {
-    "files": [],
-    "references": [
-        {
-            "path": "./frontend"
-        },
-        {
-            "path": "./backend"
-        }
+    "compilerOptions": {
+        "strict": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "exclude": [
+        "frontend",
+        "backend"
     ]
 }

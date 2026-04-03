@@ -176,36 +176,38 @@ function CatalogContent() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {offers.map((offer) => (
-                        <div key={offer.id} className="rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] group" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <Link href={`/offer/${offer.id}`} className="no-underline text-inherit">
-                                <div className="relative h-40 overflow-hidden">
-                                    <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.15))' }}>
-                                        <div className="flex items-center justify-center h-full text-white/50">
-                                            {(() => {
-                                                const cat = CATEGORIES.find(c => c.value === offer.category);
-                                                if (cat && cat.icon) {
-                                                    const IconNode = cat.icon;
-                                                    return <IconNode className="w-12 h-12" />;
-                                                }
-                                                return <Package className="w-12 h-12" />;
-                                            })()}
-                                        </div>
+                        <div key={offer.id} className="rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 group" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+                            <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
+                                <div className="relative h-44 overflow-hidden bg-white/5 flex items-center justify-center p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                    {offer.vendorLogo ? (
+                                        <Image src={offer.vendorLogo} fill className="object-contain p-6 drop-shadow-xl transition-transform duration-500 group-hover:scale-110" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                    ) : null}
+                                    <div className={`flex items-center justify-center h-full text-white/20 ${offer.vendorLogo ? 'hidden' : ''}`}>
+                                        {(() => {
+                                            const cat = CATEGORIES.find(c => c.value === offer.category);
+                                            if (cat && cat.icon) {
+                                                const IconNode = cat.icon;
+                                                return <IconNode className="w-16 h-16" />;
+                                            }
+                                            return <Package className="w-16 h-16" />;
+                                        })()}
                                     </div>
+
                                     {offer.isFlashDrop && (
-                                        <div className="absolute top-3 left-3 px-2 py-1 rounded-lg text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
-                                            <Flame className="w-3 h-3 inline-block" /> Flash
+                                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-white tracking-wider" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' }}>
+                                            <Flame className="w-3 h-3 inline-block mr-1" /> Flash
                                         </div>
                                     )}
                                     {offer.isExclusive && (
-                                        <div className="absolute top-3 right-3 px-2 py-1 rounded-lg text-xs font-bold text-yellow-300" style={{ background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)' }}>
+                                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-yellow-300 tracking-wider" style={{ background: 'rgba(234,179,8,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234,179,8,0.3)' }}>
                                             👑 VIP
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="p-4">
-                                    <div className="text-xs text-white/30 mb-1 uppercase tracking-wider">{offer.category}</div>
-                                    <h3 className="text-sm font-bold text-white mb-2 line-clamp-2 leading-snug">{offer.title}</h3>
+                                <div className="p-5 bg-gradient-to-b from-transparent to-black/20">
+                                    <div className="text-[10px] text-white/40 mb-1.5 uppercase tracking-widest font-semibold">{offer.category}</div>
+                                    <h3 className="text-base font-bold text-white mb-2 line-clamp-2 leading-snug">{offer.title}</h3>
                                     <p className="text-xs text-white/30 line-clamp-2 mb-3">{offer.description}</p>
                                     <div className="flex items-center justify-between">
                                         <span className="text-lg font-extrabold text-gradient-green">{offer.price === 0 ? 'Бесплатно' : `${offer.price.toFixed(2)}$`}</span>

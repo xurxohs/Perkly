@@ -8,6 +8,6 @@ import { BotModule } from '../bot/bot.module';
 @Module({
   imports: [PrismaModule, BotModule],
   providers: [DisputesService],
-  controllers: [DisputesController]
+  controllers: [DisputesController],
 })
-export class DisputesModule { }
+export class DisputesModule {}

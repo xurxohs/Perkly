@@ -10,6 +10,7 @@ interface User {
     email: string;
     displayName?: string;
     avatarUrl?: string;
+    telegramId?: string;
     role: string;
     tier: string;
     balance: number;
@@ -23,7 +24,7 @@ interface AuthCtx {
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, displayName?: string) => Promise<void>;
-    loginWithTelegram: (telegramData: any) => Promise<void>;
+    loginWithTelegram: (telegramData: Record<string, unknown>) => Promise<void>;
     logout: () => void;
     refreshUser: () => Promise<void>;
 }
@@ -59,9 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (savedToken) {
                 setToken(savedToken);
                 try {
-                    const u = await usersApi.getMe();
+                    const u = await usersApi.getMe() as User;
                     setUser(u);
-                } catch {
+                } catch (err) {
+                    console.error("Session restore failed:", err);
                     localStorage.removeItem('perkly_token');
                     setToken(null);
                 } finally {
@@ -73,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     const res = (await authApi.telegramMiniapp(initData)) as { access_token: string };
                     localStorage.setItem('perkly_token', res.access_token);
                     setToken(res.access_token);
-                    const profile = await usersApi.getMe();
+                    const profile = await usersApi.getMe() as User;
                     setUser(profile);
                 } catch (err) {
                     console.error('TMA Auto-login failed', err);
@@ -92,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = (await authApi.login({ email, password })) as { access_token: string };
         localStorage.setItem('perkly_token', res.access_token);
         setToken(res.access_token);
-        const profile = await usersApi.getMe();
+        const profile = await usersApi.getMe() as User;
         setUser(profile);
     };
 
@@ -101,11 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await login(email, password);
     };
 
-    const loginWithTelegram = async (telegramData: any) => {
+    const loginWithTelegram = async (telegramData: Record<string, unknown>) => {
         const res = (await authApi.telegramLogin(telegramData)) as { access_token: string };
         localStorage.setItem('perkly_token', res.access_token);
         setToken(res.access_token);
-        const profile = await usersApi.getMe();
+        const profile = await usersApi.getMe() as User;
         setUser(profile);
     };
 
@@ -117,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const refreshUser = async () => {
         try {
-            const profile = await usersApi.getMe();
+            const profile = await usersApi.getMe() as User;
             setUser(profile);
         } catch { }
     };

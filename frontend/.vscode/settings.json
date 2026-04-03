@@ -1,0 +1,9 @@
+{
+    "css.validate": false,
+    "vsintellicode.features.python.deeplearning": false,
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "problems.decorations.enabled": true,
+    "edge.cssInlineStyles": false
+}
