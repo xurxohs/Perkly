@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Send, AlertTriangle, Shield, CheckCircle, Clock } from 'lucide-react';
-import api from '@/lib/api';
+import api, { Dispute, ChatMessage } from '@/lib/api';
 
 function DisputeContent() {
     const { user, isAuthenticated, loading } = useAuth();
@@ -12,8 +12,8 @@ function DisputeContent() {
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
 
-    const [dispute, setDispute] = useState<any>(null);
-    const [messages, setMessages] = useState<any[]>([]);
+    const [dispute, setDispute] = useState<Dispute | null>(null);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
@@ -21,7 +21,8 @@ function DisputeContent() {
 
     const fetchDispute = async () => {
         try {
-            const { data } = await api.get(`/disputes/${id}`) as any;
+            const res = await api.get(`/disputes/${id}`) as { data: Dispute };
+            const data = res.data;
             setDispute(data);
             setMessages(data.messages || []);
         } catch (err) {
@@ -43,6 +44,7 @@ function DisputeContent() {
             const interval = setInterval(fetchDispute, 5000);
             return () => clearInterval(interval);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, loading, id, router]);
 
     useEffect(() => {
@@ -98,7 +100,7 @@ function DisputeContent() {
         );
     }
 
-    const isSellerOrAdmin = user?.role === 'ADMIN' || user?.userId === dispute.transaction.offer.sellerId;
+    const isSellerOrAdmin = user?.role === 'ADMIN' || user?.id === dispute.transaction?.offer?.sellerId;
     const isClosed = dispute.status === 'RESOLVED' || dispute.status === 'CLOSED';
 
     return (
@@ -109,14 +111,14 @@ function DisputeContent() {
                     <div>
                         <div className="flex items-center gap-3 mb-2">
                             <AlertTriangle className="w-6 h-6 text-red-500" />
-                            <h1 className="text-2xl font-bold text-white">Спор по заказу #{dispute.transaction.id.substring(0, 8)}</h1>
+                            <h1 className="text-2xl font-bold text-white">Спор по заказу #{dispute.transaction?.id?.substring(0, 8) || '...'}</h1>
                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${dispute.status === 'OPEN' ? 'bg-yellow-500/20 text-yellow-500' :
                                 dispute.status === 'RESOLVED' ? 'bg-green-500/20 text-green-500' : 'bg-gray-500/20 text-gray-400'
                                 }`}>
                                 {dispute.status}
                             </span>
                         </div>
-                        <p className="text-gray-400">Товар: <span className="text-white font-medium">{dispute.transaction.offer.title}</span></p>
+                        <p className="text-gray-400">Товар: <span className="text-white font-medium">{dispute.transaction?.offer?.title || '...'}</span></p>
                         <div className="mt-4 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
                             <p className="text-sm text-gray-300"><strong className="text-white">Причина спора:</strong> {dispute.reason}</p>
                         </div>
@@ -150,10 +152,10 @@ function DisputeContent() {
                             <p>Чат пуст. Опишите проблему подробнее.</p>
                         </div>
                     ) : (
-                        messages.map((msg: any) => {
-                            const isMine = msg.senderId === user?.userId;
-                            const isAdmin = msg.sender.role === 'ADMIN';
-                            const isSeller = msg.senderId === dispute.transaction.offer.sellerId;
+                        messages.map((msg) => {
+                            const isMine = msg.senderId === user?.id;
+                            const isAdmin = msg.sender?.role === 'ADMIN';
+                            const isSeller = msg.senderId === dispute.transaction?.offer?.sellerId;
 
                             return (
                                 <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
@@ -172,7 +174,7 @@ function DisputeContent() {
                                             isSeller ? 'bg-white/10 border border-white/5 text-white rounded-bl-sm' :
                                                 'bg-blue-500/20 border border-blue-500/30 text-white rounded-bl-sm'
                                         }`}>
-                                        {msg.text}
+                                        {msg.content}
                                     </div>
                                 </div>
                             );

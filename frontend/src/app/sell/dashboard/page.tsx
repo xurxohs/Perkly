@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { DollarSign, Package, TrendingUp, Clock, AlertCircle } from 'lucide-react';
-import api from '@/lib/api';
+import { DollarSign, Package, TrendingUp, Clock } from 'lucide-react';
+import api, { SellerStats, Offer } from '@/lib/api';
+import Image from 'next/image';
 
 export default function SellerDashboard() {
     const { user, isAuthenticated, loading } = useAuth();
     const router = useRouter();
-    const [stats, setStats] = useState<any>(null);
-    const [offers, setOffers] = useState<any[]>([]);
+    const [stats, setStats] = useState<SellerStats | null>(null);
+    const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -23,8 +24,8 @@ export default function SellerDashboard() {
         async function fetchData() {
             try {
                 const [statsRes, offersRes] = await Promise.all([
-                    api.get('/seller/stats'),
-                    api.get('/seller/offers')
+                    api.seller.getStats(),
+                    api.seller.getOffers()
                 ]);
                 setStats(statsRes.data);
                 setOffers(offersRes.data);
@@ -125,12 +126,12 @@ export default function SellerDashboard() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {offers.map((offer: any) => (
+                            {offers.map((offer) => (
                                 <div key={offer.id} className="flex items-center justify-between p-4 rounded-xl relative hover:bg-white/5 border border-white/5 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className="w-16 h-16 bg-white/10 rounded-lg flex-shrink-0 flex items-center justify-center relative overflow-hidden">
                                             {offer.vendorLogo ? (
-                                                <img src={offer.vendorLogo} alt={offer.title} className="w-full h-full object-cover" />
+                                                <Image src={offer.vendorLogo} alt={offer.title} width={64} height={64} className="w-full h-full object-cover" />
                                             ) : (
                                                 <Package className="w-6 h-6 text-gray-400" />
                                             )}
@@ -171,14 +172,14 @@ export default function SellerDashboard() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {stats.recentTransactions.map((tx: any, idx: number) => (
+                            {stats.recentTransactions.map((tx, idx) => (
                                 <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-black/20 border border-white/5">
                                     <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 text-blue-400">
-                                        {tx.buyer.displayName?.charAt(0) || 'U'}
+                                        {tx.buyer?.displayName?.charAt(0) || 'U'}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-white truncate">{tx.offer.title}</p>
-                                        <p className="text-xs text-gray-400 truncate">Покупатель: {tx.buyer.displayName || tx.buyer.email}</p>
+                                        <p className="text-sm font-medium text-white truncate">{tx.offer?.title}</p>
+                                        <p className="text-xs text-gray-400 truncate">Покупатель: {tx.buyer?.displayName || tx.buyer?.email}</p>
                                     </div>
                                     <div className="text-right flex-shrink-0">
                                         <p className="text-sm font-bold text-green-400">+${tx.price}</p>

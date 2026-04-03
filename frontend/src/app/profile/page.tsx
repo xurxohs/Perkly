@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle } from 'lucide-react';
+import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
-import { usersApi, transactionsApi, paymentsApi, authApi, analyticsApi } from '@/lib/api';
+import { usersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -16,18 +16,7 @@ const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderCl
     PLATINUM: { bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', borderClass: 'border-purple-500/30', glowClass: 'bg-[radial-gradient(circle,_rgba(168,85,247,0.2),_transparent_70%)]' },
 };
 
-interface Transaction {
-    id: string;
-    price: number;
-    status: string;
-    createdAt: string | Date;
-    offer?: {
-        title: string;
-        category: string;
-        hiddenData?: string;
-        sellerId?: string;
-    };
-}
+
 
 export default function ProfilePage() {
     const { user, isAuthenticated, loading, logout, refreshUser } = useAuth();
@@ -73,7 +62,7 @@ export default function ProfilePage() {
         if (isAuthenticated) {
             usersApi.getStats().then(setStats).catch(() => { });
             transactionsApi.list(0, 50).then(res => {
-                setTransactions(res.data as Transaction[]);
+                setTransactions(res.data);
             }).catch(() => { });
         }
     }, [isAuthenticated]);
@@ -107,7 +96,8 @@ export default function ProfilePage() {
 
     const handleTopUp = async (amount: number) => {
         try {
-            const { deposit } = await paymentsApi.topUp(amount) as { deposit: { id: string } };
+            const res = await paymentsApi.topUp(amount) as { deposit: { id: string } };
+            const deposit = res.deposit;
             await paymentsApi.mockWebhook(deposit.id, true);
             await refreshUser();
             setTopUpModalOpen(false);
@@ -177,7 +167,7 @@ export default function ProfilePage() {
 
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
-                            <User className="w-10 h-10 text-white" />
+                            <UserIcon className="w-10 h-10 text-white" />
                         </div>
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">

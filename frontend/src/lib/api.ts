@@ -29,6 +29,10 @@ export interface Offer {
     seller?: User;
     isActive: boolean;
     usageInstructions?: string;
+    hiddenData?: string;
+    _count?: {
+        transactions: number;
+    };
 }
 
 export interface Transaction {
@@ -71,6 +75,14 @@ export interface Dispute {
     createdAt: string;
     transaction?: Transaction;
     resolution?: 'BUYER' | 'SELLER';
+    messages?: ChatMessage[];
+}
+
+export interface SellerStats {
+    totalEarnings: number;
+    totalSales: number;
+    activeOffers: number;
+    recentTransactions: Transaction[];
 }
 
 export interface AdminStats {
@@ -286,6 +298,14 @@ export const chatApi = {
         }),
 };
 
+// ===== SELLER =====
+export const sellerApi = {
+    getStats: () =>
+        request<{ data: SellerStats }>('/seller/stats'),
+    getOffers: () =>
+        request<{ data: Offer[] }>('/seller/offers'),
+};
+
 // ===== ADMIN =====
 export const adminApi = {
     getStats: () =>
@@ -315,6 +335,7 @@ const api = {
     payments: paymentsApi,
     chat: chatApi,
     admin: adminApi,
+    seller: sellerApi,
     // Add generic request methods
     get: <T = unknown>(url: string) => request<T>(url),
     post: <T = unknown>(url: string, body: unknown) => request<T>(url, { method: 'POST', body: JSON.stringify(body) }),
