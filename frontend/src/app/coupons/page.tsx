@@ -44,7 +44,7 @@ export default function CouponsPage() {
         (async () => {
             try {
                 const data = await offersApi.list();
-                setOffers(data.data || []);
+                setOffers(data.data as Offer[] || []);
             } catch {
                 setOffers([]);
             } finally {

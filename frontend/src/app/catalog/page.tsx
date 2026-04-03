@@ -60,7 +60,7 @@ function CatalogContent() {
             if (isFlashDrop) filters.isFlashDrop = true;
 
             const res = await offersApi.list(filters);
-            setOffers(res.data);
+            setOffers(res.data as any[]);
             setTotal(res.total);
         } catch (err) {
             console.error('Failed to fetch offers:', err);
