@@ -45,7 +45,7 @@ export default function AdminUsers() {
 
     const handleMessageUser = async (userId: string) => {
         try {
-            await api.chat.createDirectRoom(userId);
+            await api.chat.createDirectRoom(userId) as any;
             router.push('/admin/chats');
         } catch (error) {
             console.error('Failed to start chat from admin panel', error);

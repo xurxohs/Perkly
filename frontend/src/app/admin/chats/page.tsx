@@ -40,7 +40,7 @@ export default function AdminChatsPage() {
 
     const loadMessages = async (roomId: string) => {
         try {
-            const res = await api.chat.getMessages(roomId);
+            const res = await api.chat.getMessages(roomId) as any;
             setMessages(res.data.reverse());
             await api.chat.markAsRead(roomId);
 
@@ -72,7 +72,7 @@ export default function AdminChatsPage() {
 
         setIsSending(true);
         try {
-            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue);
+            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue) as any;
             setMessages(prev => [...prev, newMessage]);
             setInputValue('');
 

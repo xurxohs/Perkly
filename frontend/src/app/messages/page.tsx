@@ -32,7 +32,7 @@ export default function MessagesPage() {
 
     const loadRooms = async () => {
         try {
-            const res = await api.chat.getRooms();
+            const res = await api.chat.getRooms() as any;
             setRooms(res);
             // Пытаемся взять комнату по умолчанию (например из query)
             // Но пока просто берём первую, если ничего не выбрано
@@ -43,7 +43,7 @@ export default function MessagesPage() {
 
     const loadMessages = async (roomId: string) => {
         try {
-            const res = await api.chat.getMessages(roomId);
+            const res = await api.chat.getMessages(roomId) as any;
             // Бекенд отдает { data: [...messages] } (сортировка desc)
             // Для отображения разворачиваем массив, чтобы старые были сверху
             setMessages(res.data.reverse());
@@ -79,7 +79,7 @@ export default function MessagesPage() {
 
         setIsSending(true);
         try {
-            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue);
+            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue) as any;
             setMessages(prev => [...prev, newMessage]);
             setInputValue('');
 
