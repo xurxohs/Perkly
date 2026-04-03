@@ -31,7 +31,7 @@ export default function AdminChatsPage() {
 
     const loadRooms = async () => {
         try {
-            const res = await api.chat.getRooms();
+            const res = await api.chat.getRooms() as any;
             setRooms(res);
         } catch (error) {
             console.error('Failed to load rooms:', error);

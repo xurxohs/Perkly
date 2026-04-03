@@ -21,7 +21,7 @@ function DisputeContent() {
 
     const fetchDispute = async () => {
         try {
-            const { data } = await api.get(`/disputes/${id}`);
+            const { data } = await api.get(`/disputes/${id}`) as any;
             setDispute(data);
             setMessages(data.messages || []);
         } catch (err) {
