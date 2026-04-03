@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, ArrowRightLeft, RefreshCw, Undo2 } from 'lucide-react';
-import api from '@/lib/api';
+import { ArrowRightLeft, RefreshCw, Undo2 } from 'lucide-react';
+import api, { Transaction } from '@/lib/api';
 
 export default function AdminTransactions() {
-    const [transactions, setTransactions] = useState<any[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchTransactions = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/transactions') as any;
+            const res = await api.admin.getTransactions();
             setTransactions(res.transactions);
         } catch (error) {
             console.error('Failed to fetch transactions:', error);
@@ -57,7 +57,7 @@ export default function AdminTransactions() {
                     <h1 className="text-3xl font-bold text-white mb-2">Транзакции</h1>
                     <p className="text-white/40">История покупок и возвраты</p>
                 </div>
-                <button onClick={fetchTransactions} className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
+                <button onClick={fetchTransactions} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
                     <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 </button>
             </div>

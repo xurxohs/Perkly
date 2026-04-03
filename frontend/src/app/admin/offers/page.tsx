@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Eye, EyeOff, Trash2, Check, X, RefreshCw } from 'lucide-react';
-import api from '@/lib/api';
+import { ShoppingBag, Eye, EyeOff, Trash2, RefreshCw } from 'lucide-react';
+import api, { Offer } from '@/lib/api';
 
 export default function AdminOffers() {
-    const [offers, setOffers] = useState<any[]>([]);
+    const [offers, setOffers] = useState<Offer[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchOffers = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/offers') as any;
+            const res = await api.admin.getOffers();
             setOffers(res.offers);
         } catch (error) {
             console.error('Failed to fetch offers:', error);
@@ -50,7 +50,7 @@ export default function AdminOffers() {
                     <h1 className="text-3xl font-bold text-white mb-2">Товары платформы</h1>
                     <p className="text-white/40">Модерация, блокировка и удаление</p>
                 </div>
-                <button onClick={fetchOffers} className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
+                <button onClick={fetchOffers} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
                     <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 </button>
             </div>

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { Search, Filter, ChevronDown, ShoppingCart, ArrowRight, Flame, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package } from 'lucide-react';
+import { Search, Flame, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { offersApi, OfferFilters } from '@/lib/api';
+import { offersApi, OfferFilters, Offer } from '@/lib/api';
 import { useCart } from '@/lib/CartContext';
 
 const CATEGORIES = [
@@ -27,7 +27,6 @@ const SORT_OPTIONS = [
     { value: 'oldest', label: 'Старые' },
 ];
 
-const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop';
 
 function CatalogContent() {
     const searchParams = useSearchParams();
@@ -35,7 +34,7 @@ function CatalogContent() {
     const initialFlash = searchParams.get('isFlashDrop') === 'true';
     const initialSearch = searchParams.get('search') || '';
 
-    const [offers, setOffers] = useState<any[]>([]);
+    const [offers, setOffers] = useState<Offer[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState(initialSearch);
@@ -60,7 +59,7 @@ function CatalogContent() {
             if (isFlashDrop) filters.isFlashDrop = true;
 
             const res = await offersApi.list(filters);
-            setOffers(res.data as any[]);
+            setOffers(res.data);
             setTotal(res.total);
         } catch (err) {
             console.error('Failed to fetch offers:', err);
@@ -94,7 +93,7 @@ function CatalogContent() {
                         <span className="flex items-center gap-2">
                             {CATEGORIES.find(c => c.value === category)?.icon && (
                                 (() => {
-                                    const IconNode = CATEGORIES.find(c => c.value === category)?.icon as any;
+                                    const IconNode = CATEGORIES.find(c => c.value === category)?.icon as React.ElementType;
                                     return IconNode ? <IconNode className="w-8 h-8 text-purple-400" /> : null;
                                 })()
                             )}
@@ -119,8 +118,7 @@ function CatalogContent() {
                             placeholder="Поиск товаров..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                            className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.06]"
                         />
                     </div>
                 </form>
@@ -128,32 +126,28 @@ function CatalogContent() {
                 <select
                     value={category}
                     onChange={(e) => { setCategory(e.target.value); setPage(0); }}
-                    className="px-4 py-3 rounded-xl text-sm text-white outline-none cursor-pointer appearance-none"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 180 }}
+                    title="Категория"
+                    className="px-4 py-3 rounded-xl text-sm text-white outline-none cursor-pointer appearance-none bg-white/[0.04] border border-white/[0.06] min-w-[180px]"
                 >
                     {CATEGORIES.map(c => (
-                        <option key={c.value} value={c.value} style={{ background: '#111' }}>{c.label}</option>
+                        <option key={c.value} value={c.value} className="bg-[#111]">{c.label}</option>
                     ))}
                 </select>
 
                 <select
                     value={sort}
                     onChange={(e) => { setSort(e.target.value); setPage(0); }}
-                    className="px-4 py-3 rounded-xl text-sm text-white outline-none cursor-pointer appearance-none"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 140 }}
+                    title="Сортировка"
+                    className="px-4 py-3 rounded-xl text-sm text-white outline-none cursor-pointer appearance-none bg-white/[0.04] border border-white/[0.06] min-w-[140px]"
                 >
                     {SORT_OPTIONS.map(s => (
-                        <option key={s.value} value={s.value} style={{ background: '#111' }}>{s.label}</option>
+                        <option key={s.value} value={s.value} className="bg-[#111]">{s.label}</option>
                     ))}
                 </select>
 
                 <button
                     onClick={() => { setIsFlashDrop(!isFlashDrop); setPage(0); }}
-                    className={`px-4 py-3 rounded-xl text-sm font-medium cursor-pointer border-0 transition-all ${isFlashDrop ? 'text-white' : 'text-white/50'}`}
-                    style={{
-                        background: isFlashDrop ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${isFlashDrop ? 'rgba(249,115,22,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                    }}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all ${isFlashDrop ? 'text-white bg-orange-500/15 border-orange-500/30' : 'text-white/50 bg-white/[0.04] border-white/[0.06]'} border`}
                 >
                     <Flame className="w-4 h-4 inline-block mr-1.5" /> Flash Drops
                 </button>
@@ -163,7 +157,7 @@ function CatalogContent() {
             {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl h-72 animate-pulse" style={{ background: 'rgba(255,255,255,0.03)' }} />
+                        <div key={i} className="rounded-2xl h-72 animate-pulse bg-white/[0.03]" />
                     ))}
                 </div>
             ) : offers.length === 0 ? (
@@ -176,9 +170,9 @@ function CatalogContent() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {offers.map((offer) => (
-                        <div key={offer.id} className="rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 group" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+                        <div key={offer.id} className="rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 group bg-white/[0.03] backdrop-blur-[20px] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
-                                <div className="relative h-44 overflow-hidden bg-white/5 flex items-center justify-center p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div className="relative h-44 overflow-hidden bg-white/5 flex items-center justify-center p-6 border-b border-white/[0.04]">
                                     {offer.vendorLogo ? (
                                         <Image src={offer.vendorLogo} fill className="object-contain p-6 drop-shadow-xl transition-transform duration-500 group-hover:scale-110" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                     ) : null}
@@ -194,12 +188,12 @@ function CatalogContent() {
                                     </div>
 
                                     {offer.isFlashDrop && (
-                                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-white tracking-wider" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' }}>
+                                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-white tracking-wider bg-gradient-to-br from-orange-500 to-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.4)]">
                                             <Flame className="w-3 h-3 inline-block mr-1" /> Flash
                                         </div>
                                     )}
                                     {offer.isExclusive && (
-                                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-yellow-300 tracking-wider" style={{ background: 'rgba(234,179,8,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234,179,8,0.3)' }}>
+                                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-yellow-300 tracking-wider bg-yellow-500/[0.15] backdrop-blur-[10px] border border-yellow-500/[0.3]">
                                             👑 VIP
                                         </div>
                                     )}
@@ -222,13 +216,11 @@ function CatalogContent() {
                                         addItem({ offerId: offer.id, title: offer.title, price: offer.price, category: offer.category });
                                     }}
                                     disabled={isInCart(offer.id)}
-                                    className="w-full py-2.5 rounded-xl text-sm font-semibold cursor-pointer border-0 transition-all"
-                                    style={{
-                                        background: isInCart(offer.id) ? 'rgba(34,197,94,0.1)' : 'rgba(168,85,247,0.1)',
-                                        border: `1px solid ${isInCart(offer.id) ? 'rgba(34,197,94,0.2)' : 'rgba(168,85,247,0.2)'}`,
-                                        color: isInCart(offer.id) ? '#22c55e' : '#a855f7',
-                                        cursor: isInCart(offer.id) ? 'default' : 'pointer',
-                                    }}
+                                    className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                                        isInCart(offer.id)
+                                            ? 'bg-green-500/10 border-green-500/20 text-green-500 cursor-default'
+                                            : 'bg-purple-500/10 border-purple-500/20 text-purple-400 hover:bg-purple-500/20 cursor-pointer'
+                                    }`}
                                 >
                                     {isInCart(offer.id) ? '✓ В корзине' : '🛒 В корзину'}
                                 </button>
@@ -245,11 +237,7 @@ function CatalogContent() {
                         <button
                             key={i}
                             onClick={() => setPage(i)}
-                            className={`w-10 h-10 rounded-xl text-sm font-semibold cursor-pointer border-0 transition-all ${page === i ? 'text-white' : 'text-white/40 hover:text-white'}`}
-                            style={{
-                                background: page === i ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'rgba(255,255,255,0.03)',
-                                boxShadow: page === i ? '0 0 15px rgba(168,85,247,0.3)' : 'none',
-                            }}
+                            className={`w-10 h-10 rounded-xl text-sm font-semibold cursor-pointer border-0 transition-all ${page === i ? 'text-white bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'text-white/40 hover:text-white bg-white/[0.03]'}`}
                         >
                             {i + 1}
                         </button>
@@ -262,7 +250,7 @@ function CatalogContent() {
 
 export default function CatalogPage() {
     return (
-        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 py-8"><div className="h-8 w-48 rounded-xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} /></div>}>
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 py-8"><div className="h-8 w-48 rounded-xl animate-pulse bg-white/[0.05]" /></div>}>
             <CatalogContent />
         </Suspense>
     );

@@ -1,23 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, User, Shield, Edit2, X, Check, SearchIcon, RefreshCw, MessageCircle } from 'lucide-react';
-import api from '@/lib/api';
+import { Search, User as UserIcon, Edit2, Check, RefreshCw, MessageCircle } from 'lucide-react';
+import api, { User } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 export default function AdminUsers() {
-    const [users, setUsers] = useState<any[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [editingUser, setEditingUser] = useState<any>(null);
-    const [editForm, setEditForm] = useState({ role: '', tier: '', balance: 0 });
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [editForm, setEditForm] = useState<{ role: string; tier: string; balance: number }>({ role: '', tier: '', balance: 0 });
     const router = useRouter();
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/admin/users?search=${encodeURIComponent(search)}`) as any;
-            setUsers(res.users);
+            const res = await api.admin.getUsers(search);
+            setUsers(res);
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
@@ -30,12 +30,13 @@ export default function AdminUsers() {
             fetchUsers();
         }, 300);
         return () => clearTimeout(bounce);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
     const handleEditSave = async () => {
         if (!editingUser) return;
         try {
-            await api.patch(`/admin/users/${editingUser.id}`, editForm);
+            await api.admin.updateUser(editingUser.id, editForm as Partial<User>);
             setEditingUser(null);
             fetchUsers();
         } catch (error) {
@@ -45,7 +46,7 @@ export default function AdminUsers() {
 
     const handleMessageUser = async (userId: string) => {
         try {
-            await api.chat.createDirectRoom(userId) as any;
+            await api.chat.createDirectRoom(userId);
             router.push('/admin/chats');
         } catch (error) {
             console.error('Failed to start chat from admin panel', error);
@@ -102,7 +103,7 @@ export default function AdminUsers() {
                                     <td className="py-4 px-6">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                                <User className="w-5 h-5 text-white/60" />
+                                                <UserIcon className="w-5 h-5 text-white/60" />
                                             </div>
                                             <div>
                                                 <div className="font-medium text-white text-sm">{user.email}</div>
@@ -171,6 +172,7 @@ export default function AdminUsers() {
                                 <select
                                     value={editForm.role}
                                     onChange={e => setEditForm(prev => ({ ...prev, role: e.target.value }))}
+                                    title="Выберите роль"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none outline-none focus:border-red-500/50"
                                 >
                                     <option value="USER" className="bg-[#161b2e]">Покупатель (USER)</option>
@@ -184,6 +186,7 @@ export default function AdminUsers() {
                                 <select
                                     value={editForm.tier}
                                     onChange={e => setEditForm(prev => ({ ...prev, tier: e.target.value }))}
+                                    title="Выберите тариф"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none outline-none focus:border-red-500/50"
                                 >
                                     <option value="SILVER" className="bg-[#161b2e]">SILVER</option>
@@ -199,6 +202,7 @@ export default function AdminUsers() {
                                     step="0.01"
                                     value={editForm.balance}
                                     onChange={e => setEditForm(prev => ({ ...prev, balance: parseFloat(e.target.value) || 0 }))}
+                                    title="Изменить баланс"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-red-500/50"
                                 />
                                 <p className="text-[10px] text-white/30 mt-1">Осторожно! Изменение баланса напрямую.</p>

@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { ChatRoom, ChatMessage } from '@/lib/api';
+import Image from 'next/image';
 import { Navbar } from '@/components/Navbar';
 import {
     MessageSquare, Send, Paperclip, Search,
@@ -14,9 +15,9 @@ export default function MessagesPage() {
     const { user, isAuthenticated, loading } = useAuth();
     const router = useRouter();
 
-    const [rooms, setRooms] = useState<any[]>([]);
+    const [rooms, setRooms] = useState<ChatRoom[]>([]);
     const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isSending, setIsSending] = useState(false);
 
@@ -32,7 +33,7 @@ export default function MessagesPage() {
 
     const loadRooms = async () => {
         try {
-            const res = await api.chat.getRooms() as any;
+            const res = await api.chat.getRooms();
             setRooms(res);
             // Пытаемся взять комнату по умолчанию (например из query)
             // Но пока просто берём первую, если ничего не выбрано
@@ -43,16 +44,13 @@ export default function MessagesPage() {
 
     const loadMessages = async (roomId: string) => {
         try {
-            const res = await api.chat.getMessages(roomId) as any;
-            // Бекенд отдает { data: [...messages] } (сортировка desc)
-            // Для отображения разворачиваем массив, чтобы старые были сверху
+            const res = await api.chat.getMessages(roomId);
             setMessages(res.data.reverse());
             await api.chat.markAsRead(roomId);
 
-            // Если мы прочитали, обновляем бейджики локально
             setRooms(prev => prev.map(r =>
                 r.id === roomId
-                    ? { ...r, messages: r.messages.map((m: any) => ({ ...m, isRead: true })) }
+                    ? { ...r, messages: (r.messages || []).map((m) => ({ ...m, isRead: true })) }
                     : r
             ));
         } catch (error) {
@@ -79,7 +77,7 @@ export default function MessagesPage() {
 
         setIsSending(true);
         try {
-            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue) as any;
+            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue);
             setMessages(prev => [...prev, newMessage]);
             setInputValue('');
 
@@ -104,12 +102,12 @@ export default function MessagesPage() {
     const activeRoom = rooms.find(r => r.id === activeRoomId);
 
     // Вспомогательная функция: получает имя/аватар собеседника для DIRECT-чатов
-    const getOtherParticipant = (room: any) => {
-        return room.participants?.find((p: any) => p.id !== user?.id) || null;
+    const getOtherParticipant = (room: ChatRoom) => {
+        return room.participants?.find((p) => p.id !== user?.id) || null;
     };
 
     // Определение стиля иконки комнаты
-    const getRoomStyle = (room: any) => {
+    const getRoomStyle = (room: ChatRoom) => {
         switch (room.type) {
             case 'SYSTEM': return { icon: Bell, border: 'border-green-500/50', bg: 'bg-green-500/10', text: 'text-green-500' };
             case 'DISPUTE': return { icon: ShieldAlert, border: 'border-red-500/50', bg: 'bg-red-500/10', text: 'text-red-500' };
@@ -119,7 +117,7 @@ export default function MessagesPage() {
     };
 
     // Определение названия комнаты
-    const getRoomName = (room: any) => {
+    const getRoomName = (room: ChatRoom) => {
         if (room.type === 'SYSTEM') return 'Perkly Уведомления';
         if (room.type === 'DISPUTE') return `Спор #${room.transactionId?.slice(-6) || '??'}`;
         const other = getOtherParticipant(room);
@@ -174,7 +172,7 @@ export default function MessagesPage() {
                                         {/* Avatar */}
                                         <div className={`relative w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${bg} border ${border}`}>
                                             {otherUser?.avatarUrl && room.type === 'DIRECT' ? (
-                                                <img src={otherUser.avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                                                <Image src={otherUser.avatarUrl} alt="Avatar" width={48} height={48} className="w-full h-full rounded-full object-cover" />
                                             ) : (
                                                 <RoomIcon className={`w-5 h-5 ${text}`} />
                                             )}
@@ -254,7 +252,7 @@ export default function MessagesPage() {
                                         Здесь пока нет сообщений
                                     </div>
                                 ) : (
-                                    messages.map((msg, idx) => {
+                                    messages.map((msg) => {
                                         const isMine = msg.senderId === user?.id;
                                         const isSystem = msg.senderId === null;
 
@@ -274,7 +272,7 @@ export default function MessagesPage() {
                                                 {!isMine && (
                                                     <div className="w-8 h-8 rounded-full bg-white/10 mr-2 flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/10 mt-auto">
                                                         {msg.sender?.avatarUrl ? (
-                                                            <img src={msg.sender.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                                            <Image src={msg.sender.avatarUrl} alt="Avatar" width={32} height={32} className="w-full h-full object-cover" />
                                                         ) : (
                                                             <UserIcon className="w-4 h-4 text-white/50" />
                                                         )}
@@ -319,7 +317,7 @@ export default function MessagesPage() {
                             {activeRoom?.type !== 'SYSTEM' && (
                                 <div className="p-4 bg-white/[0.02] border-t border-white/5 relative z-10 backdrop-blur-xl">
                                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                                        <button type="button" className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors">
+                                        <button type="button" title="Прикрепить файл" className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors">
                                             <Paperclip className="w-5 h-5" />
                                         </button>
                                         <input

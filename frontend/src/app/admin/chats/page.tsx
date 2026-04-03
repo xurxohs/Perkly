@@ -3,19 +3,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { ChatRoom, ChatMessage } from '@/lib/api';
 import {
     MessageSquare, Send, Paperclip, Search,
-    ShieldAlert, Bell, Store, User as UserIcon, Check, CheckCheck
+    ShieldAlert, Bell, User as UserIcon, Check, CheckCheck
 } from 'lucide-react';
 
 export default function AdminChatsPage() {
     const { user, isAuthenticated, loading } = useAuth();
     const router = useRouter();
 
-    const [rooms, setRooms] = useState<any[]>([]);
+    const [rooms, setRooms] = useState<ChatRoom[]>([]);
     const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isSending, setIsSending] = useState(false);
 
@@ -31,7 +31,7 @@ export default function AdminChatsPage() {
 
     const loadRooms = async () => {
         try {
-            const res = await api.chat.getRooms() as any;
+            const res = await api.chat.getRooms();
             setRooms(res);
         } catch (error) {
             console.error('Failed to load rooms:', error);
@@ -40,13 +40,13 @@ export default function AdminChatsPage() {
 
     const loadMessages = async (roomId: string) => {
         try {
-            const res = await api.chat.getMessages(roomId) as any;
+            const res = await api.chat.getMessages(roomId);
             setMessages(res.data.reverse());
             await api.chat.markAsRead(roomId);
 
             setRooms(prev => prev.map(r =>
                 r.id === roomId
-                    ? { ...r, messages: r.messages.map((m: any) => ({ ...m, isRead: true })) }
+                    ? { ...r, messages: (r.messages || []).map((m) => ({ ...m, isRead: true })) }
                     : r
             ));
         } catch (error) {
@@ -72,7 +72,7 @@ export default function AdminChatsPage() {
 
         setIsSending(true);
         try {
-            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue) as any;
+            const newMessage = await api.chat.sendMessage(activeRoomId, inputValue);
             setMessages(prev => [...prev, newMessage]);
             setInputValue('');
 
@@ -96,17 +96,17 @@ export default function AdminChatsPage() {
     const activeRoom = rooms.find(r => r.id === activeRoomId);
 
     // Получаем собеседников — для админа это могут быть оба участника (если это спор)
-    const getParticipantsNames = (room: any) => {
+    const getParticipantsNames = (room: ChatRoom) => {
         if (room.type === 'SYSTEM') return 'Perkly Уведомления';
         if (room.type === 'DISPUTE') return `Спор #${room.transactionId?.slice(-6) || '??'}`;
 
-        const others = room.participants?.filter((p: any) => p.id !== user?.id) || [];
+        const others = room.participants?.filter((p) => p.id !== user?.id) || [];
         if (others.length === 0) return 'Пустой чат';
         if (others.length === 1) return others[0].displayName || others[0].email;
-        return others.map((o: any) => o.displayName || o.email).join(', ');
+        return others.map((o) => o.displayName || o.email).join(', ');
     };
 
-    const getRoomStyle = (room: any) => {
+    const getRoomStyle = (room: ChatRoom) => {
         switch (room.type) {
             case 'SYSTEM': return { icon: Bell, border: 'border-green-500/50', bg: 'bg-green-500/10', text: 'text-green-500' };
             case 'DISPUTE': return { icon: ShieldAlert, border: 'border-orange-500/50', bg: 'bg-orange-500/10', text: 'text-orange-500' };
@@ -224,7 +224,7 @@ export default function AdminChatsPage() {
                                     Здесь пока нет сообщений
                                 </div>
                             ) : (
-                                messages.map((msg, idx) => {
+                                messages.map((msg) => {
                                     const isMine = msg.senderId === user?.id;
                                     const isSystem = msg.senderId === null;
 
@@ -281,7 +281,7 @@ export default function AdminChatsPage() {
                         {activeRoom?.type !== 'SYSTEM' && (
                             <div className="p-4 bg-white/[0.02] border-t border-white/5 relative z-10 backdrop-blur-xl">
                                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                                    <button type="button" className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors">
+                                    <button type="button" title="Прикрепить файл" className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors">
                                         <Paperclip className="w-5 h-5" />
                                     </button>
                                     <input

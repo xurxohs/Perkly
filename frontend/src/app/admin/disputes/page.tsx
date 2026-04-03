@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Scale, RefreshCw, CheckCircle2, User, Store } from 'lucide-react';
-import api from '@/lib/api';
+import { RefreshCw, CheckCircle2, User, Store } from 'lucide-react';
+import api, { Dispute } from '@/lib/api';
 
 export default function AdminDisputes() {
-    const [disputes, setDisputes] = useState<any[]>([]);
+    const [disputes, setDisputes] = useState<Dispute[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchDisputes = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/disputes') as any;
+            const res = await api.admin.getDisputes();
             setDisputes(res.disputes);
         } catch (error) {
             console.error('Failed to fetch disputes:', error);
@@ -46,7 +46,7 @@ export default function AdminDisputes() {
                     <h1 className="text-3xl font-bold text-white mb-2">Споры (Арбитраж)</h1>
                     <p className="text-white/40">Решение конфликтов между покупателем и продавцом</p>
                 </div>
-                <button onClick={fetchDisputes} className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
+                <button onClick={fetchDisputes} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
                     <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 </button>
             </div>

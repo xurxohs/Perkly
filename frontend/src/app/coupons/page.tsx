@@ -1,6 +1,6 @@
 'use client';
 
-import { Tag, Coffee, Gamepad2, KeyRound, ShoppingBag, Sparkles, Clock, Zap, ArrowRight, Filter, Star } from 'lucide-react';
+import { Tag, Coffee, Gamepad2, KeyRound, ShoppingBag, Sparkles, Zap, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -68,9 +68,9 @@ export default function CouponsPage() {
         <div className="flex flex-col items-center px-6 pb-24 max-w-[1200px] mx-auto w-full">
             {/* Header */}
             <section className="pt-20 pb-10 text-center w-full relative">
-                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)' }} />
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(236,72,153,0.08)_0%,transparent_70%)]" />
 
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-6" style={{ background: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.15)' }}>
+                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-6 bg-pink-500/[0.08] border border-pink-500/[0.15]">
                     <Tag className="w-4 h-4 text-pink-400" />
                     <span className="text-sm font-medium text-pink-300">Лучшие предложения</span>
                 </div>
@@ -93,9 +93,8 @@ export default function CouponsPage() {
                             onClick={() => setActiveCategory(cat.key)}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap cursor-pointer border-0 transition-all shrink-0 ${activeCategory === cat.key
                                 ? 'bg-white text-black'
-                                : 'text-white/50 hover:text-white/80'
+                                : 'text-white/50 hover:text-white/80 bg-white/[0.04] border border-white/[0.08]'
                                 }`}
-                            style={activeCategory !== cat.key ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' } : {}}
                         >
                             <cat.icon className="w-4 h-4" />
                             {cat.label}
@@ -108,7 +107,7 @@ export default function CouponsPage() {
             <section className="w-full">
                 {loading ? (
                     <div className="text-center py-20">
-                        <div className="w-8 h-8 mx-auto rounded-full border-2 border-purple-500 border-t-transparent" style={{ animation: 'spin 1s linear infinite' }} />
+                        <div className="w-8 h-8 mx-auto rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
                         <p className="text-white/30 text-sm mt-4">Загрузка купонов...</p>
                     </div>
                 ) : filtered.length === 0 ? (
@@ -131,26 +130,26 @@ export default function CouponsPage() {
                                             <Image src={imgUrl} fill className="object-cover transition-transform duration-500 group-hover:scale-105" alt={offer.title} />
 
                                             {/* Discount badge */}
-                                            <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold text-white z-10" style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)', boxShadow: '0 0 15px rgba(239,68,68,0.3)' }}>
+                                            <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold text-white z-10 bg-gradient-to-br from-red-500 to-orange-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]">
                                                 -{discount}%
                                             </div>
 
                                             {/* Flash Drop badge */}
                                             {offer.isFlashDrop && (
-                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 z-10" style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 z-10 bg-black/70 border border-amber-500/30">
                                                     <Zap className="w-3 h-3" /> Flash
                                                 </div>
                                             )}
 
                                             {/* Exclusive badge */}
                                             {offer.isExclusive && (
-                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-purple-300 z-10" style={{ background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-purple-300 z-10 bg-black/70 border border-purple-500/30">
                                                     <Star className="w-3 h-3" /> VIP
                                                 </div>
                                             )}
 
                                             {/* Category */}
-                                            <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold text-white/80 z-10" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                                            <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold text-white/80 z-10 bg-black/60 backdrop-blur-md">
                                                 {categoryFilters.find(c => c.key === offer.category)?.label || offer.category}
                                             </div>
                                         </div>
@@ -177,8 +176,8 @@ export default function CouponsPage() {
                                             </div>
 
                                             {/* Seller */}
-                                            <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <div className="w-5 h-5 rounded-full" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }} />
+                                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.05]">
+                                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
                                                 <span className="text-xs text-white/30">{offer.seller?.displayName || 'Perkly'}</span>
                                             </div>
                                         </div>
