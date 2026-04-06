@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { Clock, Gamepad2, Coffee, KeyRound, Tag, Sparkles, ArrowRight, Flame } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
