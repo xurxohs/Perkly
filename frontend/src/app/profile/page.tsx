@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
+import { useTelegram } from '@/hooks/useTelegram';
 import { usersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderCl
 
 export default function ProfilePage() {
     const { user, isAuthenticated, loading, logout, refreshUser } = useAuth();
+    const { hapticImpact, hapticNotification } = useTelegram();
     const router = useRouter();
 
     const [stats, setStats] = useState({ totalSpent: 0, totalPurchases: 0 });
@@ -256,6 +258,53 @@ export default function ProfilePage() {
                         <Crown className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
                         <div className="text-2xl font-extrabold text-white">{user.rewardPoints}</div>
                         <div className="text-xs text-white/30 mt-1">Perkly Points</div>
+                    </div>
+                </div>
+
+                {/* Referral Section */}
+                <div className="rounded-2xl p-6 mb-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                        <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center shrink-0 border border-blue-400/30">
+                            <QrCode className="w-8 h-8 text-blue-400" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                            <h3 className="text-lg font-bold text-white mb-1 flex items-center justify-center md:justify-start gap-2">
+                                🎁 Пригласи друга — получи 500 баллов!
+                            </h3>
+                            <p className="text-white/50 text-sm">
+                                Начислим по 500 Perkly Points вам и вашему другу после его регистрации.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <button
+                                onClick={() => {
+                                    const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
+                                    const link = `https://t.me/${botUsername}?start=ref_${user?.id}`;
+                                    navigator.clipboard.writeText(link);
+                                    setCopiedId('ref');
+                                    hapticNotification('success');
+                                    setTimeout(() => setCopiedId(null), 2000);
+                                }}
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all bg-white/5 border border-white/10 hover:bg-white/10 text-white"
+                            >
+                                {copiedId === 'ref' ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                                {copiedId === 'ref' ? 'Скопировано' : 'Копировать'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    hapticImpact('medium');
+                                    const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
+                                    const link = `https://t.me/${botUsername}?start=ref_${user?.id}`;
+                                    const text = encodeURIComponent(`🔥 Присоединяйся к Perkly и получи 500 бонусов при регистрации!\n\nТут лучшие предложения на подписки, игры и курсы.`);
+                                    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`;
+                                    window.open(shareUrl, '_blank');
+                                }}
+                                className="p-3 rounded-xl bg-blue-500 text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 

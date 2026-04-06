@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export function useTelegram() {
     const [webApp, setWebApp] = useState<any>(null);
@@ -22,6 +22,27 @@ export function useTelegram() {
     const expand = useCallback(() => webApp?.expand(), [webApp]);
     const onClose = useCallback(() => webApp?.close(), [webApp]);
 
+    const hapticImpact = useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => {
+        webApp?.HapticFeedback?.impactOccurred(style);
+    }, [webApp]);
+
+    const hapticNotification = useCallback((type: 'error' | 'success' | 'warning') => {
+        webApp?.HapticFeedback?.notificationOccurred(type);
+    }, [webApp]);
+
+    const showMainButton = useCallback((text: string, onClick: () => void) => {
+        if (!webApp) return;
+        webApp.MainButton.setParams({
+            text: text,
+            is_visible: true
+        });
+        webApp.MainButton.onClick(onClick);
+    }, [webApp]);
+
+    const hideMainButton = useCallback(() => {
+        webApp?.MainButton.hide();
+    }, [webApp]);
+
     return {
         webApp,
         user,
@@ -29,5 +50,9 @@ export function useTelegram() {
         isTMA: !!(webApp && webApp.initData),
         onClose,
         expand,
+        hapticImpact,
+        hapticNotification,
+        showMainButton,
+        hideMainButton,
     };
 }

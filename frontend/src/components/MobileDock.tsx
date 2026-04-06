@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCart } from '@/lib/CartContext';
+import { useTelegram } from '@/hooks/useTelegram';
 
 const dockItems = [
     { href: '/', icon: Home, label: 'Главная' },
@@ -171,6 +172,7 @@ function DockIcon({ item, isActive, onTap }: {
 
 export function MobileDock() {
     const pathname = usePathname();
+    const { hapticImpact } = useTelegram();
 
     const getActiveHref = () => {
         for (const item of dockItems) {
@@ -198,7 +200,7 @@ export function MobileDock() {
                             key={item.href}
                             item={item}
                             isActive={activeHref === item.href}
-                            onTap={() => { }}
+                            onTap={() => hapticImpact('light')}
                         />
                     ))}
                 </div>

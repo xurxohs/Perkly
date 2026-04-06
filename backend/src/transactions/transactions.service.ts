@@ -69,10 +69,17 @@ export class TransactionsService {
       });
     });
 
+    const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+    const inlineKeyboard = {
+      inline_keyboard: [
+        [{ text: '🔥 Открыть Заказ', web_app: { url: `${webAppUrl}/profile/orders` } }]
+      ]
+    };
+
     // Try to notify the buyer via Telegram
     if (buyer.telegramId) {
       const message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${offer.price}.\nВаш кэшбек: ${Math.floor(offer.price)} баллов.\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
-      await this.botService.sendTelegramNotification(buyer.telegramId, message);
+      await this.botService.sendTelegramNotification(buyer.telegramId, message, inlineKeyboard);
     }
 
     // Try to notify the seller via Telegram
@@ -80,10 +87,16 @@ export class TransactionsService {
       where: { id: offer.sellerId },
     });
     if (seller && seller.telegramId) {
+      const sellerKeyboard = {
+        inline_keyboard: [
+          [{ text: '📦 Управление Заказами', web_app: { url: `${webAppUrl}/vendor/orders` } }]
+        ]
+      };
       const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${offer.price}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
       await this.botService.sendTelegramNotification(
         seller.telegramId,
         message,
+        sellerKeyboard
       );
     }
 

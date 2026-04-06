@@ -24,10 +24,15 @@ export class BotService {
     @InjectBot() private bot: Telegraf<Context>,
   ) {}
 
-  async sendTelegramNotification(telegramId: string, message: string) {
+  async sendTelegramNotification(
+    telegramId: string,
+    message: string,
+    replyMarkup?: any,
+  ) {
     try {
       await this.bot.telegram.sendMessage(telegramId, message, {
         parse_mode: 'Markdown',
+        reply_markup: replyMarkup,
       });
       this.logger.log(`Sent notification to ${telegramId}`);
     } catch (error) {
@@ -42,66 +47,34 @@ export class BotService {
     const from = ctx.from;
     if (!from) return;
 
-    // Check if there is a login payload (login_<token>)
     const message = ctx.message;
     let text = '';
-
-    // Type narrow to Text message
     if (message && 'text' in message) {
       text = (message as { text: string }).text;
     }
 
-    const match = text.match(/^\/start login_([a-f0-9-]+)/);
-
-    if (match) {
-      const loginToken = match[1];
-      // Store the login token in user's session-like context by using chat id as key
-      // We keep it simple: store in a local map keyed by telegramId
-      this.pendingLogins.set(from.id.toString(), loginToken);
-
-      await ctx.reply(
-        `👋 Привет, *${from.first_name}*!\n\nДля входа в *Perkly* нажмите кнопку ниже, чтобы поделиться вашим номером телефона. Это безопасно — мы используем его только для вашей идентификации.`,
-        {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            keyboard: [
-              [
-                {
-                  text: '📱 Поделиться номером телефона',
-                  request_contact: true,
-                },
-              ],
-            ],
-            resize_keyboard: true,
-            one_time_keyboard: true,
-          },
-        },
-      );
-      return;
-    }
-
-    // Regular /start — just welcome + open app
     const telegramIdStr = from.id.toString();
     const email = `tg_${telegramIdStr}@telegram.local`;
 
-    // Check by telegramId first to avoid unique constraint violation
-    const existingByTg = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { telegramId: telegramIdStr },
     });
-    if (existingByTg) {
-      // User already exists, just update display name if needed
-      await this.prisma.user.update({
-        where: { id: existingByTg.id },
+    let isNewUser = false;
+
+    if (user) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
         data: {
           displayName:
-            existingByTg.displayName ||
+            user.displayName ||
             from.first_name ||
             from.username ||
             'Telegram User',
         },
       });
     } else {
-      await this.prisma.user.upsert({
+      isNewUser = true;
+      user = await this.prisma.user.upsert({
         where: { email },
         update: { telegramId: telegramIdStr },
         create: {
@@ -112,7 +85,74 @@ export class BotService {
       });
     }
 
-    const webAppUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const match = text.match(/^\/start (login_|ref_)([a-zA-Z0-9-]+)/);
+
+    if (match) {
+      const type = match[1];
+      const token = match[2];
+
+      if (type === 'login_') {
+        this.pendingLogins.set(telegramIdStr, token);
+        await ctx.reply(
+          `👋 Привет, *${from.first_name}*!\n\nДля входа в *Perkly* нажмите кнопку ниже, чтобы поделиться вашим номером телефона. Это безопасно — мы используем его только для вашей идентификации.`,
+          {
+            parse_mode: 'Markdown',
+            reply_markup: {
+              keyboard: [
+                [
+                  {
+                    text: '📱 Поделиться номером телефона',
+                    request_contact: true,
+                  },
+                ],
+              ],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          },
+        );
+        return;
+      } else if (type === 'ref_' && isNewUser) {
+        const referrerId = token;
+        const existingRef = await this.prisma.analyticsEvent.findFirst({
+          where: { eventType: 'REFERRAL', userId: user.id },
+        });
+        if (!existingRef && referrerId !== user.id) {
+          await this.prisma.user
+            .update({
+              where: { id: referrerId },
+              data: { rewardPoints: { increment: 500 } },
+            })
+            .catch(() => null);
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { rewardPoints: { increment: 500 } },
+          });
+          await this.prisma.analyticsEvent.create({
+            data: {
+              eventType: 'REFERRAL',
+              userId: user.id,
+              metadata: referrerId,
+            },
+          });
+          await ctx.reply(
+            `🎉 Вы зарегистрировались по приглашению и получили 500 Perkly Points!`,
+          );
+          // Alert referrer
+          const referrer = await this.prisma.user.findUnique({
+            where: { id: referrerId },
+          });
+          if (referrer && referrer.telegramId) {
+            await this.sendTelegramNotification(
+              referrer.telegramId,
+              `🤝 По вашей ссылке зарегистрировался друг! Вам начислено 500 Perkly Points. Зарабатывайте дальше!`,
+            );
+          }
+        }
+      }
+    }
+
+    const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
     await ctx.reply(
       `👋 Привет, *${from.first_name}*!\n\nДобро пожаловать в *Perkly* – маркетплейс скидок, купонов и подписок.\n\n👇 Выберите действие:`,
       {
@@ -120,10 +160,14 @@ export class BotService {
         ...Markup.inlineKeyboard([
           [Markup.button.webApp('🔥 Открыть Perkly', webAppUrl)],
           [
-            Markup.button.callback('💰 Мой профиль', 'action_profile'),
-            Markup.button.callback('🛍 Мои покупки', 'action_my_purchases'),
+            Markup.button.callback('💰 Профиль', 'action_profile'),
+            Markup.button.callback('🛍 Покупки', 'action_my_purchases'),
+            Markup.button.callback('🤝 Пригласить', 'action_referral'),
           ],
-          [Markup.button.callback('❓ Помощь', 'action_help')],
+          [
+            Markup.button.callback('🎁 Бонус дня', 'action_bonus'),
+            Markup.button.callback('❓ Помощь', 'action_help'),
+          ],
         ]),
       },
     );
@@ -323,5 +367,81 @@ export class BotService {
       await ctx.answerCbQuery().catch(() => {});
     }
     await this.onMyCommand(ctx);
+  }
+
+  @Command('bonus')
+  async onBonusCommand(@Ctx() ctx: Context) {
+    const from = ctx.from;
+    if (!from) return;
+    const telegramIdStr = from.id.toString();
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: telegramIdStr },
+    });
+    if (!user) return;
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const existingBonus = await this.prisma.analyticsEvent.findFirst({
+      where: {
+        eventType: 'DAILY_BONUS',
+        userId: user.id,
+        createdAt: { gte: startOfDay },
+      },
+    });
+
+    if (existingBonus) {
+      await ctx.reply(
+        '🎁 Вы уже получали бонус сегодня! Следующий будет доступен завтра.',
+        { parse_mode: 'Markdown' },
+      );
+      return;
+    }
+
+    const bonusAmount = Math.floor(Math.random() * (5000 - 500 + 1)) + 500;
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { rewardPoints: { increment: bonusAmount } },
+    });
+
+    await this.prisma.analyticsEvent.create({
+      data: {
+        eventType: 'DAILY_BONUS',
+        userId: user.id,
+        metadata: bonusAmount.toString(),
+      },
+    });
+
+    await ctx.reply(
+      `🎉 Ура! Вы крутанули рулетку Фортуны и забрали: *${bonusAmount} Perkly Points*!\nЖдем вас завтра за новой наградой.`,
+      { parse_mode: 'Markdown' },
+    );
+  }
+
+  @Action('action_bonus')
+  async onActionBonus(@Ctx() ctx: Context) {
+    if (ctx.callbackQuery) await ctx.answerCbQuery().catch(() => {});
+    await this.onBonusCommand(ctx);
+  }
+
+  @Action('action_referral')
+  async onActionReferral(@Ctx() ctx: Context) {
+    if (ctx.callbackQuery) await ctx.answerCbQuery().catch(() => {});
+    const from = ctx.from;
+    if (!from) return;
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: from.id.toString() },
+    });
+    if (!user) return;
+
+    const botInfo = ctx.botInfo;
+    const botUsername = botInfo?.username || 'PerklyLoginBot';
+    const refLink = `https://t.me/${botUsername}?start=ref_${user.id}`;
+
+    await ctx.reply(
+      `🎁 *Пригласи друга и получи 500 баллов!*\n\nПоделитесь этой ссылкой с друзьями. Как только друг присоединится к Perkly, вы оба получите награду!\n\n👇 Ваша персональная ссылка:\n\`${refLink}\``,
+      { parse_mode: 'Markdown' },
+    );
   }
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Loader2, Wallet, CreditCard } from 'lucide-react';
+import { useTelegram } from '@/hooks/useTelegram';
 
 interface TopUpModalProps {
     isOpen: boolean;
@@ -10,6 +11,7 @@ interface TopUpModalProps {
 }
 
 export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps) {
+    const { hapticImpact, hapticNotification } = useTelegram();
     const [amount, setAmount] = useState<string>('10');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -22,15 +24,19 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
         e.preventDefault();
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount) || numAmount <= 0) {
+            hapticNotification('error');
             setError('Введите корректную сумму');
             return;
         }
+        hapticImpact('medium');
 
         try {
             setLoading(true);
             setError('');
             await onTopUp(numAmount);
+            hapticNotification('success');
         } catch (err: unknown) {
+            hapticNotification('error');
             const error = err as Error;
             setError(error.message || 'Ошибка пополнения');
         } finally {
@@ -82,7 +88,10 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
                                 key={val}
                                 type="button"
                                 disabled={loading}
-                                onClick={() => setAmount(val.toString())}
+                                onClick={() => {
+                                    hapticImpact('light');
+                                    setAmount(val.toString());
+                                }}
                                 className={`py-2 rounded-lg text-sm font-bold transition-all border-0 cursor-pointer ${amount === val.toString() ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/5'}`}
                             >
                                 ${val}

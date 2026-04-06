@@ -6,6 +6,7 @@ import { ShoppingCart, CheckCircle, Share2 } from 'lucide-react';
 import { transactionsApi } from '@/lib/api';
 import { useCart } from '@/lib/CartContext';
 import { useAuth } from '@/lib/AuthContext';
+import { useTelegram } from '@/hooks/useTelegram';
 
 interface OfferActionsProps {
   offer: {
@@ -20,6 +21,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
   const router = useRouter();
   const { isAuthenticated, refreshUser } = useAuth();
   const { addItem, isInCart } = useCart();
+  const { hapticImpact, hapticNotification } = useTelegram();
 
   const [purchasing, setPurchasing] = useState(false);
   const [purchased, setPurchased] = useState(false);
@@ -27,16 +29,20 @@ export default function OfferActions({ offer }: OfferActionsProps) {
 
   const handleBuy = async () => {
     if (!isAuthenticated) {
+      hapticImpact('medium');
       router.push('/login');
       return;
     }
+    hapticImpact('heavy');
     setPurchasing(true);
     setError('');
     try {
       await transactionsApi.purchase(offer.id);
+      hapticNotification('success');
       setPurchased(true);
       await refreshUser();
     } catch (err: unknown) {
+      hapticNotification('error');
       const error = err as Error;
       setError(error.message || 'Ошибка при покупке');
     } finally {
@@ -82,7 +88,10 @@ export default function OfferActions({ offer }: OfferActionsProps) {
         </button>
 
         <button
-          onClick={() => addItem({ offerId: offer.id, title: offer.title, price: offer.price, category: offer.category })}
+          onClick={() => {
+            hapticImpact('medium');
+            addItem({ offerId: offer.id, title: offer.title, price: offer.price, category: offer.category });
+          }}
           disabled={isInCart(offer.id)}
           className={`px-6 py-4 rounded-xl font-semibold cursor-pointer border transition-all flex items-center justify-center ${
             isInCart(offer.id) 
@@ -94,7 +103,10 @@ export default function OfferActions({ offer }: OfferActionsProps) {
         </button>
 
         <button
-          onClick={handleShare}
+          onClick={() => {
+            hapticImpact('light');
+            handleShare();
+          }}
           className="px-6 py-4 rounded-xl font-semibold cursor-pointer border transition-all flex items-center justify-center bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
           title="Поделиться в Telegram"
         >

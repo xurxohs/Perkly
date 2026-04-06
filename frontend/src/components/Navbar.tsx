@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { User, LogOut, Search, X, Tag, Gem, Medal } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
+    const { hapticImpact } = useTelegram();
     const [searchOpen, setSearchOpen] = useState(false);
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
@@ -71,7 +73,14 @@ export function Navbar() {
 
             <div className="flex items-center gap-2 shrink-0 ml-4">
                 {/* Mobile search toggle */}
-                <button onClick={() => setSearchOpen(!searchOpen)} className="md:hidden p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0">
+                <button 
+                    onClick={() => {
+                        hapticImpact('light');
+                        setSearchOpen(!searchOpen);
+                    }} 
+                    className="md:hidden p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
+                    title={searchOpen ? "Закрыть поиск" : "Открыть поиск"}
+                >
                     {searchOpen ? <X className="w-5 h-5 text-white/70" /> : <Search className="w-5 h-5 text-white/70" />}
                 </button>
 
@@ -94,7 +103,14 @@ export function Navbar() {
                                 />
                             )}
                         </Link>
-                        <button onClick={logout} className="p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0">
+                        <button 
+                            onClick={() => {
+                                hapticImpact('medium');
+                                logout();
+                            }} 
+                            className="p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
+                            title="Выйти"
+                        >
                             <LogOut className="w-4 h-4 text-white/40" />
                         </button>
                     </>
