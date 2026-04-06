@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ShoppingCart, Shield, Clock, User, Tag, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package, Flame, Crown, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Shield, Clock, User, Tag, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package, Flame, Crown, CheckCircle, Share2, Send } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Reviews } from '@/components/Reviews';
@@ -63,6 +63,20 @@ function OfferDetailContent() {
             setError(err.message || 'Ошибка при покупке');
         } finally {
             setPurchasing(false);
+        }
+    };
+
+    const handleShare = () => {
+        const BOT_USERNAME = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot'; // Fallback if no env
+        const url = `https://t.me/${BOT_USERNAME}/app?startapp=offer_${offer.id}`;
+        const text = `🔥 Смотри, что я нашел в Perkly:\n\n${offer.title}\nЦена: ${offer.price === 0 ? 'Бесплатно' : offer.price + '$'}`;
+        
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        
+        if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+            (window as any).Telegram.WebApp.openTelegramLink(shareUrl);
+        } else {
+            window.open(shareUrl, '_blank');
         }
     };
 
@@ -199,7 +213,14 @@ function OfferDetailContent() {
                                     color: isInCart(offer.id) ? '#22c55e' : 'white',
                                 }}
                             >
-                                <ShoppingCart className="w-5 h-5" />
+                                {isInCart(offer.id) ? <CheckCircle className="w-5 h-5 mx-auto" /> : <ShoppingCart className="w-5 h-5 mx-auto" />}
+                            </button>
+                            <button
+                                onClick={handleShare}
+                                className="px-6 py-4 rounded-xl font-semibold cursor-pointer border-0 transition-all flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20"
+                                title="Поделиться в Telegram"
+                            >
+                                <Share2 className="w-5 h-5" />
                             </button>
                         </div>
                     )}

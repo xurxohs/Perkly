@@ -269,6 +269,14 @@ export const analyticsApi = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+    getEvents: (params?: { eventType?: string; userId?: string; skip?: number; take?: number }) => {
+        const urlParams = new URLSearchParams();
+        if (params?.eventType) urlParams.append('eventType', params.eventType);
+        if (params?.userId) urlParams.append('userId', params.userId);
+        if (params?.skip) urlParams.append('skip', String(params.skip));
+        if (params?.take) urlParams.append('take', String(params.take));
+        return request<any>(`/analytics/events?${urlParams.toString()}`);
+    }
 };
 
 // ===== CHAT =====
@@ -336,6 +344,7 @@ const api = {
     chat: chatApi,
     admin: adminApi,
     seller: sellerApi,
+    analytics: analyticsApi,
     // Add generic request methods
     get: <T = unknown>(url: string) => request<T>(url),
     post: <T = unknown>(url: string, body: unknown) => request<T>(url, { method: 'POST', body: JSON.stringify(body) }),

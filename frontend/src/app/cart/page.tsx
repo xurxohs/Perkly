@@ -30,8 +30,9 @@ export default function CartPage() {
             try {
                 await transactionsApi.purchase(item.offerId);
                 purchaseResults.push({ offerId: item.offerId, title: item.title, success: true });
-            } catch (err: any) {
-                purchaseResults.push({ offerId: item.offerId, title: item.title, success: false, error: err.message });
+            } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                purchaseResults.push({ offerId: item.offerId, title: item.title, success: false, error: errorMessage });
             }
         }
 
@@ -58,7 +59,7 @@ export default function CartPage() {
             </h1>
 
             {done && results.length > 0 && (
-                <div className="mb-8 rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="mb-8 rounded-2xl p-6 cart-results-card">
                     <h3 className="text-lg font-bold text-white mb-4">Результаты покупки</h3>
                     {results.map((r, i) => (
                         <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
@@ -87,32 +88,33 @@ export default function CartPage() {
             ) : items.length > 0 && (
                 <>
                     {/* Items */}
-                    <div className="rounded-2xl overflow-hidden mb-6" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="rounded-2xl overflow-hidden mb-6 cart-items-container">
                         {items.map((item, i) => (
                             <div
                                 key={item.offerId}
-                                className="flex items-center justify-between p-4 transition-colors"
-                                style={{ background: 'rgba(255,255,255,0.02)', borderBottom: i < items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
+                                className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 transition-colors gap-3 sm:gap-0 cart-item-row ${i < items.length - 1 ? 'cart-item-border' : ''}`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white/50" style={{ background: 'rgba(168,85,247,0.1)' }}>
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white/50 shrink-0 cart-item-icon-bg">
                                         {item.category === 'RESTAURANTS' ? <Pizza className="w-6 h-6" /> :
                                             item.category === 'SUBSCRIPTIONS' ? <Tv className="w-6 h-6" /> :
                                                 item.category === 'GAMES' ? <Gamepad2 className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                                     </div>
-                                    <div>
-                                        <Link href={`/offer/${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-purple-400 transition">
+                                    <div className="min-w-0 pr-2">
+                                        <Link href={`/offer/${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-purple-400 transition block truncate">
                                             {item.title}
                                         </Link>
                                         <div className="text-xs text-white/30">{item.category}</div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
                                     <span className="text-base font-bold text-white">{item.price.toFixed(2)}$</span>
                                     <button
                                         onClick={() => removeItem(item.offerId)}
                                         className="p-2 rounded-lg hover:bg-red-400/10 transition cursor-pointer bg-transparent border-0"
+                                        aria-label="Remove item"
+                                        title="Remove item"
                                     >
                                         <Trash2 className="w-4 h-4 text-red-400/60" />
                                     </button>
@@ -122,7 +124,7 @@ export default function CartPage() {
                     </div>
 
                     {/* Summary */}
-                    <div className="rounded-2xl p-6 mb-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="rounded-2xl p-6 mb-4 cart-summary-card">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-white/50">Итого товаров:</span>
                             <span className="text-white font-semibold">{count}</span>
@@ -135,12 +137,7 @@ export default function CartPage() {
                         <button
                             onClick={handleCheckout}
                             disabled={purchasing}
-                            className="w-full py-4 rounded-xl text-white font-bold text-base cursor-pointer border-0 transition-all"
-                            style={{
-                                background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-                                boxShadow: '0 0 25px rgba(168,85,247,0.3)',
-                                opacity: purchasing ? 0.6 : 1,
-                            }}
+                            className={`w-full py-4 rounded-xl text-white font-bold text-base cursor-pointer border-0 transition-all cart-checkout-btn ${purchasing ? 'opacity-60 scale-[0.98]' : 'opacity-100 scale-100'}`}
                         >
                             {purchasing ? 'Оформление...' : `Оформить покупку — ${total.toFixed(2)}$`}
                         </button>

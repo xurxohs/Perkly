@@ -291,100 +291,158 @@ export default function ProfilePage() {
                                 <Link href="/catalog" className="text-purple-400 text-sm no-underline">Перейти в каталог →</Link>
                             </div>
                         ) : (
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-white/[0.03]">
-                                        <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Товар</th>
-                                        <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Сумма</th>
-                                        <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Статус</th>
-                                        <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Дата</th>
-                                        <th className="text-right text-xs text-white/30 uppercase font-semibold py-3 px-4">Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {transactions.map((tx) => (
-                                        <React.Fragment key={tx.id}>
-                                            <tr className="border-t border-white/5 group">
-                                                <td className="py-3 px-4">
-                                                    <span className="text-sm text-white font-medium">{tx.offer?.title || 'Товар'}</span>
-                                                    <div className="text-xs text-white/30">{tx.offer?.category}</div>
-                                                </td>
-                                                <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toFixed(2)}$</td>
-                                                <td className="py-3 px-4">
-                                                    <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' :
-                                                        tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' :
-                                                            tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' :
-                                                                tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'
-                                                        }`}>
-                                                        {tx.status === 'PAID' ? 'Оплачено' : tx.status === 'COMPLETED' ? 'Завершено' :
-                                                            tx.status === 'PENDING' ? 'Ожидание' : tx.status === 'DISPUTED' ? 'Спор' : tx.status === 'CANCELLED' ? 'Отменено' : tx.status}
-                                                    </span>
-                                                </td>
-                                                <td className="py-3 px-4 text-xs text-white/30">{new Date(tx.createdAt).toLocaleDateString('ru-RU')}</td>
-                                                <td className="py-3 px-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
-                                                            <button
-                                                                onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
-                                                                className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}
-                                                            >
-                                                                {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />}
-                                                                {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
-                                                            </button>
-                                                        )}
-                                                        {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
-                                                            <button
-                                                                onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })}
-                                                                className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500"
-                                                            >
-                                                                <QrCode className="w-3 h-3" /> QR
-                                                            </button>
-                                                        )}
-                                                        {tx.status === 'DISPUTED' ? (
-                                                            <Link href={`/profile/transactions/dispute/?id=${tx.id}`} className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 no-underline">
-                                                                Чат спора
-                                                            </Link>
-                                                        ) : (tx.status === 'COMPLETED' || tx.status === 'PAID') && (
-                                                            <>
-                                                                <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
-                                                                    <MessageCircle className="w-3 h-3" /> Написать
+                            <>
+                                <table className="hidden md:table w-full">
+                                    <thead>
+                                        <tr className="bg-white/[0.03]">
+                                            <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Товар</th>
+                                            <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Сумма</th>
+                                            <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Статус</th>
+                                            <th className="text-left text-xs text-white/30 uppercase font-semibold py-3 px-4">Дата</th>
+                                            <th className="text-right text-xs text-white/30 uppercase font-semibold py-3 px-4">Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {transactions.map((tx) => (
+                                            <React.Fragment key={tx.id}>
+                                                <tr className="border-t border-white/5 group">
+                                                    <td className="py-3 px-4">
+                                                        <span className="text-sm text-white font-medium">{tx.offer?.title || 'Товар'}</span>
+                                                        <div className="text-xs text-white/30">{tx.offer?.category}</div>
+                                                    </td>
+                                                    <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toFixed(2)}$</td>
+                                                    <td className="py-3 px-4">
+                                                        <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' :
+                                                            tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' :
+                                                                tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' :
+                                                                    tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'
+                                                            }`}>
+                                                            {tx.status === 'PAID' ? 'Оплачено' : tx.status === 'COMPLETED' ? 'Завершено' :
+                                                                tx.status === 'PENDING' ? 'Ожидание' : tx.status === 'DISPUTED' ? 'Спор' : tx.status === 'CANCELLED' ? 'Отменено' : tx.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3 px-4 text-xs text-white/30">{new Date(tx.createdAt).toLocaleDateString('ru-RU')}</td>
+                                                    <td className="py-3 px-4 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                                <button
+                                                                    onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
+                                                                    className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}
+                                                                >
+                                                                    {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />}
+                                                                    {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
                                                                 </button>
-                                                                <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
-                                                                    <AlertTriangle className="w-3 h-3" /> Проблема?
+                                                            )}
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                                <button
+                                                                    onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })}
+                                                                    className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500"
+                                                                >
+                                                                    <QrCode className="w-3 h-3" /> QR
                                                                 </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {revealedKeys[tx.id] && tx.offer?.hiddenData && (
-                                                <tr className="border-t border-purple-500/10">
-                                                    <td colSpan={5} className="px-4 py-3">
-                                                        <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-purple-500/5 border border-purple-500/15 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]">
-                                                            <Key className="w-4 h-4 text-purple-400 shrink-0" />
-                                                            <code className="flex-1 text-sm text-purple-300 font-mono break-all select-all">
-                                                                {tx.offer?.hiddenData}
-                                                            </code>
-                                                            <button
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(tx.offer?.hiddenData || '');
-                                                                    setCopiedId(tx.id);
-                                                                    setTimeout(() => setCopiedId(null), 2000);
-                                                                    analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ transactionId: tx.id, offerTitle: tx.offer?.title }) }).catch(() => {});
-                                                                }}
-                                                                className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-purple-400'}`}
-                                                                title="Копировать"
-                                                            >
-                                                                {copiedId === tx.id ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                                            </button>
+                                                            )}
+                                                            {tx.status === 'DISPUTED' ? (
+                                                                <Link href={`/profile/transactions/dispute/?id=${tx.id}`} className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 no-underline">
+                                                                    Чат спора
+                                                                </Link>
+                                                            ) : (tx.status === 'COMPLETED' || tx.status === 'PAID') && (
+                                                                <>
+                                                                    <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
+                                                                        <MessageCircle className="w-3 h-3" /> Написать
+                                                                    </button>
+                                                                    <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
+                                                                        <AlertTriangle className="w-3 h-3" /> Проблема?
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
+                                                {revealedKeys[tx.id] && tx.offer?.hiddenData && (
+                                                    <tr className="border-t border-purple-500/10">
+                                                        <td colSpan={5} className="px-4 py-3">
+                                                            <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-purple-500/5 border border-purple-500/15 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]">
+                                                                <Key className="w-4 h-4 text-purple-400 shrink-0" />
+                                                                <code className="flex-1 text-sm text-purple-300 font-mono break-all select-all">
+                                                                    {tx.offer?.hiddenData}
+                                                                </code>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(tx.offer?.hiddenData || '');
+                                                                        setCopiedId(tx.id);
+                                                                        setTimeout(() => setCopiedId(null), 2000);
+                                                                        analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ transactionId: tx.id, offerTitle: tx.offer?.title }) }).catch(() => {});
+                                                                    }}
+                                                                    className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-purple-400'}`}
+                                                                    title="Копировать"
+                                                                >
+                                                                    {copiedId === tx.id ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Мобильные карточки */}
+                                <div className="flex flex-col md:hidden">
+                                     {transactions.map((tx) => (
+                                         <div key={`mob-${tx.id}`} className="p-4 border-b border-white/5 last:border-0">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="pr-2 text-wrap">
+                                                    <div className="text-sm text-white font-medium leading-tight mb-1 break-words">{tx.offer?.title || 'Товар'}</div>
+                                                    <div className="text-xs text-white/30">{tx.offer?.category}</div>
+                                                </div>
+                                                <div className="text-sm font-semibold text-white shrink-0 block">{tx.price.toFixed(2)}$</div>
+                                            </div>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' : tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' : tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' : tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'}`}>
+                                                    {tx.status === 'PAID' ? 'Оплачено' : tx.status === 'COMPLETED' ? 'Завершено' : tx.status === 'PENDING' ? 'Ожидание' : tx.status === 'DISPUTED' ? 'Спор' : tx.status === 'CANCELLED' ? 'Отменено' : tx.status}
+                                                </span>
+                                                <div className="text-xs text-white/30">{new Date(tx.createdAt).toLocaleDateString('ru-RU')}</div>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                    <button onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))} className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                                        {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />} {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
+                                                    </button>
+                                                )}
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                    <button onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })} className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500">
+                                                        <QrCode className="w-3 h-3" /> QR
+                                                    </button>
+                                                )}
+                                                {tx.status === 'DISPUTED' ? (
+                                                    <Link href={`/profile/transactions/dispute/?id=${tx.id}`} className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 no-underline">
+                                                        Чат спора
+                                                    </Link>
+                                                ) : (tx.status === 'COMPLETED' || tx.status === 'PAID') && (
+                                                    <>
+                                                        <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
+                                                            <MessageCircle className="w-3 h-3" /> Написать
+                                                        </button>
+                                                        <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
+                                                            <AlertTriangle className="w-3 h-3" /> Спор
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                            {revealedKeys[tx.id] && tx.offer?.hiddenData && (
+                                                <div className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 bg-purple-500/5 border border-purple-500/15 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)] overflow-hidden">
+                                                    <Key className="w-4 h-4 text-purple-400 shrink-0" />
+                                                    <code className="flex-1 text-sm text-purple-300 font-mono break-all select-all">{tx.offer?.hiddenData}</code>
+                                                    <button onClick={() => { navigator.clipboard.writeText(tx.offer?.hiddenData || ''); setCopiedId(tx.id); setTimeout(() => setCopiedId(null), 2000); analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ transactionId: tx.id, offerTitle: tx.offer?.title }) }).catch(() => {}); }} className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-purple-400'}`} title="Копировать">
+                                                        {copiedId === tx.id ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                    </button>
+                                                </div>
                                             )}
-                                        </React.Fragment>
-                                    ))}
-                                </tbody>
-                            </table>
+                                         </div>
+                                     ))}
+                                </div>
+                            </>
                         )}
                     </div>
                 )}

@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import { Navbar } from '@/components/Navbar';
 import { MobileDock } from '@/components/MobileDock';
 import { Footer } from '@/components/Footer';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
 
@@ -26,8 +27,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased text-white min-h-screen flex flex-col bg-black`}>
         <Providers>
+          <AnalyticsTracker />
           <Navbar />
-          <main className="flex-1 mt-16">
+          <main className="flex-1 mt-16 pb-28 md:pb-0 relative overflow-x-hidden">
             {children}
           </main>
           <Footer />
