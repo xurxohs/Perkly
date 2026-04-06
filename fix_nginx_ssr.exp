@@ -1,0 +1,65 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ssh -o StrictHostKeyChecking=no root@95.130.227.217
+expect "password:"
+send "8uwFRcLeJPnzdDH4\r"
+expect "*# "
+
+# Backup existing config
+send "cp /etc/nginx/sites-available/perkly /etc/nginx/sites-available/perkly.bak\r"
+expect "*# "
+
+# Overwrite with SSR config
+send "cat > /etc/nginx/sites-available/perkly << 'EOF'
+server {
+    server_name perkly.uz www.perkly.uz;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/perkly.uz/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/perkly.uz/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+server {
+    if (\$host = www.perkly.uz) {
+        return 301 https://\$host\$request_uri;
+    } # managed by Certbot
+
+    if (\$host = perkly.uz) {
+        return 301 https://\$host\$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name perkly.uz www.perkly.uz;
+    return 404; # managed by Certbot
+}
+EOF\r"
+expect "*# "
+
+# Test and reload Nginx
+send "nginx -t && systemctl reload nginx\r"
+expect "*# "
+
+send "exit\r"
+expect eof

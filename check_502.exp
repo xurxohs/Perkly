@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+set timeout 15
+spawn ssh -o StrictHostKeyChecking=no root@95.130.227.217
+expect "password:"
+send "8uwFRcLeJPnzdDH4\r"
+expect "*# "
+send "pm2 logs frontend --lines 50 --no-colors\r"
+expect {
+    "*# " { }
+    "*" { sleep 2; send "\x03"; expect "*# " }
+}
+send "ss -tulnp | grep :3000\r"
+expect "*# "
+send "exit\r"
+expect eof
