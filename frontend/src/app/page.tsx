@@ -7,7 +7,7 @@ import SafeImage from '@/components/SafeImage';
 
 export type OfferWithHours = Offer & { hours?: number };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
 async function getOffers() {
   try {
