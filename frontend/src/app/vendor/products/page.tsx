@@ -14,6 +14,8 @@ const CATEGORIES = [
     { id: 'education', name: 'Обучение' }
 ];
 
+const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
+
 export default function VendorProductsPage() {
     const { user, token } = useAuth();
     const [offers, setOffers] = useState<any[]>([]);
@@ -40,7 +42,7 @@ export default function VendorProductsPage() {
         setIsLoading(true);
         try {
             // Using direct fetch with auth header for the new endpoint
-            const res = await fetch('http://localhost:3001/offers/vendor/me', {
+            const res = await fetch(`${API_BASE}/offers/vendor/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -68,7 +70,7 @@ export default function VendorProductsPage() {
                 isActive: true
             };
 
-            const res = await fetch('http://localhost:3001/offers/vendor', {
+            const res = await fetch(`${API_BASE}/offers/vendor`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
