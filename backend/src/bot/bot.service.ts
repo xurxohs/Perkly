@@ -51,7 +51,7 @@ export class BotService {
       text = (message as { text: string }).text;
     }
 
-    const match = text.match(/\/start login_([a-f0-9-]+)/);
+    const match = text.match(/^\/start login_([a-f0-9-]+)/);
 
     if (match) {
       const loginToken = match[1];
