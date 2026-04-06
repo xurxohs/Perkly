@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ssh -o StrictHostKeyChecking=no root@95.130.227.217
+expect "password:"
+send "8uwFRcLeJPnzdDH4\r"
+expect "*# "
+
+# Backup existing config
+send "cp /etc/nginx/sites-available/perkly /etc/nginx/sites-available/perkly.bak2\r"
+expect "*# "
+
+# Replace proxy_pass http://127.0.0.1:3001/api/; with proxy_pass http://127.0.0.1:3001/;
+send "sed -i 's|proxy_pass http://127.0.0.1:3001/api/;|proxy_pass http://127.0.0.1:3001/;|g' /etc/nginx/sites-available/perkly\r"
+expect "*# "
+
+# Test and reload Nginx
+send "nginx -t && systemctl reload nginx\r"
+expect "*# "
+
+send "exit\r"
+expect eof
