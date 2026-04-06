@@ -40,7 +40,7 @@ export interface Transaction {
     offerId: string;
     buyerId: string;
     price: number;
-    status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED';
+    status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED' | 'ESCROW';
     createdAt: string;
     offer?: Offer;
     buyer?: User;
@@ -224,6 +224,11 @@ export const transactionsApi = {
 
     getById: (id: string) =>
         request<Transaction>(`/transactions/${id}`),
+
+    confirm: (id: string) =>
+        request<Transaction>(`/transactions/${id}/confirm`, {
+            method: 'PATCH',
+        }),
 };
 
 // ===== USERS =====

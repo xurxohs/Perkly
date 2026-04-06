@@ -19,14 +19,17 @@ export class TransactionsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  async purchase(@Request() req: any, @Body() body: { offerId: string }) {
+  async purchase(
+    @Request() req: { user: { userId: string } },
+    @Body() body: { offerId: string },
+  ) {
     return this.transactionsService.purchase(req.user.userId, body.offerId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async myTransactions(
-    @Request() req: any,
+    @Request() req: { user: { userId: string } },
     @Query('skip') skip?: string,
     @Query('take') take?: string,
   ) {
@@ -41,6 +44,15 @@ export class TransactionsController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.transactionsService.findOne(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/confirm')
+  async confirmDelivery(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string } },
+  ) {
+    return this.transactionsService.confirmDelivery(id, req.user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))

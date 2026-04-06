@@ -1,17 +1,15 @@
 'use client';
 
-import { Home, Tag, ShoppingBag, ShoppingCart, User, Sparkles, Store, Gift } from 'lucide-react';
+import { Home, Tag, ShoppingBag, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCart } from '@/lib/CartContext';
-import { useAuth } from '@/lib/AuthContext';
 
 const dockItems = [
     { href: '/', icon: Home, label: 'Главная' },
     { href: '/coupons', icon: Tag, label: 'Купоны' },
     { href: '/catalog', icon: ShoppingBag, label: 'Каталог' },
-    { href: '/pricing', icon: Sparkles, label: 'Тарифы' },
     { href: '/cart', icon: ShoppingCart, label: 'Корзина' },
     { href: '/profile', icon: User, label: 'Профиль' },
 ];
@@ -23,7 +21,11 @@ function useSpring(target: number, config = { stiffness: 400, damping: 28, mass:
     const currentValue = useRef(target);
     const targetRef = useRef(target);
     const frameRef = useRef<number>(0);
-    const lastTime = useRef(performance.now());
+    const lastTime = useRef(0);
+
+    useEffect(() => {
+        lastTime.current = performance.now();
+    }, []);
 
     useEffect(() => {
         targetRef.current = target;
@@ -169,7 +171,6 @@ function DockIcon({ item, isActive, onTap }: {
 
 export function MobileDock() {
     const pathname = usePathname();
-    const { isAuthenticated } = useAuth();
 
     const getActiveHref = () => {
         for (const item of dockItems) {

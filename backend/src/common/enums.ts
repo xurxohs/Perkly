@@ -19,6 +19,7 @@ export enum OfferCategory {
 export enum TransactionStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
+  ESCROW = 'ESCROW',
   ACTIVATED = 'ACTIVATED',
   DISPUTED = 'DISPUTED',
   COMPLETED = 'COMPLETED',

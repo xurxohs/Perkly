@@ -1,0 +1,50 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+
+# Variables
+set host "95.130.227.217"
+set user "root"
+set password "8uwFRcLeJPnzdDH4"
+
+# Connect via SSH
+spawn ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 $user@$host
+
+# Expect password prompt
+expect {
+    "password:" {
+        send "$password\r"
+    }
+    "Connection refused" {
+        puts "Connection refused"
+        exit 1
+    }
+    timeout {
+        puts "Connection timeout"
+        exit 1
+    }
+}
+
+# Wait for prompt and run commands
+expect "*:~#"
+
+puts "\n--- Pulling latest code ---\n"
+send "cd /var/www/perkly && git pull\r"
+expect "*:/var/www/perkly#"
+
+puts "\n--- Updating Frontend ---\n"
+send "cd frontend && npm install && npm run build\r"
+# This might take a while, increase timeout
+set timeout 120
+expect "*:/var/www/perkly/frontend#"
+
+puts "\n--- Restarting PM2 processes ---\n"
+send "pm2 restart perkly-backend\r"
+expect "*:/var/www/perkly/frontend#"
+send "pm2 restart frontend\r"
+expect "*:/var/www/perkly/frontend#"
+
+puts "\n--- Deployment Complete! ---\n"
+send "exit\r"
+
+expect eof

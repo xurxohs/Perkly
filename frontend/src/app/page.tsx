@@ -1,26 +1,42 @@
-'use client';
-
 import { Clock, Gamepad2, Coffee, KeyRound, Tag, Sparkles, ArrowRight, Flame } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import api, { Offer } from '@/lib/api';
-import { useState, useEffect } from 'react';
-
-function Countdown({ hours }: { hours: number }) {
-  const [timeLeft, setTimeLeft] = useState(Math.floor(hours * 3600));
-  useEffect(() => {
-    const t = setInterval(() => setTimeLeft(p => Math.max(0, p - 1)), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const h = Math.floor(timeLeft / 3600);
-  const m = Math.floor((timeLeft % 3600) / 60);
-  const s = Math.floor(timeLeft % 60);
-  return <span>{String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}</span>;
-}
+import { Offer } from '@/lib/api';
+import Countdown from '@/components/Countdown';
 
 export type OfferWithHours = Offer & { hours?: number };
 
-export default function Home() {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+async function getOffers() {
+  try {
+    // We can't use the relative 'request' helper from api.ts on the server-side as easily without full URL
+    const trendingRes = await fetch(`${API_BASE}/offers?take=4&sort=newest`, { cache: 'no-store' });
+    const flashRes = await fetch(`${API_BASE}/offers?isFlashDrop=true`, { cache: 'no-store' });
+
+    const trendingData = await trendingRes.json();
+    const flashData = await flashRes.json();
+
+    const trendingOffers = trendingData.data || [];
+    const rawFlashDrops = flashData.data || [];
+
+    const flashDrops = rawFlashDrops.map((drop: Offer) => {
+      let hours = 0;
+      if (drop.expiresAt) {
+        const diff = new Date(drop.expiresAt).getTime() - new Date().getTime();
+        hours = Math.max(0, diff / (1000 * 60 * 60));
+      }
+      return { ...drop, hours } as OfferWithHours;
+    }).filter((d: OfferWithHours) => d.hours !== undefined && d.hours > 0);
+
+    return { trendingOffers, flashDrops };
+  } catch (err) {
+    console.error('SSR Fetch failed:', err);
+    return { trendingOffers: [], flashDrops: [] };
+  }
+}
+
+export default async function Home() {
   const categories = [
     { title: 'Игры и Аккаунты', icon: Gamepad2, count: '1.2k+', className: 'cat-bg-games', href: '/catalog?category=GAMES' },
     { title: 'Подписки', icon: KeyRound, count: '850+', className: 'cat-bg-subscriptions', href: '/catalog?category=SUBSCRIPTIONS' },
@@ -30,40 +46,8 @@ export default function Home() {
     { title: 'Тарифы ✨', icon: Sparkles, count: '3', className: 'cat-bg-pricing', href: '/pricing' },
   ];
 
-  const [trendingOffers, setTrendingOffers] = useState<Offer[]>([]);
-  const [flashDrops, setFlashDrops] = useState<OfferWithHours[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchOffers() {
-      try {
-        // Fetch trending (all active offers, limit to 4 for now)
-        const trendingData = await api.offers.list({ take: 4, sort: 'newest' });
-
-        // Fetch flash drops
-        const flashData = await api.offers.list({ isFlashDrop: true });
-
-        setTrendingOffers(trendingData.data || []);
-
-        // Process flash drops to calculate remaining hours
-        const processedFlashDrops = (flashData.data || []).map((drop: Offer) => {
-          let hours = 0;
-          if (drop.expiresAt) {
-            const diff = new Date(drop.expiresAt).getTime() - new Date().getTime();
-            hours = Math.max(0, diff / (1000 * 60 * 60)); // convert ms to hours
-          }
-          return { ...drop, hours } as OfferWithHours;
-        }).filter((d: OfferWithHours) => d.hours !== undefined && d.hours > 0);
-
-        setFlashDrops(processedFlashDrops);
-      } catch (error) {
-        console.error('Failed to fetch offers:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchOffers();
-  }, []);
+  const { trendingOffers, flashDrops } = await getOffers();
+  const loading = false; // Data is already here
 
   return (
     <div className="flex flex-col items-center px-6 pb-24 max-w-[1200px] mx-auto w-full">
@@ -108,7 +92,7 @@ export default function Home() {
           <span className="text-sm text-white/30">Исчезнут совсем скоро</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
-          {flashDrops.length > 0 ? flashDrops.map((d, i) => (
+          {flashDrops.length > 0 ? flashDrops.map((d: OfferWithHours, i: number) => (
             <Link href={`/offer/?id=${d.id}`} key={d.id || i} className="flex flex-col sm:flex-row items-start sm:items-center p-4 cursor-pointer rounded-2xl transition-all duration-300 no-underline group hover:-translate-y-1 hover:shadow-xl gap-4 sm:gap-0 offer-card">
               <div className="flex gap-3 sm:gap-4 w-full sm:flex-1">
                 <div className="w-20 h-20 rounded-xl overflow-hidden relative shrink-0 bg-white/5 flex items-center justify-center p-2 offer-card-image">
@@ -176,7 +160,7 @@ export default function Home() {
       <section className="w-full mb-20">
         <h2 className="text-2xl font-bold mb-7 text-white">Категории Товаров</h2>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-          {categories.map((c, i) => (
+          {categories.map((c, i: number) => (
             <Link href={c.href} key={i} className="glass-card p-5 cursor-pointer shrink-0 w-[160px] no-underline">
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 relative z-10 ${c.className}`}>
                 <c.icon className="w-5 h-5 text-white" />
@@ -200,7 +184,7 @@ export default function Home() {
           {loading ? (
             <div className="col-span-1 md:col-span-4 text-center py-10 text-white/50">Загрузка скидок...</div>
           ) : trendingOffers.length > 0 ? (
-            trendingOffers.map((o: Offer, i) => (
+            trendingOffers.map((o: Offer, i: number) => (
               <Link href={`/offer/?id=${o.id}`} key={o.id || i} className="rounded-2xl overflow-hidden cursor-pointer block no-underline group hover:-translate-y-1 transition-all duration-300 offer-card">
                 <div className="w-full h-44 relative bg-white/5 flex items-center justify-center p-6 offer-card-image-bg">
                   {o.vendorLogo ? (

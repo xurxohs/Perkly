@@ -1,21 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, LogOut, Search, X, Tag, Gem, Medal, MessageSquare } from 'lucide-react';
+import { User, LogOut, Search, X, Tag, Gem, Medal } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
-import { useCart } from '@/lib/CartContext';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTelegram } from '@/hooks/useTelegram';
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
-    const { count } = useCart();
     const [searchOpen, setSearchOpen] = useState(false);
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
-    const { isTMA } = useTelegram();
 
     useEffect(() => {
         if (searchOpen && searchRef.current) searchRef.current.focus();
@@ -81,15 +77,7 @@ export function Navbar() {
 
 
 
-                {/* Cart */}
-                <Link href="/cart" className="relative p-2 rounded-full hover:bg-white/5 transition no-underline">
-                    <ShoppingCart className="w-5 h-5 text-white/70" />
-                    {count > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center text-white" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', boxShadow: '0 0 10px rgba(168,85,247,0.5)' }}>
-                            {count}
-                        </span>
-                    )}
-                </Link>
+                {/* Cart removed as it is in the mobile dock */}
 
                 {isAuthenticated ? (
                     <>

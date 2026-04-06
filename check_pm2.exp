@@ -1,0 +1,10 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.130.227.217
+expect "password:"
+send "8uwFRcLeJPnzdDH4\r"
+expect "*# "
+send "pm2 list\r"
+expect "*# "
+send "exit\r"
+expect eof

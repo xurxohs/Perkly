@@ -109,6 +109,18 @@ export default function ProfilePage() {
         }
     };
 
+    const handleConfirmDelivery = async (txId: string) => {
+        if (!confirm('Вы подтверждаете получение товара? После этого средства будут переведены продавцу, и вы не сможете открыть спор.')) return;
+        try {
+            await transactionsApi.confirm(txId);
+            setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: 'COMPLETED' } : t));
+            alert('Сделка успешно завершена!');
+        } catch (err: unknown) {
+            const error = err as Error;
+            alert('Ошибка при подтверждении: ' + (error.message || 'Попробуйте позже'));
+        }
+    };
+
     const handleBindTelegram = async () => {
         setTgStep('waiting');
         try {
@@ -247,6 +259,24 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
+                {/* Pricing/Tariffs Button (Moved from Mobile Dock) */}
+                <Link href="/pricing" className="w-full flex items-center justify-between p-5 rounded-2xl mb-4 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                            <Crown className="w-6 h-6 text-yellow-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white mb-0.5">Тарифы и Привилегии ✨</h3>
+                            <p className="text-sm text-yellow-200/60">Улучшите свой аккаунт и получайте больше выгоды</p>
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                        <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </Link>
+
                 {/* Messages Button (Moved from Navbar) */}
                 <Link href="/messages" className="w-full flex items-center justify-between p-5 rounded-2xl mb-8 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
                     <div className="flex items-center gap-4">
@@ -313,18 +343,28 @@ export default function ProfilePage() {
                                                     <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toFixed(2)}$</td>
                                                     <td className="py-3 px-4">
                                                         <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' :
+                                                            tx.status === 'ESCROW' ? 'text-blue-400 bg-blue-500/10' :
                                                             tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' :
                                                                 tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' :
                                                                     tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'
                                                             }`}>
                                                             {tx.status === 'PAID' ? 'Оплачено' : tx.status === 'COMPLETED' ? 'Завершено' :
+                                                                tx.status === 'ESCROW' ? 'В Эскроу' :
                                                                 tx.status === 'PENDING' ? 'Ожидание' : tx.status === 'DISPUTED' ? 'Спор' : tx.status === 'CANCELLED' ? 'Отменено' : tx.status}
                                                         </span>
                                                     </td>
                                                     <td className="py-3 px-4 text-xs text-white/30">{new Date(tx.createdAt).toLocaleDateString('ru-RU')}</td>
                                                     <td className="py-3 px-4 text-right">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                            {tx.status === 'ESCROW' && (
+                                                                <button
+                                                                    onClick={() => handleConfirmDelivery(tx.id)}
+                                                                    className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-all cursor-pointer border-0 shadow-lg shadow-green-500/20"
+                                                                >
+                                                                    <CheckCircle className="w-3.5 h-3.5" /> Подтвердить
+                                                                </button>
+                                                            )}
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
                                                                 <button
                                                                     onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
                                                                     className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}
@@ -333,25 +373,25 @@ export default function ProfilePage() {
                                                                     {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
                                                                 </button>
                                                             )}
-                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
                                                                 <button
                                                                     onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })}
                                                                     className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500"
                                                                 >
-                                                                    <QrCode className="w-3 h-3" /> QR
+                                                                    <QrCode className="w-3.5 h-3.5" /> QR
                                                                 </button>
                                                             )}
                                                             {tx.status === 'DISPUTED' ? (
                                                                 <Link href={`/profile/transactions/dispute/?id=${tx.id}`} className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 no-underline">
                                                                     Чат спора
                                                                 </Link>
-                                                            ) : (tx.status === 'COMPLETED' || tx.status === 'PAID') && (
+                                                            ) : (tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && (
                                                                 <>
                                                                     <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
-                                                                        <MessageCircle className="w-3 h-3" /> Написать
+                                                                        <MessageCircle className="w-3.5 h-3.5" /> Написать
                                                                     </button>
                                                                     <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
-                                                                        <AlertTriangle className="w-3 h-3" /> Проблема?
+                                                                        <AlertTriangle className="w-3.5 h-3.5" /> Проблема?
                                                                     </button>
                                                                 </>
                                                             )}
@@ -399,33 +439,38 @@ export default function ProfilePage() {
                                                 <div className="text-sm font-semibold text-white shrink-0 block">{tx.price.toFixed(2)}$</div>
                                             </div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' : tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' : tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' : tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'}`}>
-                                                    {tx.status === 'PAID' ? 'Оплачено' : tx.status === 'COMPLETED' ? 'Завершено' : tx.status === 'PENDING' ? 'Ожидание' : tx.status === 'DISPUTED' ? 'Спор' : tx.status === 'CANCELLED' ? 'Отменено' : tx.status}
+                                                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' : tx.status === 'ESCROW' ? 'text-blue-400 bg-blue-500/10' : tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' : tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' : tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'}`}>
+                                                    {tx.status === 'PAID' ? 'Оплачено' : tx.status === 'COMPLETED' ? 'Завершено' : tx.status === 'ESCROW' ? 'В Эскроу' : tx.status === 'PENDING' ? 'Ожидание' : tx.status === 'DISPUTED' ? 'Спор' : tx.status === 'CANCELLED' ? 'Отменено' : tx.status}
                                                 </span>
                                                 <div className="text-xs text-white/30">{new Date(tx.createdAt).toLocaleDateString('ru-RU')}</div>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                {tx.status === 'ESCROW' && (
+                                                    <button onClick={() => handleConfirmDelivery(tx.id)} className="w-full mb-2 py-3 rounded-xl bg-green-500 text-white font-bold text-sm cursor-pointer border-0 shadow-lg shadow-green-500/20">
+                                                        Подтвердить получение
+                                                    </button>
+                                                )}
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
                                                     <button onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))} className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
                                                         {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />} {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
                                                     </button>
                                                 )}
-                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID') && tx.offer?.hiddenData && (
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
                                                     <button onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })} className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500">
-                                                        <QrCode className="w-3 h-3" /> QR
+                                                        <QrCode className="w-3.5 h-3.5" /> QR
                                                     </button>
                                                 )}
                                                 {tx.status === 'DISPUTED' ? (
                                                     <Link href={`/profile/transactions/dispute/?id=${tx.id}`} className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1 no-underline">
                                                         Чат спора
                                                     </Link>
-                                                ) : (tx.status === 'COMPLETED' || tx.status === 'PAID') && (
+                                                ) : (tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && (
                                                     <>
                                                         <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
-                                                            <MessageCircle className="w-3 h-3" /> Написать
+                                                            <MessageCircle className="w-3.5 h-3.5" /> Написать
                                                         </button>
                                                         <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
-                                                            <AlertTriangle className="w-3 h-3" /> Спор
+                                                            <AlertTriangle className="w-3.5 h-3.5" /> Спор
                                                         </button>
                                                     </>
                                                 )}

@@ -47,12 +47,6 @@ export class TransactionsService {
         data: { balance: { decrement: offer.price } },
       });
 
-      // Credit seller balance
-      await tx.user.update({
-        where: { id: offer.sellerId },
-        data: { balance: { increment: offer.price } },
-      });
-
       // Add reward points to buyer (1 point per $1)
       await tx.user.update({
         where: { id: buyerId },
@@ -65,7 +59,7 @@ export class TransactionsService {
           offerId,
           buyerId,
           price: offer.price,
-          status: TransactionStatus.PAID,
+          status: TransactionStatus.ESCROW,
         },
         include: {
           offer: {
@@ -86,7 +80,7 @@ export class TransactionsService {
       where: { id: offer.sellerId },
     });
     if (seller && seller.telegramId) {
-      const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" только что был куплен.\nВаш баланс пополнен на $${offer.price}.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
+      const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${offer.price}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
       await this.botService.sendTelegramNotification(
         seller.telegramId,
         message,
@@ -94,6 +88,48 @@ export class TransactionsService {
     }
 
     return transaction;
+  }
+
+  async confirmDelivery(id: string, buyerId: string): Promise<Transaction> {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id },
+      include: { offer: true },
+    });
+
+    if (!transaction) throw new NotFoundException('Transaction not found');
+    if (transaction.buyerId !== buyerId)
+      throw new BadRequestException('Only the buyer can confirm delivery');
+    if (transaction.status !== (TransactionStatus.ESCROW as string))
+      throw new BadRequestException('Transaction is not in escrow');
+
+    const updatedTx = await this.prisma.$transaction(async (tx) => {
+      // Credit seller balance
+      await tx.user.update({
+        where: { id: transaction.offer.sellerId },
+        data: { balance: { increment: transaction.price } },
+      });
+
+      // Update tx
+      return tx.transaction.update({
+        where: { id },
+        data: { status: TransactionStatus.COMPLETED },
+        include: { offer: true, buyer: true },
+      });
+    });
+
+    // Notify seller
+    const seller = await this.prisma.user.findUnique({
+      where: { id: transaction.offer.sellerId },
+    });
+    if (seller && seller.telegramId) {
+      const message = `✅ *Покупатель подтвердил получение!*\n\nСделка по "${transaction.offer.title}" успешно завершена.\nСредства ($${transaction.price}) зачислены на ваш баланс.`;
+      await this.botService.sendTelegramNotification(
+        seller.telegramId,
+        message,
+      );
+    }
+
+    return updatedTx;
   }
 
   async findByBuyer(

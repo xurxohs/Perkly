@@ -1,14 +1,10 @@
-'use client';
-
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ShoppingCart, Shield, Clock, User, Tag, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package, Flame, Crown, CheckCircle, Share2, Send } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, User, Package, Flame, Crown } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 import { Reviews } from '@/components/Reviews';
-import { offersApi, transactionsApi } from '@/lib/api';
-import { useCart } from '@/lib/CartContext';
-import { useAuth } from '@/lib/AuthContext';
+import { Offer, User as UserType } from '@/lib/api';
+import OfferActions from '@/components/OfferActions';
 
 const CATEGORY_LABELS: Record<string, string> = {
     RESTAURANTS: 'Рестораны и Кафе',
@@ -21,74 +17,50 @@ const CATEGORY_LABELS: Record<string, string> = {
     OTHER: 'Другое',
 };
 
-const CATEGORY_ICONS: Record<string, any> = {
-    RESTAURANTS: Pizza, SUBSCRIPTIONS: Tv, GAMES: Gamepad2, COURSES: GraduationCap,
-    MARKETPLACES: Store, TOURISM: Plane, FITNESS: Dumbbell, OTHER: Package,
-};
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-function OfferDetailContent() {
-    const searchParams = useSearchParams();
-    const id = searchParams.get('id');
-    const router = useRouter();
-    const { isAuthenticated, refreshUser } = useAuth();
-    const { addItem, isInCart } = useCart();
+async function getOffer(id: string): Promise<Offer | null> {
+    try {
+        const res = await fetch(`${API_BASE}/offers/${id}`, { cache: 'no-store' });
+        if (!res.ok) return null;
+        return res.json();
+    } catch (err) {
+        console.error('Fetch offer failed:', err);
+        return null;
+    }
+}
 
-    const [offer, setOffer] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [purchasing, setPurchasing] = useState(false);
-    const [purchased, setPurchased] = useState(false);
-    const [error, setError] = useState('');
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ id?: string }> }): Promise<Metadata> {
+    const { id } = await searchParams;
+    if (!id) return { title: 'Товар не найден | Perkly' };
 
-    useEffect(() => {
-        if (id) {
-            offersApi.getById(id)
-                .then(setOffer)
-                .catch(() => setOffer(null))
-                .finally(() => setLoading(false));
-        }
-    }, [id]);
+    const offer = await getOffer(id);
+    if (!offer) return { title: 'Товар не найден | Perkly' };
 
-    const handleBuy = async () => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-        setPurchasing(true);
-        setError('');
-        try {
-            await transactionsApi.purchase(offer.id);
-            setPurchased(true);
-            await refreshUser();
-        } catch (err: any) {
-            setError(err.message || 'Ошибка при покупке');
-        } finally {
-            setPurchasing(false);
-        }
+    return {
+        title: `${offer.title} | Купить на Perkly`,
+        description: offer.description,
+        openGraph: {
+            title: offer.title,
+            description: offer.description,
+            images: offer.vendorLogo ? [offer.vendorLogo] : [],
+        },
     };
+}
 
-    const handleShare = () => {
-        const BOT_USERNAME = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot'; // Fallback if no env
-        const url = `https://t.me/${BOT_USERNAME}/app?startapp=offer_${offer.id}`;
-        const text = `🔥 Смотри, что я нашел в Perkly:\n\n${offer.title}\nЦена: ${offer.price === 0 ? 'Бесплатно' : offer.price + '$'}`;
-        
-        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-        
-        if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
-            (window as any).Telegram.WebApp.openTelegramLink(shareUrl);
-        } else {
-            window.open(shareUrl, '_blank');
-        }
-    };
+export default async function OfferDetailPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+    const { id } = await searchParams;
 
-    if (loading) {
+    if (!id) {
         return (
-            <div className="max-w-4xl mx-auto px-6 py-12">
-                <div className="h-64 rounded-2xl animate-pulse mb-8" style={{ background: 'rgba(255,255,255,0.03)' }} />
-                <div className="h-8 w-2/3 rounded-xl animate-pulse mb-4" style={{ background: 'rgba(255,255,255,0.05)' }} />
-                <div className="h-4 w-1/2 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.03)' }} />
+            <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+                <p className="text-white/40 text-lg mb-4">ID товара не указан</p>
+                <Link href="/catalog" className="text-purple-400 no-underline">← Вернуться в каталог</Link>
             </div>
         );
     }
+
+    const offer = await getOffer(id);
 
     if (!offer) {
         return (
@@ -109,29 +81,30 @@ function OfferDetailContent() {
             <div className="grid md:grid-cols-5 gap-8">
                 {/* Left - Image */}
                 <div className="md:col-span-2">
-                    <div className="rounded-3xl overflow-hidden aspect-square flex items-center justify-center p-8 transition-transform duration-500 hover:scale-[1.02]" style={{ background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+                    <div className="rounded-3xl overflow-hidden aspect-square flex items-center justify-center p-8 transition-transform duration-500 hover:scale-[1.02] bg-white/5 backdrop-blur-3xl border border-white/10 shadow-2xl">
                         {offer.vendorLogo ? (
                             <div className="relative w-full h-full">
-                                <Image src={offer.vendorLogo} fill className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)]" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement?.classList.add('hidden'); e.currentTarget.parentElement?.nextElementSibling?.classList.remove('hidden'); }} />
+                                <Image 
+                                  src={offer.vendorLogo} 
+                                  fill 
+                                  className="object-contain drop-shadow-2xl" 
+                                  alt={offer.title} 
+                                />
                             </div>
-                        ) : null}
-                        <div className={`w-24 h-24 text-white/50 ${offer.vendorLogo ? 'hidden' : ''}`}>
-                            {(() => {
-                                const IconNode = CATEGORY_ICONS[offer.category] || Package;
-                                return <IconNode className="w-full h-full drop-shadow-lg" />;
-                            })()}
-                        </div>
+                        ) : (
+                            <Package className="w-24 h-24 text-white/20" />
+                        )}
                     </div>
 
                     {/* Seller info */}
                     {offer.seller && (
-                        <div className="mt-4 flex items-center gap-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+                        <div className="mt-4 flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700">
                                 <User className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <div className="text-sm font-semibold text-white">{offer.seller.displayName || 'Продавец'}</div>
-                                <div className="text-xs text-white/30">Продавец</div>
+                                <div className="text-sm font-semibold text-white">{(offer.seller as UserType).displayName || 'Продавец'}</div>
+                                <div className="text-xs text-white/30">Проверенный продавец</div>
                             </div>
                         </div>
                     )}
@@ -141,16 +114,16 @@ function OfferDetailContent() {
                 <div className="md:col-span-3">
                     {/* Badges */}
                     <div className="flex items-center gap-2 mb-3">
-                        <span className="px-3 py-1 rounded-lg text-xs font-medium" style={{ background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.2)' }}>
+                        <span className="px-3 py-1 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
                             {CATEGORY_LABELS[offer.category] || offer.category}
                         </span>
                         {offer.isFlashDrop && (
-                            <span className="px-3 py-1 rounded-lg text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
+                            <span className="px-3 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-red-500">
                                 <Flame className="w-3 h-3 inline-block mr-1" /> Flash Drop
                             </span>
                         )}
                         {offer.isExclusive && (
-                            <span className="px-3 py-1 rounded-lg text-xs font-bold text-yellow-300" style={{ background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)' }}>
+                            <span className="px-3 py-1 rounded-lg text-xs font-bold text-yellow-300 bg-yellow-500/10 border border-yellow-500/30">
                                 <Crown className="w-3 h-3 inline-block mr-1" /> Эксклюзив
                             </span>
                         )}
@@ -167,7 +140,7 @@ function OfferDetailContent() {
 
                     {/* Description */}
                     <div className="mb-8">
-                        <h3 className="text-sm font-semibold text-white/50 uppercase mb-2 tracking-wider">Описание</h3>
+                        <h3 className="text-sm font-semibold text-white/30 uppercase mb-2 tracking-wider text-glow-sm">Описание</h3>
                         <p className="text-white/60 leading-relaxed">{offer.description}</p>
                     </div>
 
@@ -184,63 +157,14 @@ function OfferDetailContent() {
                     </div>
 
                     {/* Actions */}
-                    {purchased ? (
-                        <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                            <p className="text-green-400 font-semibold mb-1 flex items-center gap-1.5"><CheckCircle className="w-4 h-4" /> Покупка успешна!</p>
-                            <p className="text-green-400/60 text-sm">Промокод доступен в вашем профиле.</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-wrap gap-3">
-                            <button
-                                onClick={handleBuy}
-                                disabled={purchasing}
-                                className="flex-1 py-4 rounded-xl text-white font-bold text-base cursor-pointer border-0 transition-all"
-                                style={{
-                                    background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-                                    boxShadow: '0 0 25px rgba(168,85,247,0.3)',
-                                    opacity: purchasing ? 0.6 : 1,
-                                }}
-                            >
-                                {purchasing ? 'Обработка...' : offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toFixed(2)}$`}
-                            </button>
-                            <button
-                                onClick={() => addItem({ offerId: offer.id, title: offer.title, price: offer.price, category: offer.category })}
-                                disabled={isInCart(offer.id)}
-                                className="px-6 py-4 rounded-xl font-semibold cursor-pointer border-0 transition-all"
-                                style={{
-                                    background: isInCart(offer.id) ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
-                                    border: `1px solid ${isInCart(offer.id) ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.08)'}`,
-                                    color: isInCart(offer.id) ? '#22c55e' : 'white',
-                                }}
-                            >
-                                {isInCart(offer.id) ? <CheckCircle className="w-5 h-5 mx-auto" /> : <ShoppingCart className="w-5 h-5 mx-auto" />}
-                            </button>
-                            <button
-                                onClick={handleShare}
-                                className="px-6 py-4 rounded-xl font-semibold cursor-pointer border-0 transition-all flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20"
-                                title="Поделиться в Telegram"
-                            >
-                                <Share2 className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
-
-                    {error && (
-                        <p className="text-red-400 text-sm mt-3">{error}</p>
-                    )}
+                    <OfferActions offer={offer} />
                 </div>
             </div>
 
             {/* Reviews Section */}
-            <Reviews offerId={offer.id} />
+            <div className="mt-12 pt-12 border-t border-white/5">
+                <Reviews offerId={offer.id} />
+            </div>
         </div>
-    );
-}
-
-export default function OfferDetailPage() {
-    return (
-        <Suspense fallback={<div className="flex justify-center py-20 animate-pulse text-white/50">Загрузка...</div>}>
-            <OfferDetailContent />
-        </Suspense>
     );
 }
