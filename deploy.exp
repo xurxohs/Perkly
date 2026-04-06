@@ -29,7 +29,7 @@ expect {
 expect "*:~#"
 
 puts "\n--- Pulling latest code ---\n"
-send "cd /var/www/perkly && git pull\r"
+send "cd /var/www/perkly && git reset --hard && git pull\r"
 expect "*:/var/www/perkly#"
 
 puts "\n--- Updating Frontend ---\n"
