@@ -28,7 +28,11 @@ export default function ProfilePage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState('');
-    const [activeTab, setActiveTab] = useState<'history' | 'settings'>('history');
+    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'settings'>('history');
+    const [subscriptions, setSubscriptions] = useState<Transaction[]>([]);
+    const [redeemModalOpen, setRedeemModalOpen] = useState(false);
+    const [redeemCode, setRedeemCode] = useState('');
+    const [redeeming, setRedeeming] = useState(false);
     const [revealedKeys, setRevealedKeys] = useState<Record<string, boolean>>({});
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [qrModalData, setQrModalData] = useState<{ title: string; data: string } | null>(null);
@@ -66,6 +70,7 @@ export default function ProfilePage() {
             transactionsApi.list(0, 50).then(res => {
                 setTransactions(res.data);
             }).catch(() => { });
+            transactionsApi.getSubscriptions().then(setSubscriptions).catch(() => { });
         }
     }, [isAuthenticated]);
 
@@ -116,10 +121,35 @@ export default function ProfilePage() {
         try {
             await transactionsApi.confirm(txId);
             setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: 'COMPLETED' } : t));
+            hapticNotification('success');
             alert('Сделка успешно завершена!');
         } catch (err: unknown) {
+            hapticNotification('error');
             const error = err as Error;
             alert('Ошибка при подтверждении: ' + (error.message || 'Попробуйте позже'));
+        }
+    };
+
+    const handleRedeemGift = async () => {
+        if (!redeemCode) return;
+        setRedeeming(true);
+        try {
+            await transactionsApi.redeem(redeemCode);
+            hapticNotification('success');
+            alert('Подарок успешно активирован!');
+            setRedeemModalOpen(false);
+            setRedeemCode('');
+            await refreshUser();
+            const res = await transactionsApi.list(0, 50);
+            setTransactions(res.data);
+            const subs = await transactionsApi.getSubscriptions();
+            setSubscriptions(subs);
+        } catch (err: unknown) {
+            hapticNotification('error');
+            const error = err as Error;
+            alert(error.message || 'Ошибка активации подарка');
+        } finally {
+            setRedeeming(false);
         }
     };
 
@@ -279,6 +309,16 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <button
                                 onClick={() => {
+                                    hapticImpact('medium');
+                                    setRedeemModalOpen(true);
+                                }}
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 text-white hover:scale-105"
+                            >
+                                <Key className="w-4 h-4 text-purple-400" />
+                                Активировать код
+                            </button>
+                            <button
+                                onClick={() => {
                                     const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
                                     const link = `https://t.me/${botUsername}?start=ref_${user?.id}`;
                                     navigator.clipboard.writeText(link);
@@ -289,20 +329,7 @@ export default function ProfilePage() {
                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all bg-white/5 border border-white/10 hover:bg-white/10 text-white"
                             >
                                 {copiedId === 'ref' ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                                {copiedId === 'ref' ? 'Скопировано' : 'Копировать'}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    hapticImpact('medium');
-                                    const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
-                                    const link = `https://t.me/${botUsername}?start=ref_${user?.id}`;
-                                    const text = encodeURIComponent(`🔥 Присоединяйся к Perkly и получи 500 бонусов при регистрации!\n\nТут лучшие предложения на подписки, игры и курсы.`);
-                                    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`;
-                                    window.open(shareUrl, '_blank');
-                                }}
-                                className="p-3 rounded-xl bg-blue-500 text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20"
-                            >
-                                <MessageCircle className="w-5 h-5" />
+                                {copiedId === 'ref' ? 'Скопировано' : 'Реф. ссылка'}
                             </button>
                         </div>
                     </div>
@@ -350,7 +377,13 @@ export default function ProfilePage() {
                         onClick={() => setActiveTab('history')}
                         className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'history' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
-                        <span className="flex items-center justify-center gap-1.5"><ClipboardList className="w-4 h-4" /> История покупок</span>
+                        <span className="flex items-center justify-center gap-1.5"><ClipboardList className="w-4 h-4" /> История</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('subscriptions')}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'subscriptions' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
+                    >
+                        <span className="flex items-center justify-center gap-1.5"><Key className="w-4 h-4" /> Подписки</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('settings')}
@@ -388,6 +421,7 @@ export default function ProfilePage() {
                                                     <td className="py-3 px-4">
                                                         <span className="text-sm text-white font-medium">{tx.offer?.title || 'Товар'}</span>
                                                         <div className="text-xs text-white/30">{tx.offer?.category}</div>
+                                                        {tx.isGift && <div className="text-[10px] text-pink-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
                                                     </td>
                                                     <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toFixed(2)}$</td>
                                                     <td className="py-3 px-4">
@@ -413,7 +447,7 @@ export default function ProfilePage() {
                                                                     <CheckCircle className="w-3.5 h-3.5" /> Подтвердить
                                                                 </button>
                                                             )}
-                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
                                                                 <button
                                                                     onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
                                                                     className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}
@@ -422,7 +456,7 @@ export default function ProfilePage() {
                                                                     {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
                                                                 </button>
                                                             )}
-                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
                                                                 <button
                                                                     onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })}
                                                                     className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500"
@@ -443,6 +477,20 @@ export default function ProfilePage() {
                                                                         <AlertTriangle className="w-3.5 h-3.5" /> Проблема?
                                                                     </button>
                                                                 </>
+                                                            )}
+                                                            {tx.isGift && tx.giftCode && (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
+                                                                        const link = `https://t.me/${botUsername}?start=gift_${tx.giftCode}`;
+                                                                        navigator.clipboard.writeText(link);
+                                                                        hapticNotification('success');
+                                                                        alert('Ссылка на подарок скопирована!');
+                                                                    }}
+                                                                    className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-pink-500/10 text-pink-400"
+                                                                >
+                                                                    <Copy className="w-3 h-3" /> Ссылка
+                                                                </button>
                                                             )}
                                                         </div>
                                                     </td>
@@ -484,6 +532,7 @@ export default function ProfilePage() {
                                                 <div className="pr-2 text-wrap">
                                                     <div className="text-sm text-white font-medium leading-tight mb-1 break-words">{tx.offer?.title || 'Товар'}</div>
                                                     <div className="text-xs text-white/30">{tx.offer?.category}</div>
+                                                    {tx.isGift && <div className="text-[10px] text-pink-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
                                                 </div>
                                                 <div className="text-sm font-semibold text-white shrink-0 block">{tx.price.toFixed(2)}$</div>
                                             </div>
@@ -499,12 +548,26 @@ export default function ProfilePage() {
                                                         Подтвердить получение
                                                     </button>
                                                 )}
-                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
                                                     <button onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))} className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
                                                         {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />} {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
                                                     </button>
                                                 )}
-                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && (
+                                                {tx.isGift && tx.giftCode && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
+                                                            const link = `https://t.me/${botUsername}?start=gift_${tx.giftCode}`;
+                                                            navigator.clipboard.writeText(link);
+                                                            hapticNotification('success');
+                                                            alert('Ссылка скопирована!');
+                                                        }}
+                                                        className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-pink-500/10 text-pink-400"
+                                                    >
+                                                        <Copy className="w-3 h-3" /> Ссылка на подарок
+                                                    </button>
+                                                )}
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
                                                     <button onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })} className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500">
                                                         <QrCode className="w-3.5 h-3.5" /> QR
                                                     </button>
@@ -537,6 +600,51 @@ export default function ProfilePage() {
                                      ))}
                                 </div>
                             </>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'subscriptions' && (
+                    <div className="space-y-4">
+                        {subscriptions.length === 0 ? (
+                            <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                                <Key className="w-12 h-12 text-white/10 mx-auto mb-3" />
+                                <p className="text-white/30 mb-3">У вас пока нет активных подписок</p>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Найти в каталоге →</Link>
+                            </div>
+                        ) : (
+                            subscriptions.map(tx => {
+                                const expires = tx.expiresAt ? new Date(tx.expiresAt) : null;
+                                const isExpired = expires && expires < new Date();
+                                const diffDays = expires ? Math.ceil((expires.getTime() - Date.now()) / (24*60*60*1000)) : 0;
+
+                                return (
+                                    <div key={tx.id} className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between group">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/10 border border-purple-500/20`}>
+                                                <Store className="w-6 h-6 text-purple-400" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-white font-bold mb-0.5">{tx.offer?.title}</h4>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${isExpired ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}`}>
+                                                        {isExpired ? 'Истекла' : 'Активна'}
+                                                    </span>
+                                                    <p className="text-xs text-white/40">
+                                                        {isExpired ? `Закончилась ${expires?.toLocaleDateString()}` : `До ${expires?.toLocaleDateString()} (${diffDays} дн.)`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => router.push(`/offer/${tx.offerId}`)}
+                                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-all no-underline"
+                                        >
+                                            Продлить
+                                        </button>
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
                 )}
@@ -668,6 +776,47 @@ export default function ProfilePage() {
                 onClose={() => setTopUpModalOpen(false)}
                 onTopUp={handleTopUp}
             />
+
+            {/* Redeem Gift Modal */}
+            {redeemModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setRedeemModalOpen(false)}>
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                    <div
+                        className="relative rounded-3xl p-8 flex flex-col items-center gap-6 max-w-sm w-full bg-[#141928]/90 backdrop-blur-[40px] border border-white/10 shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="text-center">
+                            <Key className="w-10 h-10 text-purple-400 mx-auto mb-3" />
+                            <h3 className="text-xl font-bold text-white mb-1">Активация подарка</h3>
+                            <p className="text-sm text-white/40">Введите 8-значный код вашего подарка</p>
+                        </div>
+
+                        <input 
+                            value={redeemCode}
+                            onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                            placeholder="Например: A1B2C3D4"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-xl font-mono tracking-widest text-white outline-none focus:border-purple-500/50 transition-all uppercase"
+                            maxLength={8}
+                        />
+
+                        <div className="flex gap-3 w-full">
+                            <button 
+                                onClick={() => setRedeemModalOpen(false)}
+                                className="flex-1 py-3 rounded-xl bg-white/5 text-white/60 font-bold border-0 cursor-pointer"
+                            >
+                                Отмена
+                            </button>
+                            <button 
+                                onClick={handleRedeemGift}
+                                disabled={redeeming || redeemCode.length < 4}
+                                className="flex-2 py-3 px-6 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold border-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                            >
+                                {redeeming ? 'Загрузка...' : 'Активировать'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

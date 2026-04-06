@@ -18,7 +18,11 @@ export class TransactionsService {
     private botService: BotService,
   ) {}
 
-  async purchase(buyerId: string, offerId: string): Promise<Transaction> {
+  async purchase(
+    buyerId: string,
+    offerId: string,
+    isGift = false,
+  ): Promise<Transaction> {
     // Find offer
     const offer = await this.prisma.offer.findUnique({
       where: { id: offerId },
@@ -53,6 +57,16 @@ export class TransactionsService {
         data: { rewardPoints: { increment: Math.floor(offer.price) } },
       });
 
+      // Calculate expiresAt if the offer has a period
+      const expiresAt = offer.periodDays > 0 
+        ? new Date(Date.now() + offer.periodDays * 24 * 60 * 60 * 1000)
+        : null;
+
+      // Generate gift code if requested
+      const giftCode = isGift 
+        ? Math.random().toString(36).substring(2, 10).toUpperCase()
+        : null;
+
       // Create transaction record
       return tx.transaction.create({
         data: {
@@ -60,6 +74,9 @@ export class TransactionsService {
           buyerId,
           price: offer.price,
           status: TransactionStatus.ESCROW,
+          expiresAt,
+          isGift,
+          giftCode,
         },
         include: {
           offer: {
@@ -78,7 +95,15 @@ export class TransactionsService {
 
     // Try to notify the buyer via Telegram
     if (buyer.telegramId) {
-      const message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${offer.price}.\nВаш кэшбек: ${Math.floor(offer.price)} баллов.\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
+      let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${offer.price}.\nВаш кэшбек: ${Math.floor(offer.price)} баллов.`;
+      
+      if (isGift) {
+        const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;
+        message += `\n\n🎁 *Это подарок!*\nВаша ссылка для друга:\n\`${giftLink}\`\n\n_Перешлите это сообщение другу, чтобы он мог забрать товар._`;
+      } else {
+        message += `\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
+      }
+      
       await this.botService.sendTelegramNotification(buyer.telegramId, message, inlineKeyboard);
     }
 
@@ -208,5 +233,51 @@ export class TransactionsService {
     }
 
     return transaction;
+  }
+
+  async redeemGift(code: string, userId: string): Promise<Transaction> {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { giftCode: code.toUpperCase() },
+      include: { offer: true },
+    });
+
+    if (!transaction) throw new NotFoundException('Подарочный код не найден');
+    if (!transaction.isGift) throw new BadRequestException('Этот код не является подарком');
+    if (transaction.isRedeemed) throw new BadRequestException('Этот подарок уже активирован');
+    if (transaction.buyerId === userId) throw new BadRequestException('Вы не можете активировать собственный подарок');
+
+    const updated = await this.prisma.transaction.update({
+      where: { id: transaction.id },
+      data: {
+        buyerId: userId,
+        isRedeemed: true,
+      },
+      include: { offer: true, buyer: true },
+    });
+
+    // Notify the redeemer
+    if (updated.buyer.telegramId) {
+      const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+      const keyboard = {
+        inline_keyboard: [
+          [{ text: '🔥 Посмотреть товар', web_app: { url: `${webAppUrl}/profile/orders` } }]
+        ]
+      };
+      const message = `🎁 *Подарок активирован!*\n\nВы получили "${updated.offer.title}".\n\n🔐 *Ваш товар:*\n\`${updated.offer.hiddenData}\``;
+      await this.botService.sendTelegramNotification(updated.buyer.telegramId, message, keyboard);
+    }
+
+    return updated;
+  }
+
+  async findSubscriptions(userId: string): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany({
+      where: {
+        buyerId: userId,
+        expiresAt: { not: null },
+      },
+      include: { offer: true },
+      orderBy: { expiresAt: 'asc' },
+    });
   }
 }

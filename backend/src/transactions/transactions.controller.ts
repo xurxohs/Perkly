@@ -21,9 +21,28 @@ export class TransactionsController {
   @Post()
   async purchase(
     @Request() req: { user: { userId: string } },
-    @Body() body: { offerId: string },
+    @Body() body: { offerId: string; isGift?: boolean },
   ) {
-    return this.transactionsService.purchase(req.user.userId, body.offerId);
+    return this.transactionsService.purchase(
+      req.user.userId,
+      body.offerId,
+      body.isGift,
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('redeem')
+  async redeemGift(
+    @Request() req: { user: { userId: string } },
+    @Body() body: { code: string },
+  ) {
+    return this.transactionsService.redeemGift(body.code, req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('subscriptions')
+  async mySubscriptions(@Request() req: { user: { userId: string } }) {
+    return this.transactionsService.findSubscriptions(req.user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))

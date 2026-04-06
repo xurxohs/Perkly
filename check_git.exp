@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+set timeout 20
+set host "95.130.227.217"
+set user "root"
+set password "8uwFRcLeJPnzdDH4"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "*:~#"
+send "cd /var/www/perkly && git status && git log -n 1\r"
+expect "*:/var/www/perkly#"
+send "exit\r"
+expect eof

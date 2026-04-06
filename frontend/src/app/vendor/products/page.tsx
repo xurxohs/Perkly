@@ -31,7 +31,8 @@ export default function VendorProductsPage() {
         isFree: false,
         hiddenData: '',
         isFlashDrop: false,
-        vendorLogo: ''
+        vendorLogo: '',
+        periodDays: '0'
     });
 
     useEffect(() => {
@@ -67,6 +68,7 @@ export default function VendorProductsPage() {
                 hiddenData: formData.hiddenData,
                 isFlashDrop: formData.isFlashDrop,
                 vendorLogo: formData.vendorLogo || null,
+                periodDays: Number(formData.periodDays) || 0,
                 isActive: true
             };
 
@@ -81,7 +83,7 @@ export default function VendorProductsPage() {
 
             if (res.ok) {
                 setIsAddModalOpen(false);
-                setFormData({ title: '', description: '', category: 'games', price: '', isFree: false, hiddenData: '', isFlashDrop: false, vendorLogo: '' });
+                setFormData({ title: '', description: '', category: 'games', price: '', isFree: false, hiddenData: '', isFlashDrop: false, vendorLogo: '', periodDays: '0' });
                 fetchMyOffers(); // Refresh list
             }
         } catch (error) {
@@ -247,7 +249,7 @@ export default function VendorProductsPage() {
                                 <textarea required rows={3} placeholder="Опишите преимущества вашего товара..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors resize-none" />
                             </div>
 
-                            {/* Price & Free Toggle */}
+                            {/* Price & Duration */}
                             <div className="grid grid-cols-2 gap-5 items-end">
                                 <div className={`space-y-1.5 transition-all duration-300 ${formData.isFree ? 'opacity-30 pointer-events-none' : ''}`}>
                                     <label className="text-xs font-medium tracking-wide text-white/60 uppercase">Цена ($)</label>
@@ -256,12 +258,17 @@ export default function VendorProductsPage() {
                                         <input type="number" step="0.01" min="0" required={!formData.isFree} disabled={formData.isFree} value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors" />
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-4 py-3 cursor-pointer" onClick={() => setFormData({ ...formData, isFree: !formData.isFree, price: '' })}>
-                                    <div className={`w-10 h-6 rounded-full p-1 transition-colors ${formData.isFree ? 'bg-emerald-500' : 'bg-white/10'}`}>
-                                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${formData.isFree ? 'translate-x-4' : 'translate-x-0'}`} />
-                                    </div>
-                                    <span className="font-medium text-white/90">Отдавать бесплатно</span>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium tracking-wide text-white/60 uppercase">Длительность (дни, 0=бессрочно)</label>
+                                    <input type="number" min="0" value={formData.periodDays} onChange={e => setFormData({ ...formData, periodDays: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors" />
                                 </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-4 py-3 cursor-pointer w-fit" onClick={() => setFormData({ ...formData, isFree: !formData.isFree, price: '' })}>
+                                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${formData.isFree ? 'bg-emerald-500' : 'bg-white/10'}`}>
+                                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${formData.isFree ? 'translate-x-4' : 'translate-x-0'}`} />
+                                </div>
+                                <span className="font-medium text-white/90">Отдавать бесплатно</span>
                             </div>
 
                             {/* Hidden Data (Digital Item Delivery) */}

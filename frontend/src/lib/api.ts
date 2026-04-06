@@ -41,6 +41,10 @@ export interface Transaction {
     buyerId: string;
     price: number;
     status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED' | 'ESCROW';
+    expiresAt?: string | null;
+    isGift?: boolean;
+    giftCode?: string | null;
+    isRedeemed?: boolean;
     createdAt: string;
     offer?: Offer;
     buyer?: User;
@@ -213,10 +217,10 @@ export const offersApi = {
 
 // ===== TRANSACTIONS =====
 export const transactionsApi = {
-    purchase: (offerId: string) =>
+    purchase: (offerId: string, isGift = false) =>
         request<Transaction>('/transactions', {
             method: 'POST',
-            body: JSON.stringify({ offerId }),
+            body: JSON.stringify({ offerId, isGift }),
         }),
 
     list: (skip = 0, take = 20) =>
@@ -229,6 +233,15 @@ export const transactionsApi = {
         request<Transaction>(`/transactions/${id}/confirm`, {
             method: 'PATCH',
         }),
+
+    redeem: (code: string) =>
+        request<Transaction>('/transactions/redeem', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        }),
+
+    getSubscriptions: () =>
+        request<Transaction[]>('/transactions/subscriptions'),
 };
 
 // ===== USERS =====

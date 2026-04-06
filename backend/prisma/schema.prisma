@@ -57,6 +57,7 @@ model Offer {
   isActive          Boolean       @default(true)
   isFlashDrop       Boolean       @default(false)
   expiresAt         DateTime?
+  periodDays        Int           @default(0)
   sellerId          String
   featuredUntil     DateTime?
   createdAt         DateTime      @default(now())
@@ -70,10 +71,14 @@ model Transaction {
   id        String     @id @default(uuid())
   offerId   String
   buyerId   String
-  price     Float
-  status    String     @default("PENDING")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  price         Float
+  status        String     @default("PENDING")
+  expiresAt     DateTime?
+  isGift        Boolean    @default(false)
+  giftCode      String?    @unique
+  isRedeemed    Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   chatRooms ChatRoom[]
   dispute   Dispute?
   buyer     User       @relation("BuyerTransactions", fields: [buyerId], references: [id])

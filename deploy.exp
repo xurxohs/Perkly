@@ -32,10 +32,14 @@ puts "\n--- Pulling latest code ---\n"
 send "cd /var/www/perkly && git reset --hard && git pull\r"
 expect "*:/var/www/perkly#"
 
+puts "\n--- Updating Backend ---\n"
+send "cd backend && npm install && npx prisma db push --accept-data-loss && npm run build\r"
+set timeout 180
+expect "*:/var/www/perkly/backend#"
+
 puts "\n--- Updating Frontend ---\n"
-send "cd frontend && npm install && npm run build\r"
-# This might take a while, increase timeout
-set timeout 120
+send "cd ../frontend && npm install && npm run build\r"
+set timeout 300
 expect "*:/var/www/perkly/frontend#"
 
 puts "\n--- Restarting PM2 processes ---\n"

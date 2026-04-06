@@ -1,4 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { TransactionsService } from '../transactions/transactions.service';
 import {
   Start,
   Update,
@@ -11,6 +13,7 @@ import {
 import { Context, Markup, Telegraf } from 'telegraf';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
+import { Transaction, User, Offer } from '@prisma/client';
 
 @Update()
 @Injectable()
@@ -21,6 +24,8 @@ export class BotService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => AuthService))
     private authService: AuthService,
+    @Inject(forwardRef(() => TransactionsService))
+    private transactionsService: TransactionsService,
     @InjectBot() private bot: Telegraf<Context>,
   ) {}
 
@@ -85,7 +90,7 @@ export class BotService {
       });
     }
 
-    const match = text.match(/^\/start (login_|ref_)([a-zA-Z0-9-]+)/);
+    const match = text.match(/^\/start (login_|ref_|gift_)([a-zA-Z0-9-]+)/);
 
     if (match) {
       const type = match[1];
@@ -149,6 +154,22 @@ export class BotService {
             );
           }
         }
+        return;
+      } else if (type === 'gift_') {
+        const giftCode = token;
+        try {
+          await this.transactionsService.redeemGift(giftCode, user.id);
+          await ctx.reply(
+            `🎁 *Подарок активирован!*\n\nВы успешно получили товар. Проверьте ваш профиль в приложении.`,
+            { parse_mode: 'Markdown' },
+          );
+        } catch (error) {
+          await ctx.reply(
+            `❌ *Ошибка активации:* ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+            { parse_mode: 'Markdown' },
+          );
+        }
+        return;
       }
     }
 
@@ -443,5 +464,52 @@ export class BotService {
       `🎁 *Пригласи друга и получи 500 баллов!*\n\nПоделитесь этой ссылкой с друзьями. Как только друг присоединится к Perkly, вы оба получите награду!\n\n👇 Ваша персональная ссылка:\n\`${refLink}\``,
       { parse_mode: 'Markdown' },
     );
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_NOON)
+  async handleSubscriptionRenewals() {
+    this.logger.log('Checking for expiring subscriptions...');
+    const now = new Date();
+    const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    // Find transactions expiring in 0-3 days
+    type ExpiringTransaction = Transaction & { buyer: User; offer: Offer };
+    const expiringSoon = (await this.prisma.transaction.findMany({
+      where: {
+        expiresAt: {
+          gt: now,
+          lte: in3Days,
+        },
+        status: 'COMPLETED',
+      },
+      include: { buyer: true, offer: true },
+    })) as ExpiringTransaction[];
+
+    for (const tx of expiringSoon) {
+      if (tx.buyer.telegramId) {
+        const diffDays = Math.ceil(
+          (tx.expiresAt!.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+        );
+        const message = `⚠️ *Ваша подписка на "${tx.offer.title}" заканчивается через ${diffDays} дня!*\n\nНе забудьте продлить ее, чтобы сохранить доступ к сервису.`;
+
+        const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+        const keyboard = {
+          inline_keyboard: [
+            [
+              {
+                text: '🔄 Продлить сейчас',
+                web_app: { url: `${webAppUrl}/offer/${tx.offerId}` },
+              },
+            ],
+          ],
+        };
+
+        await this.sendTelegramNotification(
+          tx.buyer.telegramId,
+          message,
+          keyboard,
+        );
+      }
+    }
   }
 }
