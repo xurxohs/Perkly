@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { Clock, Gamepad2, Coffee, KeyRound, Tag, Sparkles, ArrowRight, Flame } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Offer } from '@/lib/api';
 import Countdown from '@/components/Countdown';
+import SafeImage from '@/components/SafeImage';
 
 export type OfferWithHours = Offer & { hours?: number };
 
@@ -97,10 +97,13 @@ export default async function Home() {
             <Link href={`/offer/?id=${d.id}`} key={d.id || i} className="flex flex-col sm:flex-row items-start sm:items-center p-4 cursor-pointer rounded-2xl transition-all duration-300 no-underline group hover:-translate-y-1 hover:shadow-xl gap-4 sm:gap-0 offer-card">
               <div className="flex gap-3 sm:gap-4 w-full sm:flex-1">
                 <div className="w-20 h-20 rounded-xl overflow-hidden relative shrink-0 bg-white/5 flex items-center justify-center p-2 offer-card-image">
-                  {d.vendorLogo ? (
-                    <Image src={d.vendorLogo} fill className="object-contain drop-shadow-lg p-1 transition-transform group-hover:scale-105" alt={d.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                  ) : null}
-                  <div className={`w-full h-full flex items-center justify-center text-2xl ${d.vendorLogo ? 'hidden' : ''}`}><Flame className="w-8 h-8 text-orange-500/80 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]" /></div>
+                  <SafeImage 
+                    src={d.vendorLogo || ''} 
+                    fill 
+                    className="object-contain drop-shadow-lg p-1 transition-transform group-hover:scale-105" 
+                    alt={d.title} 
+                    fallbackIcon={<Flame className="w-8 h-8 text-orange-500/80 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]" />}
+                  />
                 </div>
                 <div className="flex-1 relative z-10 flex flex-col justify-center">
                   <h3 className="text-base font-bold text-white mb-1 line-clamp-1">{d.title}</h3>
@@ -188,14 +191,12 @@ export default async function Home() {
             trendingOffers.map((o: Offer, i: number) => (
               <Link href={`/offer/?id=${o.id}`} key={o.id || i} className="rounded-2xl overflow-hidden cursor-pointer block no-underline group hover:-translate-y-1 transition-all duration-300 offer-card">
                 <div className="w-full h-44 relative bg-white/5 flex items-center justify-center p-6 offer-card-image-bg">
-                  {o.vendorLogo ? (
-                    <Image src={o.vendorLogo} fill className="object-contain p-6 drop-shadow-xl transition-transform duration-500 group-hover:scale-110" alt={o.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                  ) : null}
-                  <div className={`${o.vendorLogo ? 'hidden' : ''}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-white/20">
-                      <path d="M9.375 3a1.875 1.875 0 0 0 0 3.75h1.875v4.5H3.375A1.875 1.875 0 0 1 1.5 9.375v-.75c0-1.036.84-1.875 1.875-1.875h3.193A3.375 3.375 0 0 1 12 2.753a3.375 3.375 0 0 1 5.432 3.997h3.193c1.035 0 1.875.84 1.875 1.875v.75c0 1.036-.84 1.875-1.875 1.875H12.75v-4.5h1.875a1.875 1.875 0 1 0-1.875-1.875V6.75h-1.5V4.875C11.25 3.839 10.41 3 9.375 3ZM11.25 12.75H3v6.75a2.25 2.25 0 0 0 2.25 2.25h6v-9ZM12.75 12.75v9h6.75a2.25 2.25 0 0 0 2.25-2.25v-6.75h-9Z" />
-                    </svg>
-                  </div>
+                  <SafeImage 
+                    src={o.vendorLogo || ''} 
+                    fill 
+                    className="object-contain p-6 drop-shadow-xl transition-transform duration-500 group-hover:scale-110" 
+                    alt={o.title} 
+                  />
                   <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/80 z-10 offer-card-category-badge">
                     {o.category}
                   </div>
