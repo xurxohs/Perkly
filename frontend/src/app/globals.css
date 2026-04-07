@@ -27,6 +27,8 @@
     background-color: #000000;
     color: #f8fafc;
     overflow-x: hidden;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
   * {

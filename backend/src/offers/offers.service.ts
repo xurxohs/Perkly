@@ -25,6 +25,9 @@ export class OffersService {
     isFlashDrop?: boolean;
     minPrice?: number;
     maxPrice?: number;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
   }): Promise<{ data: Offer[]; total: number }> {
     const {
       skip = 0,
@@ -35,6 +38,9 @@ export class OffersService {
       isFlashDrop,
       minPrice,
       maxPrice,
+      lat,
+      lng,
+      radiusKm,
     } = params;
 
     const where: Prisma.OfferWhereInput = { isActive: true };
@@ -54,6 +60,21 @@ export class OffersService {
       if (minPrice !== undefined) priceFilter.gte = minPrice;
       if (maxPrice !== undefined) priceFilter.lte = maxPrice;
       where.price = priceFilter;
+    }
+
+    if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+      const ky = 40000 / 360;
+      const kx = Math.cos((Math.PI * lat) / 180.0) * ky;
+      const dx = radiusKm / kx;
+      const dy = radiusKm / ky;
+      where.latitude = {
+        gte: lat - dy,
+        lte: lat + dy,
+      };
+      where.longitude = {
+        gte: lng - dx,
+        lte: lng + dx,
+      };
     }
 
     let orderBy: Prisma.OfferOrderByWithRelationInput = { createdAt: 'desc' };

@@ -68,6 +68,9 @@ export class OffersController {
     @Query('isFlashDrop') isFlashDrop?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radiusKm') radiusKm?: string,
   ): Promise<{ data: Offer[]; total: number }> {
     return this.offersService.findAllFiltered({
       skip: skip ? Number(skip) : undefined,
@@ -83,6 +86,9 @@ export class OffersController {
             : undefined,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      lat: lat ? Number(lat) : undefined,
+      lng: lng ? Number(lng) : undefined,
+      radiusKm: radiusKm ? Number(radiusKm) : undefined,
     });
   }
 

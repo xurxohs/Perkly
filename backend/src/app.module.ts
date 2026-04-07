@@ -18,6 +18,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { SquadsModule } from './squads/squads.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     NotificationsModule,
     PaymentsModule,
     AnalyticsModule,
+    SquadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

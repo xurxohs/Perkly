@@ -35,7 +35,10 @@ export function Navbar() {
             : null;
 
     return (
-        <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-6 py-3 rounded-[2rem] flex items-center justify-between transition-all duration-300">
+        <nav 
+            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-6 py-3 rounded-[2rem] flex items-center justify-between transition-all duration-300"
+            style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+        >
             <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
                 <div className="w-8 h-8 rounded-full" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', boxShadow: '0 0 15px rgba(168,85,247,0.5)' }} />
                 <span className="text-xl font-bold tracking-tight text-white">Perkly</span>

@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BotService } from '../bot/bot.service';
-import { Transaction } from '@prisma/client';
+import { Transaction, User } from '@prisma/client';
+import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class TransactionsService {
   constructor(
     private prisma: PrismaService,
     private botService: BotService,
+    private squadsService: SquadsService,
   ) {}
 
   async purchase(
@@ -51,10 +53,14 @@ export class TransactionsService {
         data: { balance: { decrement: offer.price } },
       });
 
-      // Add reward points to buyer (1 point per $1)
+      // Add reward points to buyer (1 point per unit, +15% if squad reward active)
+      const extraPoints = buyer.hasSquadReward ? Math.floor(offer.price * 0.15) : 0;
       await tx.user.update({
         where: { id: buyerId },
-        data: { rewardPoints: { increment: Math.floor(offer.price) } },
+        data: { 
+          rewardPoints: { increment: Math.floor(offer.price) + extraPoints },
+          ...(buyer.hasSquadReward ? { hasSquadReward: false } : {})
+        },
       });
 
       // Calculate expiresAt if the offer has a period
@@ -165,6 +171,11 @@ export class TransactionsService {
         seller.telegramId,
         message,
       );
+    }
+
+    // Trigger squad goal check if buyer is in a squad
+    if (updatedTx.buyer.squadId) {
+      await this.squadsService.checkAndTriggerRewards(updatedTx.buyer.squadId);
     }
 
     return updatedTx;

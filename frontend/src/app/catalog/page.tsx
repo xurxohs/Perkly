@@ -33,6 +33,7 @@ function CatalogContent() {
     const initialCategory = searchParams.get('category') || '';
     const initialFlash = searchParams.get('isFlashDrop') === 'true';
     const initialSearch = searchParams.get('search') || '';
+    const initialNear = searchParams.get('near') === 'true';
 
     const [offers, setOffers] = useState<Offer[]>([]);
     const [total, setTotal] = useState(0);
@@ -42,6 +43,12 @@ function CatalogContent() {
     const [sort, setSort] = useState('newest');
     const [page, setPage] = useState(0);
     const [isFlashDrop, setIsFlashDrop] = useState(initialFlash);
+    const [isNearMe, setIsNearMe] = useState(initialNear || !!searchParams.get('lat'));
+    const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+        searchParams.get('lat') && searchParams.get('lng') 
+            ? { lat: Number(searchParams.get('lat')), lng: Number(searchParams.get('lng')) }
+            : null
+    );
     const { addItem, isInCart } = useCart();
 
     const PAGE_SIZE = 12;
@@ -57,6 +64,11 @@ function CatalogContent() {
             if (category) filters.category = category;
             if (search) filters.search = search;
             if (isFlashDrop) filters.isFlashDrop = true;
+            if (isNearMe && coords) {
+                filters.lat = coords.lat;
+                filters.lng = coords.lng;
+                filters.radiusKm = 3;
+            }
 
             const res = await offersApi.list(filters);
             setOffers(res.data);
@@ -68,7 +80,7 @@ function CatalogContent() {
         } finally {
             setLoading(false);
         }
-    }, [page, category, sort, search, isFlashDrop]);
+    }, [page, category, sort, search, isFlashDrop, isNearMe, coords]);
 
     useEffect(() => {
         fetchOffers();
@@ -80,6 +92,33 @@ function CatalogContent() {
         e.preventDefault();
         setPage(0);
         fetchOffers();
+    };
+
+    const toggleNearMe = () => {
+        if (!isNearMe) {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        setCoords({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        });
+                        setIsNearMe(true);
+                        setPage(0);
+                    },
+                    (error) => {
+                        console.error("Error getting location:", error);
+                        alert("Не удалось получить доступ к геопозиции. Пожалуйста, проверьте настройки браузера.");
+                    }
+                );
+            } else {
+                alert("Ваш браузер не поддерживает геолокацию.");
+            }
+        } else {
+            setIsNearMe(false);
+            setCoords(null);
+            setPage(0);
+        }
     };
 
     return (
@@ -150,6 +189,13 @@ function CatalogContent() {
                     className={`px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all ${isFlashDrop ? 'text-white bg-orange-500/15 border-orange-500/30' : 'text-white/50 bg-white/[0.04] border-white/[0.06]'} border`}
                 >
                     <Flame className="w-4 h-4 inline-block mr-1.5" /> Flash Drops
+                </button>
+
+                <button
+                    onClick={toggleNearMe}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all ${isNearMe ? 'text-white bg-blue-500/15 border-blue-500/30' : 'text-white/50 bg-white/[0.04] border-white/[0.06]'} border`}
+                >
+                    📍 Рядом со мной
                 </button>
             </div>
 

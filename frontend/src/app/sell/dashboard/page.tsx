@@ -15,6 +15,19 @@ export default function SellerDashboard() {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [newOffer, setNewOffer] = useState({
+        title: '',
+        description: '',
+        price: 0,
+        category: 'SUBSCRIPTIONS',
+        hiddenData: '',
+        latitude: null as number | null,
+        longitude: null as number | null,
+        periodDays: 30,
+        isFlashDrop: false
+    });
+
     useEffect(() => {
         if (!loading && (!isAuthenticated || !user)) {
             router.push('/auth/login');
@@ -41,6 +54,36 @@ export default function SellerDashboard() {
         }
     }, [isAuthenticated, loading, user, router]);
 
+    const handleCreateOffer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await api.offers.create(newOffer);
+            setIsCreateModalOpen(false);
+            setNewOffer({ title: '', description: '', price: 0, category: 'SUBSCRIPTIONS', hiddenData: '', latitude: null, longitude: null, periodDays: 30, isFlashDrop: false });
+            // Refresh data
+            const [statsRes, offersRes] = await Promise.all([
+                api.seller.getStats(),
+                api.seller.getOffers()
+            ]);
+            setStats(statsRes.data);
+            setOffers(offersRes.data);
+        } catch (err) {
+            alert('Failed to create offer: ' + (err instanceof Error ? err.message : String(err)));
+        }
+    };
+
+    const getCurrentLocation = () => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                setNewOffer(prev => ({
+                    ...prev,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                }));
+            });
+        }
+    };
+
     if (loading || isLoading) {
         return (
             <div className="flex justify-center items-center min-h-[60vh]">
@@ -56,11 +99,73 @@ export default function SellerDashboard() {
                     <h1 className="text-3xl font-bold text-white mb-2">Панель Продавца</h1>
                     <p className="text-gray-400">Управляйте вашими товарами и отслеживайте статистику продаж</p>
                 </div>
-                <Link href="/sell" className="px-6 py-3 rounded-xl text-white font-semibold flex items-center gap-2"
+                <button 
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="px-6 py-3 rounded-xl text-white font-semibold flex items-center gap-2 border-0 cursor-pointer"
                     style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}>
                     <Package className="w-5 h-5" /> Добавить Товар
-                </Link>
+                </button>
             </div>
+
+            {/* Create Offer Modal */}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 border-white/10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-white">Новый товар</h2>
+                            <button onClick={() => setIsCreateModalOpen(false)} className="text-white/40 hover:text-white bg-transparent border-0 cursor-pointer text-2xl">&times;</button>
+                        </div>
+                        <form onSubmit={handleCreateOffer} className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-white/50 mb-1">Название</label>
+                                <input type="text" required value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-purple-500" placeholder="Напр: Подписка Netflix Premium" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-white/50 mb-1">Цена ($)</label>
+                                    <input type="number" step="0.01" required value={newOffer.price} onChange={e => setNewOffer({...newOffer, price: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-white/50 mb-1">Период действия (дни)</label>
+                                    <input type="number" required value={newOffer.periodDays} onChange={e => setNewOffer({...newOffer, periodDays: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-white/50 mb-1">Категория</label>
+                                <select value={newOffer.category} onChange={e => setNewOffer({...newOffer, category: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-[#1a1f2e] border border-white/10 text-white outline-none">
+                                    <option value="SUBSCRIPTIONS">Подписки</option>
+                                    <option value="RESTAURANTS">Рестораны и Кафе</option>
+                                    <option value="GAMES">Игры</option>
+                                    <option value="MARKETPLACES">Маркетплейсы</option>
+                                </select>
+                            </div>
+                            
+                            {/* Geofencing Fields */}
+                            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                                <h3 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">📍 Геолокация (для функции "Рядом со мной")</h3>
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                    <input type="number" step="any" placeholder="Широта (Lat)" value={newOffer.latitude || ''} onChange={e => setNewOffer({...newOffer, latitude: e.target.value ? Number(e.target.value) : null})} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white" />
+                                    <input type="number" step="any" placeholder="Долгота (Lng)" value={newOffer.longitude || ''} onChange={e => setNewOffer({...newOffer, longitude: e.target.value ? Number(e.target.value) : null})} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white" />
+                                </div>
+                                <button type="button" onClick={getCurrentLocation} className="text-xs text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 px-3 py-1.5 rounded-lg border-0 cursor-pointer transition-colors">
+                                    Определить моё местоположение
+                                </button>
+                                <p className="text-[10px] text-white/30 mt-2">Оставьте пустым, если товар цифровой (без физической точки).</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-white/50 mb-1">Описание</label>
+                                <textarea value={newOffer.description} onChange={e => setNewOffer({...newOffer, description: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none h-24" placeholder="Подробности..."></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-white/50 mb-1">Скрытые данные (Ключ/Ссылка)</label>
+                                <input type="text" required value={newOffer.hiddenData} onChange={e => setNewOffer({...newOffer, hiddenData: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" placeholder="То, что увидит покупатель после оплаты" />
+                            </div>
+                            <button type="submit" className="w-full py-4 rounded-xl text-white font-bold cursor-pointer border-0 mt-4" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}>Создать Оффер</button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">

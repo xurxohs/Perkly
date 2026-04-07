@@ -25,6 +25,8 @@ export interface Offer {
     isExclusive: boolean;
     isFlashDrop: boolean;
     expiresAt: string | null;
+    latitude: number | null;
+    longitude: number | null;
     sellerId: string;
     seller?: User;
     isActive: boolean;
@@ -33,6 +35,21 @@ export interface Offer {
     _count?: {
         transactions: number;
     };
+}
+
+export interface Squad {
+    id: string;
+    name: string;
+    inviteCode: string;
+    monthlyGoal: number;
+    currentSpending: number;
+    isGoalReached: boolean;
+    rewardTriggeredDate: string | null;
+    members: {
+        id: string;
+        displayName: string | null;
+        avatarUrl: string | null;
+    }[];
 }
 
 export interface Transaction {
@@ -188,6 +205,9 @@ export interface OfferFilters {
     isFlashDrop?: boolean;
     minPrice?: number;
     maxPrice?: number;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
 }
 
 export const offersApi = {
@@ -351,6 +371,22 @@ export const adminApi = {
         request<{ transactions: Transaction[] }>('/admin/transactions'),
 };
 
+// ===== SQUADS =====
+export const squadsApi = {
+    create: (name: string) =>
+        request<Squad>('/squads', {
+            method: 'POST',
+            body: JSON.stringify({ name }),
+        }),
+    join: (inviteCode: string) =>
+        request<Squad>('/squads/join', {
+            method: 'POST',
+            body: JSON.stringify({ inviteCode }),
+        }),
+    getMe: () =>
+        request<Squad | null>('/squads/me'),
+};
+
 
 const api = {
     auth: authApi,
@@ -363,6 +399,7 @@ const api = {
     admin: adminApi,
     seller: sellerApi,
     analytics: analyticsApi,
+    squads: squadsApi,
     // Add generic request methods
     get: <T = unknown>(url: string) => request<T>(url),
     post: <T = unknown>(url: string, body: unknown) => request<T>(url, { method: 'POST', body: JSON.stringify(body) }),

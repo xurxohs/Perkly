@@ -334,19 +334,37 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
+                {/* Squad Rewards Button */}
+                <Link href="/profile/squad" className="w-full flex items-center justify-between p-5 rounded-2xl mb-4 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.3)] border border-indigo-500/30">
+                            <UserIcon className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white mb-0.5">Сквад Награды 👥</h3>
+                            <p className="text-sm text-indigo-200/60">Цели с друзьями и Mega Perk (15% кешбэк)</p>
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors relative z-10">
+                        <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </Link>
 
                 {/* Pricing/Tariffs Button (Moved from Mobile Dock) */}
                 <Link href="/pricing" className="w-full flex items-center justify-between p-5 rounded-2xl mb-4 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
-                            <Crown className="w-6 h-6 text-yellow-400" />
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)] border border-yellow-500/30">
+                            <Crown className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white mb-0.5">Тарифы и Привилегии ✨</h3>
                             <p className="text-sm text-yellow-200/60">Улучшите свой аккаунт и получайте больше выгоды</p>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-yellow-500/20 transition-colors">
                         <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
@@ -356,15 +374,15 @@ export default function ProfilePage() {
                 {/* Messages Button (Moved from Navbar) */}
                 <Link href="/messages" className="w-full flex items-center justify-between p-5 rounded-2xl mb-8 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                            <MessageCircle className="w-6 h-6 text-purple-400" />
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] border border-purple-500/30">
+                            <MessageCircle className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white mb-0.5">Личные сообщения</h3>
                             <p className="text-sm text-purple-200/60">Чаты с продавцами и системные уведомления</p>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
                         <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>

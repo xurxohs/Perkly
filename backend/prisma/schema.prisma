@@ -29,6 +29,19 @@ model User {
   chatRooms           ChatRoom[]    @relation("ChatParticipants")
   deposits            Deposit[]     @relation("UserDeposits")
   subscriptions       Subscription[]
+  squadId             String?
+  squad               Squad?        @relation("UserSquad", fields: [squadId], references: [id])
+  hasSquadReward      Boolean       @default(false)
+}
+
+model Squad {
+  id                  String   @id @default(uuid())
+  name                String
+  inviteCode          String   @unique
+  monthlyGoal         Float    @default(1000000.0)
+  rewardTriggeredDate DateTime?
+  createdAt           DateTime @default(now())
+  members             User[]   @relation("UserSquad")
 }
 
 model Deposit {
@@ -58,6 +71,8 @@ model Offer {
   isFlashDrop       Boolean       @default(false)
   expiresAt         DateTime?
   periodDays        Int           @default(0)
+  latitude          Float?
+  longitude         Float?
   sellerId          String
   featuredUntil     DateTime?
   createdAt         DateTime      @default(now())

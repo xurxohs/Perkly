@@ -13,6 +13,18 @@ const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' }
 export const metadata: Metadata = {
   title: 'Perkly | Премиум Маркетплейс Цифровых Услуг',
   description: 'Покупка и продажа промокодов, подписок и цифровых товаров с безопасной сделкой.',
+  manifest: '/manifest.json',
+  icons: {
+    apple: '/icon-192.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Perkly',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

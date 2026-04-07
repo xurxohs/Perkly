@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { TransactionsService } from '../transactions/transactions.service';
+import { OffersService } from '../offers/offers.service';
 import {
   Start,
   Update,
@@ -26,6 +27,7 @@ export class BotService {
     private authService: AuthService,
     @Inject(forwardRef(() => TransactionsService))
     private transactionsService: TransactionsService,
+    private offersService: OffersService,
     @InjectBot() private bot: Telegraf<Context>,
   ) {}
 
@@ -181,7 +183,10 @@ export class BotService {
         ...Markup.inlineKeyboard([
           [Markup.button.webApp('🔥 Открыть Perkly', webAppUrl)],
           [
+            Markup.button.webApp('📍 Рядом со мной', `${webAppUrl}/catalog?near=true`),
             Markup.button.callback('💰 Профиль', 'action_profile'),
+          ],
+          [
             Markup.button.callback('🛍 Покупки', 'action_my_purchases'),
             Markup.button.callback('🤝 Пригласить', 'action_referral'),
           ],
@@ -247,6 +252,99 @@ export class BotService {
         reply_markup: { remove_keyboard: true },
       },
     );
+  }
+
+  @Command('nearby')
+  async onNearbyCommand(@Ctx() ctx: Context) {
+    await ctx.reply(
+      '📍 Чтобы найти лучшие предложения рядом с вами, нажмите кнопку ниже и поделитесь своим местоположением.',
+      {
+        reply_markup: {
+          keyboard: [
+            [
+              {
+                text: '📍 Поделиться местоположением',
+                request_location: true,
+              },
+            ],
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      },
+    );
+  }
+
+  @On('location')
+  async onLocation(@Ctx() ctx: Context) {
+    const from = ctx.from;
+    const message = ctx.message;
+
+    if (!from || !message || !('location' in message) || !message.location)
+      return;
+
+    const { latitude, longitude } = message.location as {
+      latitude: number;
+      longitude: number;
+    };
+
+    const offers = await this.offersService.findAllFiltered({
+      lat: latitude,
+      lng: longitude,
+      radiusKm: 3, // As per user request
+      take: 5,
+    });
+
+    if (offers.data.length === 0) {
+      await ctx.reply(
+        '😔 К сожалению, в радиусе 3 км пока нет активных предложений. Попробуйте позже или поищите в полном каталоге!',
+        {
+          reply_markup: { remove_keyboard: true },
+        },
+      );
+      return;
+    }
+
+    let response = `📍 *Предложения рядом с вами (3 км):*\n\n`;
+    const startPayload = ctx.message && 'text' in ctx.message ? ctx.message.text.split(' ')[1] : null;
+
+    if (startPayload?.startsWith('gift_')) {
+      const code = startPayload.replace('gift_', '');
+      const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+      await ctx.reply(`🎁 *У вас подарок!*\n\nНажмите кнопку ниже, чтобы забрать его.`, {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+          [Markup.button.webApp('🎁 Забрать подарок', `${webAppUrl}/profile/redeem?code=${code}`)]
+        ])
+      });
+      return;
+    }
+
+    if (startPayload?.startsWith('squad_')) {
+      const code = startPayload.replace('squad_', '');
+      const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+      await ctx.reply(`👥 *Вас пригласили в сквад!* 🎉\n\nОбъединяйтесь с друзьями, чтобы достигать общих целей и получать Mega Perks (кешбэк 15%).`, {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+          [Markup.button.webApp('🤝 Вступить в сквад', `${webAppUrl}/profile/squad?join=${code}`)]
+        ])
+      });
+      return;
+    }
+
+    const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+    offers.data.forEach((offer, i) => {
+      response += `${i + 1}. *${offer.title}* — $${offer.price}\n`;
+    });
+
+    await ctx.reply(response, {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.webApp('🔥 Открыть все рядом', `${webAppUrl}/catalog?lat=${latitude}&lng=${longitude}&radiusKm=3`)],
+        [Markup.button.callback('🔙 В меню', 'action_main_menu')],
+      ]),
+      reply_markup: { remove_keyboard: true },
+    });
   }
 
   @Command('stats')
@@ -444,6 +542,12 @@ export class BotService {
   async onActionBonus(@Ctx() ctx: Context) {
     if (ctx.callbackQuery) await ctx.answerCbQuery().catch(() => {});
     await this.onBonusCommand(ctx);
+  }
+
+  @Action('action_main_menu')
+  async onActionMainMenu(@Ctx() ctx: Context) {
+    if (ctx.callbackQuery) await ctx.answerCbQuery().catch(() => {});
+    await this.start(ctx);
   }
 
   @Action('action_referral')
