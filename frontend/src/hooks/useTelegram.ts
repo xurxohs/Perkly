@@ -2,20 +2,70 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
+interface TelegramUser {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    language_code?: string;
+    is_premium?: boolean;
+}
+
+interface TelegramWebApp {
+    ready: () => void;
+    close: () => void;
+    expand: () => void;
+    initData: string;
+    initDataUnsafe: {
+        user?: TelegramUser;
+        query_id?: string;
+        auth_date?: string;
+        hash?: string;
+    };
+    openTelegramLink: (url: string) => void;
+    MainButton: {
+        text: string;
+        color: string;
+        textColor: string;
+        isVisible: boolean;
+        isActive: boolean;
+        isProgressVisible: boolean;
+        show: () => void;
+        hide: () => void;
+        enable: () => void;
+        disable: () => void;
+        showProgress: (leaveActive: boolean) => void;
+        hideProgress: () => void;
+        setParams: (params: Record<string, unknown>) => void;
+        onClick: (callback: () => void) => void;
+        offClick: (callback: () => void) => void;
+    };
+    HapticFeedback: {
+        impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+        notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+        selectionChanged: () => void;
+    };
+}
+
 export function useTelegram() {
-    const [webApp, setWebApp] = useState<any>(null);
-    const [user, setUser] = useState<any>(null);
+    const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
+    const [user, setUser] = useState<TelegramUser | null>(null);
 
     useEffect(() => {
-        // Check if the script has loaded and WebApp object is available
-        if (typeof window !== 'undefined' && (window as any).Telegram && (window as any).Telegram.WebApp) {
-            const tg = (window as any).Telegram.WebApp;
-            tg.ready(); // Tell Telegram the app is ready to be displayed
-            setWebApp(tg);
+        const win = window as unknown as { Telegram?: { WebApp: TelegramWebApp } };
+        if (typeof window !== 'undefined' && win.Telegram?.WebApp) {
+            const tg = win.Telegram.WebApp;
+            
+            // Defer state update to avoid 'set-state-in-effect' lint warning
+            const timer = setTimeout(() => {
+                setWebApp(tg);
+                if (tg.initDataUnsafe?.user) {
+                    setUser(tg.initDataUnsafe.user);
+                }
+            }, 0);
 
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                setUser(tg.initDataUnsafe.user);
-            }
+            tg.ready();
+            return () => clearTimeout(timer);
         }
     }, []);
 

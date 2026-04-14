@@ -5,6 +5,7 @@ import { ArrowRight, Lock, Mail, Send, CheckCircle, Loader2 } from "lucide-react
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import React from 'react';
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
@@ -93,12 +94,12 @@ function LoginForm() {
     return (
         <div className="glass-card w-full max-w-md p-8 relative flex flex-col">
             {/* Decorative glows */}
-            <div className="absolute -top-6 -left-6 w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full blur-2xl opacity-40 z-0" />
-            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 z-0" />
+            <div className="absolute -top-6 -left-6 w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full blur-2xl opacity-40 z-0 pointer-events-none" />
+            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 z-0 pointer-events-none" />
 
             {/* Header */}
             <div className="z-10 text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 bg-[linear-gradient(135deg,#0088cc,#00b4ff)]">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 bg-telegram-gradient">
                     <Send className="w-7 h-7 text-white" />
                 </div>
                 <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">С возвращением</h1>
@@ -113,11 +114,12 @@ function LoginForm() {
 
             {/* ======= TELEGRAM SECTION ======= */}
             {tgStep === 'idle' && (
-                <div className="z-10 mb-6">
+                <div className="z-10 mb-6 font-sans">
                     <button
                         onClick={handleTelegramLogin}
                         disabled={loading}
-                        className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-base transition-all cursor-pointer border-0 bg-[linear-gradient(135deg,#0088cc,#00b4ff)] shadow-[0_0_30px_rgba(0,136,204,0.35)] ${loading ? 'opacity-70' : 'opacity-100'}`}
+                        className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-base transition-all cursor-pointer border-0 bg-telegram-gradient shadow-telegram-glow ${loading ? 'opacity-70' : 'opacity-100 hover:opacity-90'}`}
+                        title="Войти через Telegram"
                     >
                         <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
                             <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.869 4.326-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.829.941z" />
@@ -131,7 +133,7 @@ function LoginForm() {
             )}
 
             {tgStep === 'waiting' && (
-                <div className="z-10 mb-6 rounded-2xl p-5 text-center bg-[#0088cc]/[0.08] border border-[#0088cc]/20">
+                <div className="z-10 mb-6 rounded-2xl p-5 text-center bg-[#0088cc]/10 border border-[#0088cc]/20">
                     <Loader2 className="w-8 h-8 text-blue-400 mx-auto mb-3 animate-spin" />
                     <p className="text-white font-semibold mb-1">Ожидаем подтверждения...</p>
                     <p className="text-white/40 text-sm mb-4">
@@ -147,7 +149,7 @@ function LoginForm() {
                         Открыть бот снова <ArrowRight className="w-3 h-3" />
                     </a>
                     <div>
-                        <button onClick={cancelTgLogin} className="text-xs text-white/30 hover:text-white/60 transition bg-transparent border-0 cursor-pointer">
+                        <button onClick={cancelTgLogin} className="text-xs text-white/30 hover:text-white/60 transition bg-transparent border-0 cursor-pointer" title="Отменить вход">
                             Отменить
                         </button>
                     </div>
@@ -155,7 +157,7 @@ function LoginForm() {
             )}
 
             {tgStep === 'done' && (
-                <div className="z-10 mb-6 rounded-2xl p-5 text-center bg-green-500/[0.08] border border-green-500/20">
+                <div className="z-10 mb-6 rounded-2xl p-5 text-center bg-green-500/10 border border-green-500/20">
                     <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                     <p className="text-green-400 font-bold text-lg">Вы вошли!</p>
                     <p className="text-white/40 text-sm mt-1">Перенаправляем на главную...</p>
@@ -205,7 +207,8 @@ function LoginForm() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="mt-2 w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-0 disabled:opacity-50"
+                            className={`mt-2 w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-0 disabled:opacity-50 ${loading ? '' : 'hover:opacity-90 shadow-lg'}`}
+                            title="Войти"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Войти <ArrowRight className="w-5 h-5" /></>}
                         </button>
@@ -230,7 +233,7 @@ function LoginForm() {
 export default function LoginPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 w-full relative overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none -z-10" />
+            <div className="absolute top-1/2 left-1/2 -track-x-1/2 -track-y-1/2 w-[800px] h-[800px] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none -z-10" />
             <Suspense fallback={<div className="text-white/50">Загрузка...</div>}>
                 <LoginForm />
             </Suspense>

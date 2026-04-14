@@ -21,7 +21,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
   const router = useRouter();
   const { isAuthenticated, refreshUser } = useAuth();
   const { addItem, isInCart } = useCart();
-  const { hapticImpact, hapticNotification } = useTelegram();
+  const { webApp, hapticImpact, hapticNotification } = useTelegram();
 
   const [purchasing, setPurchasing] = useState(false);
   const [purchased, setPurchased] = useState(false);
@@ -62,9 +62,8 @@ export default function OfferActions({ offer }: OfferActionsProps) {
 
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
-    const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
-    if (tg?.initData) {
-      tg.openTelegramLink(shareUrl);
+    if (webApp) {
+      (webApp as any).openTelegramLink(shareUrl);
     } else {
       window.open(shareUrl, '_blank');
     }
@@ -140,6 +139,8 @@ export default function OfferActions({ offer }: OfferActionsProps) {
               ? 'bg-green-500/10 border-green-500/20 text-green-500' 
               : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
           }`}
+          title={isInCart(offer.id) ? 'В корзине' : 'Добавить в корзину'}
+          aria-label={isInCart(offer.id) ? 'В корзине' : 'Добавить в корзину'}
         >
           {isInCart(offer.id) ? <CheckCircle className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
         </button>

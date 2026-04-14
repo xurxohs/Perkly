@@ -107,6 +107,8 @@ export function Reviews({ offerId }: { offerId: string }) {
                                 type="button"
                                 onClick={() => setRating(star)}
                                 className="bg-transparent border-0 cursor-pointer p-0 transition-transform hover:scale-110"
+                                title={`Оценить на ${star} звезд`}
+                                aria-label={`Оценить на ${star} звезд`}
                             >
                                 <Star
                                     className={`w-6 h-6 ${star <= rating ? 'text-yellow-500 fill-yellow-500' : 'text-white/20'}`}
@@ -126,6 +128,8 @@ export function Reviews({ offerId }: { offerId: string }) {
                             type="submit"
                             disabled={submitting}
                             className="absolute bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-2 flex items-center justify-center cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-50"
+                            title="Отправить отзыв"
+                            aria-label="Отправить отзыв"
                         >
                             <Send className="w-4 h-4" />
                         </button>
@@ -178,7 +182,7 @@ export function Reviews({ offerId }: { offerId: string }) {
                                 </div>
                             </div>
                             {review.comment && (
-                                <p className="text-white/70 text-sm leading-relaxed mt-2 pl-12 border-l-2 border-white/10 py-1 ml-1" style={{ whiteSpace: 'pre-wrap' }}>
+                                <p className="text-white/70 text-sm leading-relaxed mt-2 pl-12 border-l-2 border-white/10 py-1 ml-1 whitespace-pre-wrap">
                                     {review.comment}
                                 </p>
                             )}

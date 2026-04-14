@@ -1,8 +1,7 @@
 "use client";
 
 import { useAuth } from '@/lib/AuthContext';
-import { offersApi } from '@/lib/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Edit2, Trash2, Tag, Flame, AlertCircle, Package } from 'lucide-react';
 import Image from 'next/image';
 
@@ -16,9 +15,20 @@ const CATEGORIES = [
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
+interface Offer {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    price: number;
+    isActive: boolean;
+    vendorLogo?: string;
+    isFlashDrop?: boolean;
+}
+
 export default function VendorProductsPage() {
-    const { user, token } = useAuth();
-    const [offers, setOffers] = useState<any[]>([]);
+    const { token } = useAuth();
+    const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -35,11 +45,8 @@ export default function VendorProductsPage() {
         periodDays: '0'
     });
 
-    useEffect(() => {
-        if (token) fetchMyOffers();
-    }, [token]);
-
-    const fetchMyOffers = async () => {
+    const fetchMyOffers = useCallback(async () => {
+        if (!token) return;
         setIsLoading(true);
         try {
             // Using direct fetch with auth header for the new endpoint
@@ -55,7 +62,11 @@ export default function VendorProductsPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [token]);
+
+    useEffect(() => {
+        fetchMyOffers();
+    }, [fetchMyOffers]);
 
     const handleCreateOffer = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -121,15 +132,7 @@ export default function VendorProductsPage() {
             </div>
 
             {/* Products Table Area */}
-            <div
-                className="rounded-3xl overflow-hidden"
-                style={{
-                    background: 'rgba(255,255,255,0.02)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-                }}
-            >
+            <div className="rounded-3xl overflow-hidden glass-card shadow-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -195,10 +198,10 @@ export default function VendorProductsPage() {
                                         </td>
                                         <td className="p-6 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors">
+                                                <button className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors" title="Редактировать">
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
-                                                <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/50 hover:text-red-400 transition-colors">
+                                                <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/50 hover:text-red-400 transition-colors" title="Удалить">
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -215,15 +218,7 @@ export default function VendorProductsPage() {
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-in fade-in duration-300">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-                    <div
-                        className="relative w-full max-w-2xl rounded-3xl overflow-hidden p-8 flex flex-col max-h-[90vh]"
-                        style={{
-                            background: 'rgba(20, 25, 40, 0.85)',
-                            backdropFilter: 'blur(40px)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.1)'
-                        }}
-                    >
+                    <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden p-8 flex flex-col max-h-[90vh] glass-card-heavy shadow-2xl border border-white/10">
                         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                             <Plus className="w-6 h-6 text-purple-400" /> Добавить Новый Товар
                         </h2>
@@ -237,7 +232,13 @@ export default function VendorProductsPage() {
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-medium tracking-wide text-white/60 uppercase">Категория</label>
-                                    <select required value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors appearance-none">
+                                    <select
+                                        required
+                                        value={formData.category}
+                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors appearance-none"
+                                        title="Выберите категорию"
+                                    >
                                         {CATEGORIES.map(c => <option key={c.id} value={c.id} className="bg-[#1a1f2e]">{c.name}</option>)}
                                     </select>
                                 </div>
@@ -264,12 +265,21 @@ export default function VendorProductsPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-4 py-3 cursor-pointer w-fit" onClick={() => setFormData({ ...formData, isFree: !formData.isFree, price: '' })}>
+                            <label 
+                                className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-4 py-3 cursor-pointer w-fit hover:bg-white/5 transition-colors"
+                                title="Отдавать бесплатно"
+                            >
+                                <input 
+                                    type="checkbox"
+                                    className="sr-only"
+                                    checked={formData.isFree}
+                                    onChange={() => setFormData({ ...formData, isFree: !formData.isFree, price: '' })}
+                                />
                                 <div className={`w-10 h-6 rounded-full p-1 transition-colors ${formData.isFree ? 'bg-emerald-500' : 'bg-white/10'}`}>
                                     <div className={`w-4 h-4 rounded-full bg-white transition-transform ${formData.isFree ? 'translate-x-4' : 'translate-x-0'}`} />
                                 </div>
                                 <span className="font-medium text-white/90">Отдавать бесплатно</span>
-                            </div>
+                            </label>
 
                             {/* Hidden Data (Digital Item Delivery) */}
                             <div className="space-y-1.5">
@@ -286,12 +296,21 @@ export default function VendorProductsPage() {
                                     <label className="text-xs font-medium tracking-wide text-white/60 uppercase">Ссылка на Логотип (URL)</label>
                                     <input type="text" placeholder="https://..." value={formData.vendorLogo} onChange={e => setFormData({ ...formData, vendorLogo: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors text-sm" />
                                 </div>
-                                <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-4 py-3 cursor-pointer" onClick={() => setFormData({ ...formData, isFlashDrop: !formData.isFlashDrop })}>
+                                <label 
+                                    className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors"
+                                    title="Flash Drop"
+                                >
+                                    <input 
+                                        type="checkbox"
+                                        className="sr-only"
+                                        checked={formData.isFlashDrop}
+                                        onChange={() => setFormData({ ...formData, isFlashDrop: !formData.isFlashDrop })}
+                                    />
                                     <div className={`w-10 h-6 rounded-full p-1 transition-colors ${formData.isFlashDrop ? 'bg-orange-500' : 'bg-white/10'}`}>
                                         <div className={`w-4 h-4 rounded-full bg-white transition-transform ${formData.isFlashDrop ? 'translate-x-4' : 'translate-x-0'}`} />
                                     </div>
                                     <span className="font-medium text-white/90 flex items-center gap-1.5"><Flame className="w-4 h-4 text-orange-500" /> Flash Drop</span>
-                                </div>
+                                </label>
                             </div>
 
                             {/* Actions */}

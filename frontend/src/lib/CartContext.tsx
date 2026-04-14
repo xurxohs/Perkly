@@ -31,14 +31,15 @@ const CartContext = createContext<CartCtx>({
 });
 
 export function CartProvider({ children }: { children: ReactNode }) {
-    const [items, setItems] = useState<CartItem[]>([]);
-
-    useEffect(() => {
+    const [items, setItems] = useState<CartItem[]>(() => {
+        if (typeof window === 'undefined') return [];
         const saved = localStorage.getItem('perkly_cart');
-        if (saved) {
-            try { setItems(JSON.parse(saved)); } catch { }
+        try {
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
         }
-    }, []);
+    });
 
     useEffect(() => {
         localStorage.setItem('perkly_cart', JSON.stringify(items));

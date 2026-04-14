@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Gift, X, Coins, Ticket, Coffee, Sparkles, Trophy } from 'lucide-react';
+import { X, Coins, Ticket, Coffee } from 'lucide-react';
+import React from 'react';
 
 interface Prize {
     label: string;
@@ -38,19 +39,6 @@ function getWeightedRandom(): number {
     return 0;
 }
 
-function getSpinsLeft(): number {
-    const today = new Date().toDateString();
-    const data = localStorage.getItem('perkly_wheel');
-    if (!data) return DAILY_LIMIT;
-    try {
-        const parsed = JSON.parse(data);
-        if (parsed.date !== today) return DAILY_LIMIT;
-        return Math.max(0, DAILY_LIMIT - (parsed.spins || 0));
-    } catch {
-        return DAILY_LIMIT;
-    }
-}
-
 function recordSpin() {
     const today = new Date().toDateString();
     const data = localStorage.getItem('perkly_wheel');
@@ -67,17 +55,21 @@ export default function FortuneWheel() {
     const [isSpinning, setIsSpinning] = useState(false);
     const [prize, setPrize] = useState<Prize | null>(null);
     const [showModal, setShowModal] = useState(false);
-    const [spinsLeft, setSpinsLeft] = useState(DAILY_LIMIT);
-    const [totalPoints, setTotalPoints] = useState(0);
+    const [spinsLeft, setSpinsLeft] = useState<number>(() => {
+        if (typeof window === 'undefined') return DAILY_LIMIT;
+        // Force reset limit for the user as requested
+        localStorage.removeItem('perkly_wheel');
+        return DAILY_LIMIT;
+    });
+    const [totalPoints, setTotalPoints] = useState<number>(() => {
+        if (typeof window === 'undefined') return 0;
+        const pts = localStorage.getItem('perkly_points');
+        return pts ? parseInt(pts) : 0;
+    });
     const wheelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Force reset limit for the user as requested
-        localStorage.removeItem('perkly_wheel');
-        setSpinsLeft(DAILY_LIMIT);
-
-        const pts = localStorage.getItem('perkly_points');
-        setTotalPoints(pts ? parseInt(pts) : 0);
+        // Any other non-state-setting initialization can go here
     }, []);
 
     const resetSpins = () => {
@@ -93,12 +85,8 @@ export default function FortuneWheel() {
         setShowModal(false);
 
         const winIndex = getWeightedRandom();
-        // Calculate where the pointer (top) needs to land
-        // The wheel's segment 0 starts at 0 degrees
-        // We need the winning segment center to be at top (0 / 360)
         const segmentCenter = winIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-        // Spin several full rotations + land on the prize
-        const fullSpins = 5 + Math.floor(Math.random() * 3); // 5-7 full rotations
+        const fullSpins = 5 + Math.floor(Math.random() * 3);
         const targetRotation = fullSpins * 360 + (360 - segmentCenter);
 
         setRotation(prev => prev + targetRotation);
@@ -112,11 +100,10 @@ export default function FortuneWheel() {
             setPrize(won);
             setShowModal(true);
 
-            // Add points
             if (won.value.endsWith('pp')) {
-                const pts = parseInt(won.value);
+                const ptsValue = parseInt(won.value);
                 const current = parseInt(localStorage.getItem('perkly_points') || '0');
-                const newTotal = current + pts;
+                const newTotal = current + ptsValue;
                 localStorage.setItem('perkly_points', String(newTotal));
                 setTotalPoints(newTotal);
             }
@@ -126,34 +113,33 @@ export default function FortuneWheel() {
     return (
         <div className="flex flex-col items-center">
             {/* Points display */}
-            <div className="flex items-center gap-2 mb-8 px-4 py-2 rounded-full" style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)' }}>
+            <div className="flex items-center gap-2 mb-8 px-4 py-2 rounded-full badge-balance">
                 <Coins className="w-5 h-5 text-yellow-400" />
                 <span className="text-sm font-semibold text-white">Баланс: <span className="text-yellow-400">{totalPoints}</span> Perkly Points</span>
             </div>
 
             {/* Wheel container */}
-            <div className="relative mb-8" style={{ width: 320, height: 320 }}>
+            <div className="relative mb-8 w-80 h-80">
                 {/* Outer glow */}
-                <div className="absolute inset-0 rounded-full" style={{ boxShadow: '0 0 60px rgba(168,85,247,0.2), 0 0 120px rgba(251,191,36,0.1)', animation: isSpinning ? 'pulse-neon 0.5s infinite' : 'pulse-neon 3s infinite' }} />
+                <div className={`absolute inset-0 rounded-full ${isSpinning ? 'animate-pulse-neon-wheel-fast' : 'animate-pulse-neon-wheel'}`} />
 
                 {/* Pointer (top center) */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-                    <div style={{ width: 0, height: 0, borderLeft: '14px solid transparent', borderRight: '14px solid transparent', borderTop: '24px solid #fff', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))' }} />
+                <div className="absolute -top-3 left-1/2 -track-x-1/2 z-20">
+                    <div className="wheel-pointer" />
                 </div>
 
                 {/* Spinning wheel */}
                 <div
                     ref={wheelRef}
-                    className="w-full h-full rounded-full relative overflow-hidden"
+                    className="w-full h-full rounded-full relative overflow-hidden wheel-inner-glow transition-transform"
                     style={{
                         transform: `rotate(${rotation}deg)`,
-                        transition: isSpinning ? `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)` : 'none',
-                        border: '4px solid rgba(255,255,255,0.1)',
-                        boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5)',
-                    }}
+                        transitionDuration: isSpinning ? `${SPIN_DURATION}ms` : '0ms',
+                        transitionTimingFunction: 'cubic-bezier(0.17, 0.67, 0.12, 0.99)'
+                    } as React.CSSProperties}
                 >
                     {/* SVG segments */}
-                    <svg viewBox="0 0 200 200" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+                    <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
                         {PRIZES.map((p, i) => {
                             const startAngle = i * SEGMENT_ANGLE;
                             const endAngle = startAngle + SEGMENT_ANGLE;
@@ -163,7 +149,7 @@ export default function FortuneWheel() {
                             const y1 = 100 + 100 * Math.sin(startRad);
                             const x2 = 100 + 100 * Math.cos(endRad);
                             const y2 = 100 + 100 * Math.sin(endRad);
-                            const largeArc = SEGMENT_ANGLE > 180 ? 1 : 0;
+                            const largeArc = 0;
 
                             const midAngle = ((startAngle + endAngle) / 2 * Math.PI) / 180;
                             const labelR = 65;
@@ -188,7 +174,7 @@ export default function FortuneWheel() {
                                         fontSize="10"
                                         fontWeight="800"
                                         transform={`rotate(${labelAngle}, ${lx}, ${ly})`}
-                                        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+                                        className="drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                                     >
                                         {p.shortLabel}
                                     </text>
@@ -199,8 +185,8 @@ export default function FortuneWheel() {
 
                     {/* Center button */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', boxShadow: '0 0 20px rgba(245,158,11,0.4), inset 0 -3px 6px rgba(180,83,9,0.4)' }}>
-                            <span className="text-2xl font-black" style={{ color: 'rgba(120,53,15,0.7)' }}>P</span>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center wheel-center-bulb">
+                            <span className="text-2xl font-black text-[#78230f]/70">P</span>
                         </div>
                     </div>
                 </div>
@@ -215,11 +201,9 @@ export default function FortuneWheel() {
                     {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
                         <div
                             key={i}
-                            className="w-2.5 h-2.5 rounded-full transition-all"
-                            style={{
-                                background: i < spinsLeft ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'rgba(255,255,255,0.1)',
-                                boxShadow: i < spinsLeft ? '0 0 8px rgba(168,85,247,0.5)' : 'none',
-                            }}
+                            className={`w-2.5 h-2.5 rounded-full transition-all ${
+                                i < spinsLeft ? 'bg-primary-gradient shadow-primary-glow' : 'bg-white/10'
+                            }`}
                         />
                     ))}
                 </div>
@@ -230,19 +214,12 @@ export default function FortuneWheel() {
                 <button
                     onClick={spin}
                     disabled={isSpinning || spinsLeft <= 0}
-                    className="w-full py-4 rounded-2xl text-white font-bold text-lg cursor-pointer border-0 transition-all duration-300"
-                    style={{
-                        background: isSpinning
-                            ? 'rgba(255,255,255,0.05)'
-                            : spinsLeft <= 0
-                                ? 'rgba(255,255,255,0.03)'
-                                : 'linear-gradient(135deg, #a855f7, #ec4899)',
-                        boxShadow: isSpinning || spinsLeft <= 0
-                            ? 'none'
-                            : '0 0 30px rgba(168,85,247,0.3), 0 0 60px rgba(168,85,247,0.1)',
-                        opacity: isSpinning || spinsLeft <= 0 ? 0.5 : 1,
-                        cursor: isSpinning || spinsLeft <= 0 ? 'not-allowed' : 'pointer',
-                    }}
+                    className={`w-full py-4 rounded-2xl text-white font-bold text-lg cursor-pointer transition-all duration-300 ${
+                        isSpinning ? 'bg-white/5 opacity-50 cursor-not-allowed' :
+                        spinsLeft <= 0 ? 'bg-white/10 opacity-50 cursor-not-allowed' :
+                        'bg-primary-gradient shadow-[0_0_30_rgba(168,85,247,0.3),0_0_60_rgba(168,85,247,0.1)] hover:opacity-90'
+                    }`}
+                    title={isSpinning ? "Колесо крутится" : spinsLeft <= 0 ? "Приходите завтра" : "Крутить бесплатно"}
                 >
                     {isSpinning ? '🎰 Крутится...' : spinsLeft <= 0 ? 'Приходите завтра!' : '🎰 Крутить Бесплатно'}
                 </button>
@@ -251,6 +228,7 @@ export default function FortuneWheel() {
                     <button
                         onClick={resetSpins}
                         className="text-[10px] text-white/10 hover:text-white/30 transition-colors uppercase tracking-widest bg-transparent border-0 cursor-pointer pt-4"
+                        title="Сбросить попытки (для разработчиков)"
                     >
                         [ Разработчик: Сбросить попытки ]
                     </button>
@@ -264,31 +242,37 @@ export default function FortuneWheel() {
 
             {/* ======== PRIZE MODAL ======== */}
             {showModal && prize && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
-                    <div className="relative max-w-sm w-full rounded-3xl p-8 text-center" style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(168,85,247,0.2)', boxShadow: '0 0 60px rgba(168,85,247,0.15)' }}>
-                        <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-white/30 hover:text-white transition cursor-pointer bg-transparent border-0">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <div className="relative max-w-sm w-full rounded-3xl p-8 text-center bg-[#0a0a0ab2] border border-[#a855f720] shadow-[0_0_60px_rgba(168,85,247,0.15)]">
+                        <button 
+                            onClick={() => setShowModal(false)} 
+                            className="absolute top-4 right-4 text-white/30 hover:text-white transition cursor-pointer bg-transparent border-0"
+                            title="Закрыть"
+                            aria-label="Закрыть"
+                        >
                             <X className="w-5 h-5" />
                         </button>
 
-                        {/* Prize icon */}
                         <div className="text-6xl mb-4">{prize.icon}</div>
 
-                        {/* Title */}
                         <h3 className="text-2xl font-extrabold text-white mb-2">
                             {prize.value === 'retry' ? 'Не повезло!' : 'Поздравляем! 🎉'}
                         </h3>
 
-                        {/* Prize name */}
-                        <div className="text-lg font-bold mb-3" style={{ color: prize.color }}>
+                        <div className="text-lg font-bold mb-3" style={{ color: prize.color } as React.CSSProperties}>
                             {prize.label}
                         </div>
 
-                        {/* Description */}
                         <p className="text-white/50 text-sm mb-6">{prize.description}</p>
 
-                        {/* Prize value highlight */}
                         {prize.value !== 'retry' && (
-                            <div className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl mb-6" style={{ background: `${prize.color}15`, border: `1px solid ${prize.color}30` }}>
+                            <div 
+                                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl mb-6 border"
+                                style={{ 
+                                    backgroundColor: `${prize.color}15`, 
+                                    borderColor: `${prize.color}30` 
+                                } as React.CSSProperties}
+                            >
                                 {prize.value.endsWith('pp') ? (
                                     <Coins className="w-5 h-5 text-yellow-400" />
                                 ) : prize.value === 'coffee' ? (
@@ -300,19 +284,19 @@ export default function FortuneWheel() {
                             </div>
                         )}
 
-                        {/* Close button */}
                         <button
                             onClick={() => setShowModal(false)}
-                            className="w-full py-3 rounded-xl text-white font-semibold cursor-pointer border-0"
-                            style={{
-                                background: prize.value === 'retry' ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, ${prize.color}, ${prize.color}cc)`,
-                                boxShadow: prize.value === 'retry' ? 'none' : `0 0 20px ${prize.color}30`,
-                            }}
+                            className={`w-full py-3 rounded-xl text-white font-semibold cursor-pointer border-0 transition-opacity hover:opacity-90 ${
+                                prize.value === 'retry' ? 'bg-white/5 shadow-none' : ''
+                            }`}
+                            style={prize.value !== 'retry' ? {
+                                background: `linear-gradient(135deg, ${prize.color}, ${prize.color}cc)`,
+                                boxShadow: `0 0 20px ${prize.color}30`,
+                            } as React.CSSProperties : {}}
                         >
                             {prize.value === 'retry' ? 'Закрыть' : 'Забрать приз!'}
                         </button>
 
-                        {/* Remaining spins */}
                         <p className="text-xs text-white/30 mt-4">
                             Осталось попыток: {spinsLeft}
                         </p>

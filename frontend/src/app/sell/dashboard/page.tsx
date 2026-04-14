@@ -101,8 +101,7 @@ export default function SellerDashboard() {
                 </div>
                 <button 
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="px-6 py-3 rounded-xl text-white font-semibold flex items-center gap-2 border-0 cursor-pointer"
-                    style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}>
+                    className="px-6 py-3 rounded-xl text-white font-semibold flex items-center gap-2 border-0 cursor-pointer bg-gradient-to-br from-purple-500 to-pink-500 hover:opacity-90 transition-opacity">
                     <Package className="w-5 h-5" /> Добавить Товар
                 </button>
             </div>
@@ -117,22 +116,22 @@ export default function SellerDashboard() {
                         </div>
                         <form onSubmit={handleCreateOffer} className="space-y-4">
                             <div>
-                                <label className="block text-sm text-white/50 mb-1">Название</label>
-                                <input type="text" required value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-purple-500" placeholder="Напр: Подписка Netflix Premium" />
+                                <label htmlFor="offer-title" className="block text-sm text-white/50 mb-1">Название</label>
+                                <input id="offer-title" type="text" required value={newOffer.title} onChange={e => setNewOffer({...newOffer, title: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-purple-500" placeholder="Напр: Подписка Netflix Premium" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-white/50 mb-1">Цена ($)</label>
-                                    <input type="number" step="0.01" required value={newOffer.price} onChange={e => setNewOffer({...newOffer, price: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" />
+                                    <label htmlFor="offer-price" className="block text-sm text-white/50 mb-1">Цена ($)</label>
+                                    <input id="offer-price" type="number" step="0.01" required value={newOffer.price} onChange={e => setNewOffer({...newOffer, price: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-white/50 mb-1">Период действия (дни)</label>
-                                    <input type="number" required value={newOffer.periodDays} onChange={e => setNewOffer({...newOffer, periodDays: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" />
+                                    <label htmlFor="offer-period" className="block text-sm text-white/50 mb-1">Период действия (дни)</label>
+                                    <input id="offer-period" type="number" required value={newOffer.periodDays} onChange={e => setNewOffer({...newOffer, periodDays: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm text-white/50 mb-1">Категория</label>
-                                <select value={newOffer.category} onChange={e => setNewOffer({...newOffer, category: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-[#1a1f2e] border border-white/10 text-white outline-none">
+                                <label htmlFor="offer-category" className="block text-sm text-white/50 mb-1">Категория</label>
+                                <select id="offer-category" value={newOffer.category} onChange={e => setNewOffer({...newOffer, category: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-[#1a1f2e] border border-white/10 text-white outline-none">
                                     <option value="SUBSCRIPTIONS">Подписки</option>
                                     <option value="RESTAURANTS">Рестораны и Кафе</option>
                                     <option value="GAMES">Игры</option>
@@ -142,7 +141,7 @@ export default function SellerDashboard() {
                             
                             {/* Geofencing Fields */}
                             <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                                <h3 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">📍 Геолокация (для функции "Рядом со мной")</h3>
+                                <h3 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">📍 Геолокация (для функции &quot;Рядом со мной&quot;)</h3>
                                 <div className="grid grid-cols-2 gap-2 mb-3">
                                     <input type="number" step="any" placeholder="Широта (Lat)" value={newOffer.latitude || ''} onChange={e => setNewOffer({...newOffer, latitude: e.target.value ? Number(e.target.value) : null})} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white" />
                                     <input type="number" step="any" placeholder="Долгота (Lng)" value={newOffer.longitude || ''} onChange={e => setNewOffer({...newOffer, longitude: e.target.value ? Number(e.target.value) : null})} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white" />
@@ -158,10 +157,10 @@ export default function SellerDashboard() {
                                 <textarea value={newOffer.description} onChange={e => setNewOffer({...newOffer, description: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none h-24" placeholder="Подробности..."></textarea>
                             </div>
                             <div>
-                                <label className="block text-sm text-white/50 mb-1">Скрытые данные (Ключ/Ссылка)</label>
-                                <input type="text" required value={newOffer.hiddenData} onChange={e => setNewOffer({...newOffer, hiddenData: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" placeholder="То, что увидит покупатель после оплаты" />
+                                <label htmlFor="offer-hidden" className="block text-sm text-white/50 mb-1">Скрытые данные (Ключ/Ссылка)</label>
+                                <input id="offer-hidden" type="text" required value={newOffer.hiddenData} onChange={e => setNewOffer({...newOffer, hiddenData: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" placeholder="То, что увидит покупатель после оплаты" />
                             </div>
-                            <button type="submit" className="w-full py-4 rounded-xl text-white font-bold cursor-pointer border-0 mt-4" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}>Создать Оффер</button>
+                            <button type="submit" className="w-full py-4 rounded-xl text-white font-bold cursor-pointer border-0 mt-4 bg-gradient-to-br from-purple-500 to-pink-500 hover:opacity-90 transition-opacity">Создать Оффер</button>
                         </form>
                     </div>
                 </div>

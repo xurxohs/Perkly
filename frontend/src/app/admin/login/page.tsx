@@ -23,8 +23,9 @@ export default function AdminLogin() {
         try {
             await login(email, password);
             router.push('/admin'); // После логина перекидывает в дашборд (layout проверит роль)
-        } catch (err: any) {
-            setError(err.message || 'Ошибка входа');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Ошибка входа';
+            setError(message);
         } finally {
             setIsLoading(false);
         }
@@ -70,6 +71,7 @@ export default function AdminLogin() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all"
                                     placeholder="admin@perkly.com"
+                                    title="E-mail администратора"
                                 />
                             </div>
                         </div>
@@ -87,6 +89,7 @@ export default function AdminLogin() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all"
                                     placeholder="••••••••"
+                                    title="Пароль администратора"
                                 />
                             </div>
                         </div>
@@ -94,12 +97,9 @@ export default function AdminLogin() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className={`w-full relative group overflow-hidden rounded-2xl py-4 flex items-center justify-center gap-2 font-bold text-white transition-all duration-300 border-0 cursor-pointer ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'
+                            className={`w-full relative group overflow-hidden rounded-2xl py-4 flex items-center justify-center gap-2 font-bold text-white transition-all duration-300 border-0 cursor-pointer bg-gradient-to-br from-red-500/80 to-orange-500/80 shadow-[0_10px_30px_rgba(239,68,68,0.2)] inset-shadow-white/20 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'
                                 }`}
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(239,68,68,0.8) 0%, rgba(249,115,22,0.8) 100%)',
-                                boxShadow: '0 10px 30px rgba(239,68,68,0.2), inset 0 2px 0 rgba(255,255,255,0.2)'
-                            }}
+                            title="Войти в админ-панель"
                         >
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />

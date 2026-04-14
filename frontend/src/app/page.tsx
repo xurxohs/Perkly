@@ -82,6 +82,30 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ======== TOPKA BANNER ======== */}
+      <section className="w-full mb-20">
+        <Link href="/feed" className="block no-underline group">
+          <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 topka-banner">
+            <div className="absolute inset-0 topka-banner-bg" />
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full topka-banner-glow" />
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3 topka-badge">
+                  <Flame className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Новое</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">🔥 Топка</h2>
+                <p className="text-white/50 text-sm max-w-sm">Листай горячие предложения как в TikTok — свайпай и хватай скидки!</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 text-white/60 group-hover:text-white transition-colors">
+                <span className="text-sm font-medium">Открыть</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* ======== FLASH DROPS ======== */}
       <section className="w-full mb-20 relative">
         {/* Warm ambient glow behind section */}

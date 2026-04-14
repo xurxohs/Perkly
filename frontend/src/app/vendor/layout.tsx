@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     LayoutDashboard,
     PackageSearch,
@@ -12,7 +13,8 @@ import {
     Settings,
     LogOut,
     ChevronRight,
-    Sparkles
+    Sparkles,
+    Menu
 } from 'lucide-react';
 
 export default function VendorLayout({
@@ -52,18 +54,12 @@ export default function VendorLayout({
 
             {/* Sidebar - Liquid Glass Style */}
             <aside
-                className={`${isSidebarOpen ? 'w-72' : 'w-24'} transition-all duration-500 ease-in-out relative z-20 flex flex-col`}
-                style={{
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    backdropFilter: 'blur(30px)',
-                    borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-                    boxShadow: '10px 0 30px rgba(0,0,0,0.5)'
-                }}
+                className={`${isSidebarOpen ? 'w-72' : 'w-24'} transition-all duration-500 ease-in-out relative z-20 flex flex-col bg-white/5 backdrop-blur-[30px] border-r border-white/5 shadow-2xl`}
             >
                 {/* Logo Area */}
                 <div className="p-8 flex items-center justify-between border-b border-white/5">
-                    <Link href="/" className="flex items-center gap-3 no-underline group">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105" style={{ background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)', boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)' }}>
+                    <Link href="/" className="flex items-center gap-3 no-underline group" title="На главную">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 bg-primary-gradient shadow-primary-glow">
                             <Sparkles className="w-5 h-5 text-white" />
                         </div>
                         {isSidebarOpen && (
@@ -73,7 +69,30 @@ export default function VendorLayout({
                             </div>
                         )}
                     </Link>
+                    {isSidebarOpen && (
+                        <button 
+                            onClick={() => setIsSidebarOpen(false)} 
+                            className="p-2 text-white/40 hover:text-white transition-colors bg-transparent border-0 cursor-pointer"
+                            title="Свернуть меню"
+                            aria-label="Свернуть меню"
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
+
+                {!isSidebarOpen && (
+                    <div className="flex justify-center p-4">
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)} 
+                            className="p-2 text-white/40 hover:text-white transition-colors bg-white/5 rounded-lg border-0 cursor-pointer"
+                            title="Развернуть меню"
+                            aria-label="Развернуть меню"
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
 
                 {/* Navigation Area */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto mt-4">
@@ -83,11 +102,7 @@ export default function VendorLayout({
                             <Link
                                 key={item.name}
                                 href={item.path}
-                                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 no-underline group ${isActive ? 'text-white' : 'text-white/60 hover:text-white'}`}
-                                style={{
-                                    background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
-                                    boxShadow: isActive ? 'inset 0 0 0 1px rgba(168,85,247,0.3), 0 4px 20px rgba(0,0,0,0.2)' : 'none',
-                                }}
+                                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 no-underline group ${isActive ? 'text-white bg-white/10 shadow-inner-border' : 'text-white/60 hover:text-white'}`}
                             >
                                 <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-purple-400' : 'group-hover:text-white/90'}`} />
                                 {isSidebarOpen && (
@@ -105,7 +120,8 @@ export default function VendorLayout({
                 <div className="p-4 border-t border-white/5">
                     <button
                         onClick={logout}
-                        className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-white/60 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 group"
+                        className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-white/60 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 group border-0 bg-transparent cursor-pointer"
+                        title="Выйти из аккаунта"
                     >
                         <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                         {isSidebarOpen && <span className="font-medium">Выйти</span>}
@@ -119,8 +135,13 @@ export default function VendorLayout({
                     {/* Minimalist Top Header info */}
                     <header className="flex justify-end items-center mb-10 pb-6 border-b border-white/5">
                         <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 p-[2px]">
-                                <img src={user.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user.displayName} alt="Vendor" className="w-full h-full rounded-full object-cover bg-[#0a0f1c]" />
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 p-[2px] relative overflow-hidden">
+                                <Image 
+                                    src={user.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user.displayName} 
+                                    alt="Vendor" 
+                                    fill 
+                                    className="rounded-full object-cover bg-[#0a0f1c]" 
+                                />
                             </div>
                             <span className="font-medium text-sm text-white/90">{user.displayName}</span>
                         </div>

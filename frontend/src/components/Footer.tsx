@@ -10,29 +10,43 @@ export function Footer() {
     if (isTMA) return null;
 
     return (
-        <footer className="w-full mt-auto relative" style={{ background: 'rgba(10,10,10,0.8)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <footer className="w-full mt-auto relative bg-[#0a0a0acc] border-t border-white/5">
             {/* Ambient background glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)' }} />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
 
             <div className="max-w-[1200px] mx-auto px-6 py-16">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 lg:gap-12 pb-12" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 lg:gap-12 pb-12 border-b border-white/5">
                     {/* Brand Col */}
                     <div className="col-span-1 md:col-span-1">
-                        <Link href="/" className="flex items-center gap-2 mb-6 no-underline inline-flex">
-                            <div className="w-8 h-8 rounded-full" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', boxShadow: '0 0 15px rgba(168,85,247,0.5)' }} />
-                            <span className="text-xl font-bold tracking-tight text-white">Perkly</span>
+                        <Link href="/" className="flex items-center gap-2 mb-6 no-underline inline-flex group">
+                            <div className="w-8 h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
+                            <span className="text-xl font-bold tracking-tight text-white group-hover:text-purple-400 transition-colors">Perkly</span>
                         </Link>
                         <p className="text-sm text-white/40 mb-6 leading-relaxed">
                             Премиальный маркетплейс цифровых услуг. Безопасные сделки, моментальная доставка и лучший кэшбек.
                         </p>
                         <div className="flex items-center gap-3">
-                            <a href="#" className="w-9 h-9 rounded-full flex items-center justify-center transition-colors" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)' }} onMouseOver={e => e.currentTarget.style.color = '#fff'} onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}>
+                            <a 
+                                href="#" 
+                                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-white/5 text-white/60 hover:text-white"
+                                aria-label="Instagram"
+                            >
                                 <Instagram className="w-4 h-4" />
                             </a>
-                            <a href="https://t.me/perkly_support" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full flex items-center justify-center transition-colors" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)' }} onMouseOver={e => e.currentTarget.style.color = '#fff'} onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}>
+                            <a 
+                                href="https://t.me/perkly_support" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-white/5 text-white/60 hover:text-white"
+                                aria-label="Telegram"
+                            >
                                 <MessageCircle className="w-4 h-4" />
                             </a>
-                            <a href="#" className="w-9 h-9 rounded-full flex items-center justify-center transition-colors" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)' }} onMouseOver={e => e.currentTarget.style.color = '#fff'} onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}>
+                            <a 
+                                href="#" 
+                                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-white/5 text-white/60 hover:text-white"
+                                aria-label="Twitter"
+                            >
                                 <Twitter className="w-4 h-4" />
                             </a>
                         </div>

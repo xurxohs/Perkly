@@ -36,11 +36,10 @@ export function Navbar() {
 
     return (
         <nav 
-            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-6 py-3 rounded-[2rem] flex items-center justify-between transition-all duration-300"
-            style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-6 py-3 rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
         >
             <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-                <div className="w-8 h-8 rounded-full" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', boxShadow: '0 0 15px rgba(168,85,247,0.5)' }} />
+                <div className="w-8 h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
                 <span className="text-xl font-bold tracking-tight text-white">Perkly</span>
             </Link>
 
@@ -54,8 +53,7 @@ export function Navbar() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Поиск купонов, подписок, товаров..."
-                        className="w-full pl-10 pr-4 py-2.5 rounded-full text-sm text-white placeholder-white/30 outline-none"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-full text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
                     />
                 </form>
             </div>
@@ -63,6 +61,7 @@ export function Navbar() {
             {/* Nav Links */}
             <div className="hidden lg:flex items-center gap-5 text-sm font-medium text-white/50 shrink-0">
                 <Link href="/catalog" className="hover:text-white transition-colors no-underline text-inherit">Каталог</Link>
+                <Link href="/feed" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5">🔥 Топка</Link>
                 <Link href="/coupons" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5"><Tag className="w-4 h-4" /> Купоны</Link>
                 <Link href="/pricing" className="hover:text-white transition-colors no-underline text-inherit">Тарифы ✨</Link>
                 <Link href="/sell" className="hover:text-white transition-colors no-underline text-inherit">Продавать</Link>
@@ -102,7 +101,7 @@ export function Navbar() {
                                     style={{
                                         filter: `drop-shadow(${tierBadge.shadow})`,
                                         color: tierBadge.color
-                                    }}
+                                    } as React.CSSProperties}
                                 />
                             )}
                         </Link>
@@ -122,7 +121,7 @@ export function Navbar() {
                         <Link href="/login" className="px-4 py-2 text-sm font-medium rounded-full border border-white/10 hover:bg-white/5 transition flex items-center text-white no-underline">
                             Войти
                         </Link>
-                        <Link href="/register" className="px-4 py-2 text-sm font-medium rounded-full bg-white text-black hover:bg-white/90 transition flex items-center no-underline" style={{ boxShadow: '0 0 20px rgba(255,255,255,0.15)' }}>
+                        <Link href="/register" className="px-4 py-2 text-sm font-medium rounded-full bg-white text-black hover:bg-white/90 transition flex items-center no-underline shadow-white-glow">
                             Начать
                         </Link>
                     </>
@@ -131,7 +130,7 @@ export function Navbar() {
 
             {/* Mobile search overlay */}
             {searchOpen && (
-                <div className="absolute top-full left-0 w-full p-4 md:hidden" style={{ background: 'rgba(0,0,0,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="absolute top-full left-0 w-full p-4 md:hidden bg-black/95 border-b border-white/[0.06]">
                     <form onSubmit={handleSearch} className="relative">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                         <input
@@ -139,8 +138,7 @@ export function Navbar() {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Поиск купонов, подписок, товаров..."
-                            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
                             autoFocus
                         />
                     </form>

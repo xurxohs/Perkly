@@ -32,6 +32,29 @@ model User {
   squadId             String?
   squad               Squad?        @relation("UserSquad", fields: [squadId], references: [id])
   hasSquadReward      Boolean       @default(false)
+  organizedEvents     Event[]       @relation("OrganizerEvents")
+}
+
+model Event {
+  id                String   @id @default(uuid())
+  title             String
+  category          String   // Festival, Exhibition, Party, etc.
+  description       String   // Short 2-3 lines
+  fullDescription   String?  // Long format blog text
+  date              DateTime
+  startTime         String   // e.g. "19:00"
+  ageLimit          String   @default("0+")
+  location          String   // Venue name
+  address           String
+  latitude          Float?
+  longitude         Float?
+  imageUrl          String
+  viewersCount      Int      @default(0)
+  participantsCount Int      @default(0)
+  organizerId       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  organizer         User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
 }
 
 model Squad {

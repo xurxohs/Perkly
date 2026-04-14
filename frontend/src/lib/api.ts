@@ -106,6 +106,16 @@ export interface SellerStats {
     recentTransactions: Transaction[];
 }
 
+export interface AnalyticsEvent {
+    id: string;
+    eventType: string;
+    userId: string | null;
+    sessionId: string | null;
+    offerId: string | null;
+    metadata: string | null;
+    createdAt: string;
+}
+
 export interface AdminStats {
     usersCount: number;
     newUsersToday: number;
@@ -115,6 +125,27 @@ export interface AdminStats {
     openDisputesCount: number;
     recentTransactions: Transaction[];
     recentUsers: User[];
+}
+
+export interface Event {
+    id: string;
+    title: string;
+    category: string;
+    description: string;
+    fullDescription: string | null;
+    date: string;
+    startTime: string;
+    ageLimit: string;
+    location: string;
+    address: string;
+    latitude: number | null;
+    longitude: number | null;
+    imageUrl: string;
+    viewersCount: number;
+    participantsCount: number;
+    organizerId: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 
@@ -313,7 +344,7 @@ export const analyticsApi = {
         if (params?.userId) urlParams.append('userId', params.userId);
         if (params?.skip) urlParams.append('skip', String(params.skip));
         if (params?.take) urlParams.append('take', String(params.take));
-        return request<any>(`/analytics/events?${urlParams.toString()}`);
+        return request<{ data: AnalyticsEvent[]; total: number }>(`/analytics/events?${urlParams.toString()}`);
     }
 };
 
@@ -387,6 +418,19 @@ export const squadsApi = {
         request<Squad | null>('/squads/me'),
 };
 
+// ===== EVENTS =====
+export const eventsApi = {
+    list: (params: { skip?: number; take?: number; category?: string; search?: string } = {}) => {
+        const urlParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, val]) => {
+            if (val !== undefined && val !== '') urlParams.set(key, String(val));
+        });
+        return request<{ data: Event[]; total: number }>(`/events?${urlParams.toString()}`);
+    },
+    getById: (id: string) =>
+        request<Event>(`/events/${id}`),
+};
+
 
 const api = {
     auth: authApi,
@@ -400,6 +444,7 @@ const api = {
     seller: sellerApi,
     analytics: analyticsApi,
     squads: squadsApi,
+    events: eventsApi,
     // Add generic request methods
     get: <T = unknown>(url: string) => request<T>(url),
     post: <T = unknown>(url: string, body: unknown) => request<T>(url, { method: 'POST', body: JSON.stringify(body) }),

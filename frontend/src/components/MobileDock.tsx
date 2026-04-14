@@ -1,19 +1,28 @@
 'use client';
 
-import { Home, Tag, ShoppingBag, ShoppingCart, User } from 'lucide-react';
+import { Home, Tag, ShoppingBag, ShoppingCart, User, Flame, Map, Ticket, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCart } from '@/lib/CartContext';
 import { useTelegram } from '@/hooks/useTelegram';
 
-const dockItems = [
+const marketplaceDockItems = [
     { href: '/', icon: Home, label: 'Главная' },
     { href: '/coupons', icon: Tag, label: 'Купоны' },
     { href: '/catalog', icon: ShoppingBag, label: 'Каталог' },
     { href: '/cart', icon: ShoppingCart, label: 'Корзина' },
     { href: '/profile', icon: User, label: 'Профиль' },
 ];
+
+const topkaDockItems = [
+    { href: '/map', icon: Map, label: 'Карта' },
+    { href: '/feed', icon: Flame, label: 'Топка' },
+    { href: '/plans', icon: Ticket, label: 'Планы' },
+    { href: '/search', icon: Search, label: 'Поиск' },
+];
+
+const TOPKA_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
 
 // Spring physics simulation
 function useSpring(target: number, config = { stiffness: 400, damping: 28, mass: 1 }) {
@@ -174,8 +183,11 @@ export function MobileDock() {
     const pathname = usePathname();
     const { hapticImpact } = useTelegram();
 
+    const isTopka = TOPKA_PAGES.some(p => pathname.startsWith(p));
+    const currentItems = isTopka ? topkaDockItems : marketplaceDockItems;
+
     const getActiveHref = () => {
-        for (const item of dockItems) {
+        for (const item of currentItems) {
             if (item.href === '/' && pathname === '/') return '/';
             if (item.href !== '/' && pathname.startsWith(item.href)) return item.href;
         }
@@ -195,9 +207,10 @@ export function MobileDock() {
                 <div
                     className="mx-3 mb-3 px-2 py-2.5 rounded-[36px] flex items-center justify-around gap-1 w-full max-w-[420px] liquid-glass-dock"
                 >
-                    {dockItems.map((item) => (
+                    {currentItems.map((item) => (
                         <DockIcon
                             key={item.href}
+                            // @ts-ignore
                             item={item}
                             isActive={activeHref === item.href}
                             onTap={() => hapticImpact('light')}

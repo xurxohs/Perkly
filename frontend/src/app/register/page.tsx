@@ -31,8 +31,9 @@ export default function RegisterPage() {
         try {
             await register(formData.email, formData.passwordHash, formData.displayName);
             router.push("/");
-        } catch (err: any) {
-            setError(err.message || "Ошибка регистрации. Возможно, email уже занят.");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Ошибка регистрации. Возможно, email уже занят.";
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -79,7 +80,7 @@ export default function RegisterPage() {
                 <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-orange-500 to-rose-500 rounded-full blur-3xl opacity-30 z-0" />
 
                 <div className="z-10 text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #0088cc, #00b4ff)' }}>
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 bg-[#0088cc] shadow-[0_0_20px_rgba(0,136,204,0.3)]">
                         <Send className="w-7 h-7 text-white" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Создать аккаунт</h1>
@@ -92,12 +93,7 @@ export default function RegisterPage() {
                         <button
                             onClick={handleTelegramLogin}
                             disabled={loading}
-                            className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-base transition-all cursor-pointer border-0"
-                            style={{
-                                background: 'linear-gradient(135deg, #0088cc, #00b4ff)',
-                                boxShadow: '0 0 30px rgba(0,136,204,0.35)',
-                                opacity: loading ? 0.7 : 1
-                            }}
+                            className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-base transition-all cursor-pointer border-0 bg-[#0088cc] shadow-[0_0_30px_rgba(0,136,204,0.35)] disabled:opacity-70"
                         >
                             <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
                                 <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.869 4.326-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.829.941z" />
@@ -111,7 +107,7 @@ export default function RegisterPage() {
                 )}
 
                 {tgStep === 'waiting' && (
-                    <div className="z-10 mb-6 rounded-2xl p-5 text-center" style={{ background: 'rgba(0,136,204,0.08)', border: '1px solid rgba(0,136,204,0.2)' }}>
+                    <div className="z-10 mb-6 rounded-2xl p-5 text-center bg-blue-500/10 border border-blue-500/20">
                         <Loader2 className="w-8 h-8 text-blue-400 mx-auto mb-3 animate-spin" />
                         <p className="text-white font-semibold mb-1">Подтвердите в Telegram</p>
                         <p className="text-white/40 text-sm mb-4">
@@ -130,7 +126,7 @@ export default function RegisterPage() {
                 )}
 
                 {tgStep === 'done' && (
-                    <div className="z-10 mb-6 rounded-2xl p-5 text-center" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                    <div className="z-10 mb-6 rounded-2xl p-5 text-center bg-green-500/10 border border-green-500/20">
                         <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                         <p className="text-green-400 font-bold text-lg">Аккаунт создан!</p>
                         <p className="text-white/40 text-sm mt-1">Перенаправляем на главную...</p>

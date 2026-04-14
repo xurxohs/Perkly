@@ -4,7 +4,12 @@ import { OfferCategory, Role, Tier } from '../src/common/enums';
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('Clearing existing offers...');
+    console.log('Clearing existing records to avoid foreign key errors...');
+    await prisma.dispute.deleteMany();
+    await prisma.message.deleteMany();
+    await prisma.chatRoom.deleteMany();
+    await prisma.review.deleteMany();
+    await prisma.transaction.deleteMany();
     await prisma.offer.deleteMany();
 
     console.log('Ensuring System User exists...');

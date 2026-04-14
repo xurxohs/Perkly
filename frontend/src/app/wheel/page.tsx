@@ -13,16 +13,16 @@ export default function WheelPage() {
             {/* Header */}
             <div className="text-center mb-10 relative">
                 {/* Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)' }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none wheel-glow" />
 
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 wheel-badge">
                     <Sparkles className="w-4 h-4 text-yellow-400" />
                     <span className="text-sm font-medium text-yellow-300">Испытайте удачу</span>
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
                     Колесо Фортуны<br />
-                    <span style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Perkly</span>
+                    <span className="text-gradient">Perkly</span>
                 </h1>
 
                 <p className="text-white/40 text-base max-w-md mx-auto leading-relaxed">
@@ -34,7 +34,7 @@ export default function WheelPage() {
             <FortuneWheel />
 
             {/* Prizes table */}
-            <div className="w-full mt-16 rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="w-full mt-16 rounded-2xl p-6 glass-card">
                 <h3 className="text-lg font-bold text-white mb-4">Возможные призы</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
@@ -47,7 +47,7 @@ export default function WheelPage() {
                         { icon: <Crown className="w-6 h-6 text-yellow-400" />, label: '100 Points', rarity: 'Легенда' },
                         { icon: <RefreshCcw className="w-6 h-6 text-slate-400" />, label: 'Попробуй ещё', rarity: 'Редко' },
                     ].map((p, i) => (
-                        <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5">
                             <div className="flex items-center justify-center w-8 h-8">{p.icon}</div>
                             <div>
                                 <div className="text-sm font-semibold text-white">{p.label}</div>

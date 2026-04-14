@@ -3,10 +3,9 @@ import Script from 'next/script';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
-import { Navbar } from '@/components/Navbar';
-import { MobileDock } from '@/components/MobileDock';
-import { Footer } from '@/components/Footer';
+import { LayoutShell } from '@/components/LayoutShell';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
+import { OnboardingProvider } from '@/components/OnboardingProvider';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' });
 
@@ -40,15 +39,15 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased text-white min-h-screen flex flex-col bg-black`}>
         <Providers>
           <AnalyticsTracker />
-          <Navbar />
-          <main className="flex-1 mt-16 pb-28 md:pb-0 relative overflow-x-hidden">
-            {children}
-          </main>
-          <Footer />
-          <MobileDock />
+          <OnboardingProvider>
+            <LayoutShell>
+              {children}
+            </LayoutShell>
+          </OnboardingProvider>
         </Providers>
       </body>
     </html>
   );
 }
+
 

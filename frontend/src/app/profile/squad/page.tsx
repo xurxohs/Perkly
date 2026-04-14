@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { Users, UserPlus, Share2, Trophy, ArrowRight, CheckCircle2, Loader2, Copy, ExternalLink, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import { Users, UserPlus, Share2, Trophy, ArrowRight, CheckCircle2, Loader2, Copy, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { squadsApi, Squad } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function SquadContent() {
     const { user, refreshUser } = useAuth();
@@ -20,6 +21,40 @@ function SquadContent() {
     const [actionLoading, setActionLoading] = useState(false);
     const [squadName, setSquadName] = useState('');
     const [copied, setCopied] = useState(false);
+
+    const handleJoinSquad = useCallback(async (code: string) => {
+        setActionLoading(true);
+        try {
+            const joinedSquad = await squadsApi.join(code);
+            setSquad(joinedSquad);
+            hapticNotification('success');
+            await refreshUser();
+            router.replace('/profile/squad');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Ошибка при вступлении в сквад';
+            alert(message);
+            hapticNotification('error');
+        } finally {
+            setActionLoading(false);
+        }
+    }, [hapticNotification, refreshUser, router]);
+
+    const handleCreateSquad = async () => {
+        if (!squadName.trim()) return;
+        setActionLoading(true);
+        try {
+            const newSquad = await squadsApi.create(squadName);
+            setSquad(newSquad);
+            hapticNotification('success');
+            await refreshUser();
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Ошибка при создании сквада';
+            alert(message);
+            hapticNotification('error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     const fetchSquad = async () => {
         try {
@@ -40,39 +75,7 @@ function SquadContent() {
         if (joinCode && !loading && !squad) {
             handleJoinSquad(joinCode);
         }
-    }, [joinCode, loading, squad]);
-
-    const handleCreateSquad = async () => {
-        if (!squadName.trim()) return;
-        setActionLoading(true);
-        try {
-            const newSquad = await squadsApi.create(squadName);
-            setSquad(newSquad);
-            hapticNotification('success');
-            await refreshUser();
-        } catch (err: any) {
-            alert(err.message || 'Ошибка при создании сквада');
-            hapticNotification('error');
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleJoinSquad = async (code: string) => {
-        setActionLoading(true);
-        try {
-            const joinedSquad = await squadsApi.join(code);
-            setSquad(joinedSquad);
-            hapticNotification('success');
-            await refreshUser();
-            router.replace('/profile/squad');
-        } catch (err: any) {
-            alert(err.message || 'Ошибка при вступлении в сквад');
-            hapticNotification('error');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+    }, [joinCode, loading, squad, handleJoinSquad]);
 
     const copyInviteLink = () => {
         if (!squad) return;
@@ -97,7 +100,7 @@ function SquadContent() {
         return (
             <div className="max-w-2xl mx-auto px-6 py-12">
                 <div className="text-center mb-12">
-                    <div className="w-20 h-20 bg-purple-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+                    <div className="w-20 h-20 bg-purple-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-primary-glow">
                         <Users className="w-10 h-10 text-purple-400" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-white mb-4">Командные Цели ✨</h1>
@@ -123,7 +126,8 @@ function SquadContent() {
                             <button
                                 onClick={handleCreateSquad}
                                 disabled={actionLoading || !squadName.trim()}
-                                className="w-full py-4 rounded-xl font-extrabold text-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+                                className="w-full py-4 rounded-xl font-extrabold text-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 bg-primary-gradient text-white shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 border-0 cursor-pointer"
+                                title="Создать сквад"
                             >
                                 {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : '🚀 Создать Сквад'}
                             </button>
@@ -172,6 +176,8 @@ function SquadContent() {
                             <button
                                 onClick={copyInviteLink}
                                 className={`p-4 rounded-xl border-0 cursor-pointer transition-all ${copied ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'}`}
+                                title="Копировать код"
+                                aria-label="Копировать код"
                             >
                                 {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                             </button>
@@ -179,6 +185,7 @@ function SquadContent() {
                         <button
                             onClick={copyInviteLink}
                             className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider mt-2 bg-transparent border-0 cursor-pointer"
+                            title="Поделиться ссылкой"
                         >
                             <Share2 className="w-3.5 h-3.5" /> Поделиться ссылкой
                         </button>
@@ -203,8 +210,8 @@ function SquadContent() {
 
                 <div className="relative h-6 bg-white/[0.03] rounded-full overflow-hidden border border-white/10 p-1 mb-8 shadow-inner">
                     <div
-                        className="h-full bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(168,85,247,0.5)]"
-                        style={{ width: `${progressPercentage}%` }}
+                        className="h-full bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(168,85,247,0.5)] [width:var(--progress)]"
+                        style={{ '--progress': `${progressPercentage}%` } as React.CSSProperties}
                     />
                     {isGoalReached && (
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -253,9 +260,9 @@ function SquadContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {squad.members.map((member) => (
                         <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] group hover:border-purple-500/30 transition-all cursor-default">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110 relative overflow-hidden">
                                 {member.avatarUrl ? (
-                                    <img src={member.avatarUrl} alt={member.displayName || 'Avatar'} className="w-full h-full rounded-xl object-cover" />
+                                    <Image src={member.avatarUrl} alt={member.displayName || 'Avatar'} fill className="object-cover" />
                                 ) : (
                                     <div className="text-xl font-extrabold text-purple-400 capitalize">
                                         {(member.displayName || 'U')[0]}
@@ -276,6 +283,7 @@ function SquadContent() {
                         <button
                             onClick={copyInviteLink}
                             className="flex items-center gap-4 p-4 rounded-2xl bg-purple-500/5 border border-dashed border-purple-500/30 group hover:border-purple-400/50 hover:bg-purple-500/10 transition-all cursor-pointer"
+                            title="Пригласить друга"
                         >
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
                                 <UserPlus className="w-6 h-6 text-purple-400" />
