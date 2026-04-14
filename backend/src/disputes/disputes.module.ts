@@ -3,10 +3,9 @@ import { DisputesService } from './disputes.service';
 import { DisputesController } from './disputes.controller';
 
 import { PrismaModule } from '../prisma/prisma.module';
-import { BotModule } from '../bot/bot.module';
 
 @Module({
-  imports: [PrismaModule, BotModule],
+  imports: [PrismaModule],
   providers: [DisputesService],
   controllers: [DisputesController],
 })

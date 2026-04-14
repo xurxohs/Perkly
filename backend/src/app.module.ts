@@ -19,6 +19,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SquadsModule } from './squads/squads.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { SquadsModule } from './squads/squads.module';
     PaymentsModule,
     AnalyticsModule,
     SquadsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

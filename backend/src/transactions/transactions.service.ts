@@ -3,10 +3,12 @@ import {
   BadRequestException,
   NotFoundException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BotService } from '../bot/bot.service';
-import { Transaction, User } from '@prisma/client';
+import { Transaction } from '@prisma/client';
 import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
 
@@ -16,7 +18,9 @@ export class TransactionsService {
 
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => BotService))
     private botService: BotService,
+    @Inject(forwardRef(() => SquadsService))
     private squadsService: SquadsService,
   ) {}
 
@@ -26,12 +30,11 @@ export class TransactionsService {
     isGift = false,
   ): Promise<Transaction> {
     // Find offer
-    const offer = await this.prisma.offer.findUnique({
-      where: { id: offerId },
-    });
+    const offer = await this.prisma.offer.findUnique({ where: { id: offerId } });
     if (!offer) throw new NotFoundException('Offer not found');
-    if (!offer.isActive)
+    if (!offer.isActive) {
       throw new BadRequestException('Offer is no longer active');
+    }
 
     // Prevent self-purchase
     if (offer.sellerId === buyerId) {
@@ -54,22 +57,25 @@ export class TransactionsService {
       });
 
       // Add reward points to buyer (1 point per unit, +15% if squad reward active)
-      const extraPoints = buyer.hasSquadReward ? Math.floor(offer.price * 0.15) : 0;
+      const extraPoints = buyer.hasSquadReward
+        ? Math.floor(offer.price * 0.15)
+        : 0;
       await tx.user.update({
         where: { id: buyerId },
-        data: { 
+        data: {
           rewardPoints: { increment: Math.floor(offer.price) + extraPoints },
-          ...(buyer.hasSquadReward ? { hasSquadReward: false } : {})
+          ...(buyer.hasSquadReward ? { hasSquadReward: false } : {}),
         },
       });
 
       // Calculate expiresAt if the offer has a period
-      const expiresAt = offer.periodDays > 0 
-        ? new Date(Date.now() + offer.periodDays * 24 * 60 * 60 * 1000)
-        : null;
+      const expiresAt =
+        offer.periodDays > 0
+          ? new Date(Date.now() + offer.periodDays * 24 * 60 * 60 * 1000)
+          : null;
 
       // Generate gift code if requested
-      const giftCode = isGift 
+      const giftCode = isGift
         ? Math.random().toString(36).substring(2, 10).toUpperCase()
         : null;
 
@@ -95,8 +101,13 @@ export class TransactionsService {
     const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
     const inlineKeyboard = {
       inline_keyboard: [
-        [{ text: '🔥 Открыть Заказ', web_app: { url: `${webAppUrl}/profile/orders` } }]
-      ]
+        [
+          {
+            text: '🔥 Открыть Заказ',
+            web_app: { url: `${webAppUrl}/profile/orders` },
+          },
+        ],
+      ],
     };
 
     // Try to notify the buyer via Telegram
@@ -110,7 +121,11 @@ export class TransactionsService {
         message += `\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
       }
       
-      await this.botService.sendTelegramNotification(buyer.telegramId, message, inlineKeyboard);
+      await this.botService.sendTelegramNotification(
+        buyer.telegramId,
+        message,
+        inlineKeyboard,
+      );
     }
 
     // Try to notify the seller via Telegram
@@ -120,8 +135,13 @@ export class TransactionsService {
     if (seller && seller.telegramId) {
       const sellerKeyboard = {
         inline_keyboard: [
-          [{ text: '📦 Управление Заказами', web_app: { url: `${webAppUrl}/vendor/orders` } }]
-        ]
+          [
+            {
+              text: '📦 Управление Заказами',
+              web_app: { url: `${webAppUrl}/vendor/orders` },
+            },
+          ],
+        ],
       };
       const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${offer.price}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
       await this.botService.sendTelegramNotification(
@@ -271,11 +291,20 @@ export class TransactionsService {
       const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
       const keyboard = {
         inline_keyboard: [
-          [{ text: '🔥 Посмотреть товар', web_app: { url: `${webAppUrl}/profile/orders` } }]
-        ]
+          [
+            {
+              text: '🔥 Посмотреть товар',
+              web_app: { url: `${webAppUrl}/profile/orders` },
+            },
+          ],
+        ],
       };
       const message = `🎁 *Подарок активирован!*\n\nВы получили "${updated.offer.title}".\n\n🔐 *Ваш товар:*\n\`${updated.offer.hiddenData}\``;
-      await this.botService.sendTelegramNotification(updated.buyer.telegramId, message, keyboard);
+      await this.botService.sendTelegramNotification(
+        updated.buyer.telegramId,
+        message,
+        keyboard,
+      );
     }
 
     return updated;

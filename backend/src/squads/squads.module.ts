@@ -1,13 +1,12 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { SquadsService } from './squads.service';
 import { SquadsController } from './squads.controller';
-import { PrismaService } from '../prisma/prisma.service';
-import { BotModule } from '../bot/bot.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [forwardRef(() => BotModule)],
+  imports: [PrismaModule],
   controllers: [SquadsController],
-  providers: [SquadsService, PrismaService],
+  providers: [SquadsService],
   exports: [SquadsService],
 })
 export class SquadsModule {}
