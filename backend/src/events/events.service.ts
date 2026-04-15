@@ -58,22 +58,30 @@ export class EventsService {
 
   // Helper for mock data generation or seeding
   async seedEvents(organizerId: string) {
-    const categories = ['Фестиваль', 'Выставка', 'Вечеринка', 'Концерт', 'Мастер-класс'];
+    const categories = [
+      'Фестиваль',
+      'Выставка',
+      'Вечеринка',
+      'Концерт',
+      'Мастер-класс',
+    ];
     const titles = [
       'Neon Summer Fest',
       'Art & Tech Exhibition',
       'Underground Techno Night',
       'Digital Marketing Summit',
-      'Wine & Jazz Evening'
+      'Wine & Jazz Evening',
     ];
-    
+
     for (let i = 0; i < titles.length; i++) {
       await this.prisma.event.create({
         data: {
           title: titles[i],
           category: categories[i % categories.length],
-          description: 'Присоединяйтесь к нам для незабываемого вечера, полного эмоций, новых знакомств и ярких впечатлений. Самое ожидаемое событие этого сезона!',
-          fullDescription: 'Это мероприятие объединяет лучших представителей индустрии. Тебя ждет эксклюзивная программа, живое общение и специальные гости. Будь в центре событий вместе с Perkly.',
+          description:
+            'Присоединяйтесь к нам для незабываемого вечера, полного эмоций, новых знакомств и ярких впечатлений. Самое ожидаемое событие этого сезона!',
+          fullDescription:
+            'Это мероприятие объединяет лучших представителей индустрии. Тебя ждет эксклюзивная программа, живое общение и специальные гости. Будь в центре событий вместе с Perkly.',
           date: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
           startTime: '19:00',
           ageLimit: i % 2 === 0 ? '18+' : '12+',
@@ -83,7 +91,7 @@ export class EventsService {
           viewersCount: Math.floor(Math.random() * 200) + 50,
           participantsCount: Math.floor(Math.random() * 1500) + 200,
           organizerId,
-        }
+        },
       });
     }
   }

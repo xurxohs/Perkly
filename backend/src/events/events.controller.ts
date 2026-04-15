@@ -32,10 +32,12 @@ export class EventsController {
       take: take ? Number(take) : undefined,
       where: {
         category,
-        OR: search ? [
-          { title: { contains: search } },
-          { description: { contains: search } },
-        ] : undefined,
+        OR: search
+          ? [
+              { title: { contains: search } },
+              { description: { contains: search } },
+            ]
+          : undefined,
       },
       orderBy: { createdAt: 'desc' },
     });

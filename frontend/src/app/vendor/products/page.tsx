@@ -256,12 +256,12 @@ export default function VendorProductsPage() {
                                     <label className="text-xs font-medium tracking-wide text-white/60 uppercase">Цена ($)</label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-3 text-white/40">$</span>
-                                        <input type="number" step="0.01" min="0" required={!formData.isFree} disabled={formData.isFree} value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors" />
+                                        <input type="number" step="0.01" min="0" required={!formData.isFree} disabled={formData.isFree} value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} placeholder="0.00" className="w-full bg-black/30 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors" />
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-medium tracking-wide text-white/60 uppercase">Длительность (дни, 0=бессрочно)</label>
-                                    <input type="number" min="0" value={formData.periodDays} onChange={e => setFormData({ ...formData, periodDays: e.target.value })} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors" />
+                                    <input type="number" min="0" value={formData.periodDays} onChange={e => setFormData({ ...formData, periodDays: e.target.value })} placeholder="0" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors" />
                                 </div>
                             </div>
 

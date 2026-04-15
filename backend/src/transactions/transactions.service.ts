@@ -30,7 +30,9 @@ export class TransactionsService {
     isGift = false,
   ): Promise<Transaction> {
     // Find offer
-    const offer = await this.prisma.offer.findUnique({ where: { id: offerId } });
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: offerId },
+    });
     if (!offer) throw new NotFoundException('Offer not found');
     if (!offer.isActive) {
       throw new BadRequestException('Offer is no longer active');
@@ -113,14 +115,14 @@ export class TransactionsService {
     // Try to notify the buyer via Telegram
     if (buyer.telegramId) {
       let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${offer.price}.\nВаш кэшбек: ${Math.floor(offer.price)} баллов.`;
-      
+
       if (isGift) {
         const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;
         message += `\n\n🎁 *Это подарок!*\nВаша ссылка для друга:\n\`${giftLink}\`\n\n_Перешлите это сообщение другу, чтобы он мог забрать товар._`;
       } else {
         message += `\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
       }
-      
+
       await this.botService.sendTelegramNotification(
         buyer.telegramId,
         message,
@@ -147,7 +149,7 @@ export class TransactionsService {
       await this.botService.sendTelegramNotification(
         seller.telegramId,
         message,
-        sellerKeyboard
+        sellerKeyboard,
       );
     }
 
@@ -273,9 +275,14 @@ export class TransactionsService {
     });
 
     if (!transaction) throw new NotFoundException('Подарочный код не найден');
-    if (!transaction.isGift) throw new BadRequestException('Этот код не является подарком');
-    if (transaction.isRedeemed) throw new BadRequestException('Этот подарок уже активирован');
-    if (transaction.buyerId === userId) throw new BadRequestException('Вы не можете активировать собственный подарок');
+    if (!transaction.isGift)
+      throw new BadRequestException('Этот код не является подарком');
+    if (transaction.isRedeemed)
+      throw new BadRequestException('Этот подарок уже активирован');
+    if (transaction.buyerId === userId)
+      throw new BadRequestException(
+        'Вы не можете активировать собственный подарок',
+      );
 
     const updated = await this.prisma.transaction.update({
       where: { id: transaction.id },

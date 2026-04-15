@@ -39,6 +39,7 @@ export class BotService {
     try {
       await this.bot.telegram.sendMessage(telegramId, message, {
         parse_mode: 'Markdown',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         reply_markup: replyMarkup,
       });
       this.logger.log(`Sent notification to ${telegramId}`);
@@ -183,7 +184,10 @@ export class BotService {
         ...Markup.inlineKeyboard([
           [Markup.button.webApp('🔥 Открыть Perkly', webAppUrl)],
           [
-            Markup.button.webApp('📍 Рядом со мной', `${webAppUrl}/catalog?near=true`),
+            Markup.button.webApp(
+              '📍 Рядом со мной',
+              `${webAppUrl}/catalog?near=true`,
+            ),
             Markup.button.callback('💰 Профиль', 'action_profile'),
           ],
           [
@@ -306,29 +310,48 @@ export class BotService {
     }
 
     let response = `📍 *Предложения рядом с вами (3 км):*\n\n`;
-    const startPayload = ctx.message && 'text' in ctx.message ? ctx.message.text.split(' ')[1] : null;
+    const startPayload =
+      ctx.message && 'text' in ctx.message
+        ? ctx.message.text.split(' ')[1]
+        : null;
 
     if (startPayload?.startsWith('gift_')) {
       const code = startPayload.replace('gift_', '');
       const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
-      await ctx.reply(`🎁 *У вас подарок!*\n\nНажмите кнопку ниже, чтобы забрать его.`, {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([
-          [Markup.button.webApp('🎁 Забрать подарок', `${webAppUrl}/profile/redeem?code=${code}`)]
-        ])
-      });
+      await ctx.reply(
+        `🎁 *У вас подарок!*\n\nНажмите кнопку ниже, чтобы забрать его.`,
+        {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [
+              Markup.button.webApp(
+                '🎁 Забрать подарок',
+                `${webAppUrl}/profile/redeem?code=${code}`,
+              ),
+            ],
+          ]),
+        },
+      );
       return;
     }
 
     if (startPayload?.startsWith('squad_')) {
       const code = startPayload.replace('squad_', '');
       const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
-      await ctx.reply(`👥 *Вас пригласили в сквад!* 🎉\n\nОбъединяйтесь с друзьями, чтобы достигать общих целей и получать Mega Perks (кешбэк 15%).`, {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([
-          [Markup.button.webApp('🤝 Вступить в сквад', `${webAppUrl}/profile/squad?join=${code}`)]
-        ])
-      });
+      await ctx.reply(
+        `👥 *Вас пригласили в сквад!* 🎉\n\nОбъединяйтесь с друзьями, чтобы достигать общих целей и получать Mega Perks (кешбэк 15%).`,
+        {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [
+              Markup.button.webApp(
+                '🤝 Вступить в сквад',
+                `${webAppUrl}/profile/squad?join=${code}`,
+              ),
+            ],
+          ]),
+        },
+      );
       return;
     }
 
@@ -340,7 +363,12 @@ export class BotService {
     await ctx.reply(response, {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
-        [Markup.button.webApp('🔥 Открыть все рядом', `${webAppUrl}/catalog?lat=${latitude}&lng=${longitude}&radiusKm=3`)],
+        [
+          Markup.button.webApp(
+            '🔥 Открыть все рядом',
+            `${webAppUrl}/catalog?lat=${latitude}&lng=${longitude}&radiusKm=3`,
+          ),
+        ],
         [Markup.button.callback('🔙 В меню', 'action_main_menu')],
       ]),
       reply_markup: { remove_keyboard: true },
