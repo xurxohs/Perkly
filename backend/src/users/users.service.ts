@@ -10,6 +10,17 @@ export const SUBSCRIPTION_PRICES: Record<string, number> = {
   PLATINUM: 9.99,
 };
 
+const WHEEL_REWARDS: Record<string, number> = {
+  '50 Points': 50,
+  '100 Points': 100,
+  '25 Points': 25,
+  '200 Points': 200,
+  'Скидка 5%': 50,
+  'Скидка 10%': 100,
+  Промокод: 75,
+  'Бонус ×2': 150,
+};
+
 const USER_SELECT = {
   id: true,
   email: true,
@@ -107,6 +118,40 @@ export class UsersService {
       tier,
       endDate,
       cost,
+    };
+  }
+
+  async claimWheelReward(userId: string, reward: string) {
+    const points = WHEEL_REWARDS[reward];
+    if (!points) {
+      throw new BadRequestException('Unknown wheel reward');
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        rewardPoints: {
+          increment: points,
+        },
+      },
+      select: USER_SELECT,
+    });
+
+    await this.prisma.analyticsEvent.create({
+      data: {
+        eventType: 'WHEEL_REWARD_CLAIMED',
+        userId,
+        metadata: JSON.stringify({ reward, points }),
+      },
+    });
+
+    return {
+      success: true,
+      message: `Начислено ${points} Perkly Points`,
+      reward,
+      points,
+      newRewardPoints: user.rewardPoints,
+      newBalance: user.balance,
     };
   }
 }

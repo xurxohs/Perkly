@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -33,11 +34,11 @@ export class OffersController {
   @Post('vendor')
   createVendorOffer(
     @Req() req: AuthRequest,
-    @Body() createOfferDto: Omit<Prisma.OfferCreateInput, 'seller'>,
+    @Body() body: Record<string, unknown>,
   ): Promise<Offer> {
     return this.offersService.createVendorOffer(
       req.user.userId,
-      createOfferDto,
+      this.normalizeVendorOfferBody(body),
     );
   }
 
@@ -108,5 +109,143 @@ export class OffersController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<Offer> {
     return this.offersService.remove({ id });
+  }
+
+  private normalizeVendorOfferBody(
+    body: Record<string, unknown>,
+  ): Omit<Prisma.OfferCreateInput, 'seller'> {
+    const title = this.requiredString(body, 'title');
+    const description = this.requiredString(body, 'description');
+    const category = this.requiredString(body, 'category');
+    const hiddenData = this.requiredString(body, 'hiddenData');
+    const price = this.requiredNumber(body, 'price');
+
+    const payload: Omit<Prisma.OfferCreateInput, 'seller'> = {
+      title,
+      description,
+      category,
+      hiddenData,
+      price,
+      isActive: this.optionalBoolean(body, 'isActive') ?? true,
+    };
+
+    const vendorLogo =
+      this.optionalString(body, 'vendorLogo') ??
+      this.optionalString(body, 'imageUrl');
+    if (vendorLogo) payload.vendorLogo = vendorLogo;
+
+    const usageInstructions = this.optionalString(body, 'usageInstructions');
+    if (usageInstructions) payload.usageInstructions = usageInstructions;
+
+    const discountPercent = this.optionalInteger(body, 'discountPercent');
+    if (discountPercent !== undefined) {
+      payload.discountPercent = discountPercent;
+    }
+
+    const periodDays = this.optionalInteger(body, 'periodDays');
+    if (periodDays !== undefined) payload.periodDays = periodDays;
+
+    const isExclusive = this.optionalBoolean(body, 'isExclusive');
+    if (isExclusive !== undefined) payload.isExclusive = isExclusive;
+
+    const isFlashDrop = this.optionalBoolean(body, 'isFlashDrop');
+    if (isFlashDrop !== undefined) payload.isFlashDrop = isFlashDrop;
+
+    const expiresAt = this.optionalDate(body, 'expiresAt');
+    if (expiresAt) payload.expiresAt = expiresAt;
+
+    const latitude = this.optionalNumber(body, 'latitude');
+    if (latitude !== undefined) payload.latitude = latitude;
+
+    const longitude = this.optionalNumber(body, 'longitude');
+    if (longitude !== undefined) payload.longitude = longitude;
+
+    return payload;
+  }
+
+  private requiredString(
+    body: Record<string, unknown>,
+    field: string,
+  ): string {
+    const value = this.optionalString(body, field);
+    if (!value) {
+      throw new BadRequestException(`${field} is required`);
+    }
+    return value;
+  }
+
+  private optionalString(
+    body: Record<string, unknown>,
+    field: string,
+  ): string | undefined {
+    const value = body[field];
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? undefined : trimmed;
+  }
+
+  private requiredNumber(body: Record<string, unknown>, field: string): number {
+    const value = this.optionalNumber(body, field);
+    if (value === undefined) {
+      throw new BadRequestException(`${field} must be a number`);
+    }
+    return value;
+  }
+
+  private optionalNumber(
+    body: Record<string, unknown>,
+    field: string,
+  ): number | undefined {
+    const value = body[field];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
+  private optionalInteger(
+    body: Record<string, unknown>,
+    field: string,
+  ): number | undefined {
+    const value = this.optionalNumber(body, field);
+    if (value === undefined) return undefined;
+    if (!Number.isInteger(value)) {
+      throw new BadRequestException(`${field} must be an integer`);
+    }
+    return value;
+  }
+
+  private optionalBoolean(
+    body: Record<string, unknown>,
+    field: string,
+  ): boolean | undefined {
+    const value = body[field];
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      if (value === 'true') return true;
+      if (value === 'false') return false;
+    }
+    return undefined;
+  }
+
+  private optionalDate(
+    body: Record<string, unknown>,
+    field: string,
+  ): Date | undefined {
+    const value = body[field];
+    if (typeof value !== 'string' || !value.trim()) return undefined;
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`${field} must be a valid ISO date`);
+    }
+
+    return parsed;
   }
 }

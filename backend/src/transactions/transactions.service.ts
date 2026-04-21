@@ -5,12 +5,20 @@ import {
   Logger,
   Inject,
   forwardRef,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BotService } from '../bot/bot.service';
 import { Transaction } from '@prisma/client';
 import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
+
+const PROMO_CODES: Record<string, { percent: number; label: string }> = {
+  WELCOME10: { percent: 10, label: 'Welcome discount' },
+  'PRKLY-GOLD': { percent: 5, label: 'Gold promo' },
+  'PRKLY-PLAT': { percent: 10, label: 'Platinum promo' },
+  'PRKLY-VIP': { percent: 15, label: 'VIP promo' },
+};
 
 @Injectable()
 export class TransactionsService {
@@ -28,6 +36,8 @@ export class TransactionsService {
     buyerId: string,
     offerId: string,
     isGift = false,
+    pointsUsed = 0,
+    promoCode?: string,
   ): Promise<Transaction> {
     // Find offer
     const offer = await this.prisma.offer.findUnique({
@@ -46,7 +56,23 @@ export class TransactionsService {
     // Check buyer balance
     const buyer = await this.prisma.user.findUnique({ where: { id: buyerId } });
     if (!buyer) throw new NotFoundException('User not found');
-    if (buyer.balance < offer.price) {
+
+    const promo = promoCode ? this.validatePromoCode(promoCode, offer.price) : null;
+    const promoDiscount = promo?.discountAmount ?? 0;
+    const priceAfterPromo = Math.max(0, offer.price - promoDiscount);
+    const normalizedPoints = Math.max(0, Math.floor(pointsUsed || 0));
+    if (normalizedPoints > buyer.rewardPoints) {
+      throw new BadRequestException('Not enough reward points');
+    }
+    const requestedPointsDiscount = normalizedPoints / 100;
+    const maxPointsDiscount = priceAfterPromo * 0.5;
+    const pointsDiscount = Math.min(requestedPointsDiscount, maxPointsDiscount);
+    const pointsToSpend = Math.floor(pointsDiscount * 100);
+    const finalPrice = Number(
+      Math.max(0, priceAfterPromo - pointsDiscount).toFixed(2),
+    );
+
+    if (buyer.balance < finalPrice) {
       throw new BadRequestException('Insufficient balance');
     }
 
@@ -55,17 +81,19 @@ export class TransactionsService {
       // Deduct buyer balance
       await tx.user.update({
         where: { id: buyerId },
-        data: { balance: { decrement: offer.price } },
+        data: { balance: { decrement: finalPrice } },
       });
 
       // Add reward points to buyer (1 point per unit, +15% if squad reward active)
       const extraPoints = buyer.hasSquadReward
-        ? Math.floor(offer.price * 0.15)
+        ? Math.floor(finalPrice * 0.15)
         : 0;
       await tx.user.update({
         where: { id: buyerId },
         data: {
-          rewardPoints: { increment: Math.floor(offer.price) + extraPoints },
+          rewardPoints: {
+            increment: Math.floor(finalPrice) + extraPoints - pointsToSpend,
+          },
           ...(buyer.hasSquadReward ? { hasSquadReward: false } : {}),
         },
       });
@@ -86,7 +114,7 @@ export class TransactionsService {
         data: {
           offerId,
           buyerId,
-          price: offer.price,
+          price: finalPrice,
           status: TransactionStatus.ESCROW,
           expiresAt,
           isGift,
@@ -114,7 +142,7 @@ export class TransactionsService {
 
     // Try to notify the buyer via Telegram
     if (buyer.telegramId) {
-      let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${offer.price}.\nВаш кэшбек: ${Math.floor(offer.price)} баллов.`;
+      let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${finalPrice}.\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
 
       if (isGift) {
         const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;
@@ -145,7 +173,7 @@ export class TransactionsService {
           ],
         ],
       };
-      const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${offer.price}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
+      const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${finalPrice}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
       await this.botService.sendTelegramNotification(
         seller.telegramId,
         message,
@@ -154,6 +182,28 @@ export class TransactionsService {
     }
 
     return transaction;
+  }
+
+  validatePromoCode(code: string, amount: number) {
+    if (!amount || amount <= 0) {
+      throw new BadRequestException('Invalid amount');
+    }
+
+    const normalized = code.trim().toUpperCase();
+    const promo = PROMO_CODES[normalized];
+    if (!promo) {
+      throw new BadRequestException('Промокод не найден или истек');
+    }
+
+    const discountAmount = Number(((amount * promo.percent) / 100).toFixed(2));
+
+    return {
+      code: normalized,
+      label: promo.label,
+      percent: promo.percent,
+      discountAmount,
+      finalAmount: Number(Math.max(0, amount - discountAmount).toFixed(2)),
+    };
   }
 
   async confirmDelivery(id: string, buyerId: string): Promise<Transaction> {
@@ -246,26 +296,72 @@ export class TransactionsService {
   async updateStatus(
     id: string,
     status: TransactionStatus,
+    actorId: string,
   ): Promise<Transaction> {
-    const transaction = await this.prisma.transaction.update({
+    const existing = await this.prisma.transaction.findUnique({
+      where: { id },
+      include: { offer: true, buyer: true },
+    });
+    if (!existing) throw new NotFoundException('Transaction not found');
+
+    const actor = await this.prisma.user.findUnique({ where: { id: actorId } });
+    if (!actor) throw new NotFoundException('User not found');
+
+    const isAdmin = actor.role === 'ADMIN';
+    const isSeller = existing.offer.sellerId === actorId;
+
+    if (!isAdmin && !isSeller) {
+      throw new ForbiddenException('Only seller or admin can update status');
+    }
+
+    if (status !== TransactionStatus.CANCELLED && !isAdmin) {
+      throw new ForbiddenException('Only admin can set this status');
+    }
+
+    if (status === TransactionStatus.CANCELLED) {
+      if (
+        existing.status === TransactionStatus.CANCELLED ||
+        existing.status === TransactionStatus.DISPUTED
+      ) {
+        throw new BadRequestException('Transaction cannot be cancelled');
+      }
+
+      const transaction = await this.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: existing.buyerId },
+          data: { balance: { increment: existing.price } },
+        });
+
+        if (existing.status === TransactionStatus.COMPLETED) {
+          await tx.user.update({
+            where: { id: existing.offer.sellerId },
+            data: { balance: { decrement: existing.price } },
+          });
+        }
+
+        return tx.transaction.update({
+          where: { id },
+          data: { status },
+          include: { offer: true, buyer: true },
+        });
+      });
+
+      if (transaction.buyer.telegramId) {
+        const message = `❌ *Заказ отменен*\n\nТранзакция по "${transaction.offer.title}" была отменена. Средства за нее возвращены на ваш баланс.`;
+        await this.botService.sendTelegramNotification(
+          transaction.buyer.telegramId,
+          message,
+        );
+      }
+
+      return transaction;
+    }
+
+    return this.prisma.transaction.update({
       where: { id },
       data: { status },
       include: { offer: true, buyer: true },
     });
-
-    // Try to notify the buyer via Telegram about status changes
-    if (
-      transaction.buyer.telegramId &&
-      status === TransactionStatus.CANCELLED
-    ) {
-      const message = `❌ *Заказ отменен*\n\nТранзакция по "${transaction.offer.title}" была отменена. Средства за нее возвращены на ваш баланс.`;
-      await this.botService.sendTelegramNotification(
-        transaction.buyer.telegramId,
-        message,
-      );
-    }
-
-    return transaction;
   }
 
   async redeemGift(code: string, userId: string): Promise<Transaction> {

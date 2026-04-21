@@ -37,6 +37,11 @@ export class DisputesController {
     );
   }
 
+  @Get('my')
+  async findMyDisputes(@Request() req: RequestWithUser) {
+    return this.disputesService.findAllForUser(req.user.userId);
+  }
+
   @Get()
   async findAllForAdmin(@Request() req: RequestWithUser) {
     const user = req.user;

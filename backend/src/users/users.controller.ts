@@ -54,4 +54,13 @@ export class UsersController {
       body.months ?? 1,
     );
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/rewards/claim')
+  async claimWheelReward(
+    @Req() req: AuthRequest,
+    @Body() body: { reward: string },
+  ) {
+    return this.usersService.claimWheelReward(req.user.userId, body.reward);
+  }
 }

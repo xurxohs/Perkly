@@ -107,6 +107,21 @@ export class DisputesService {
     });
   }
 
+  async findAllForUser(userId: string) {
+    return this.prisma.dispute.findMany({
+      where: {
+        OR: [
+          { transaction: { buyerId: userId } },
+          { transaction: { offer: { sellerId: userId } } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        transaction: { include: { offer: true, buyer: true } },
+      },
+    });
+  }
+
   // addMessage method was removed - handled by ChatModule
 
   async resolveDispute(

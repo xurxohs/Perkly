@@ -49,8 +49,8 @@ export class SellerController {
       orderBy: { createdAt: 'desc' },
       take: 5,
       include: {
-        offer: { select: { title: true } },
-        buyer: { select: { displayName: true, email: true } },
+        offer: { select: { id: true, title: true } },
+        buyer: { select: { id: true, displayName: true, email: true } },
       },
     });
 
@@ -89,8 +89,8 @@ export class SellerController {
         take: parseInt(take),
         orderBy: { createdAt: 'desc' },
         include: {
-          offer: { select: { title: true, price: true } },
-          buyer: { select: { displayName: true, email: true } },
+          offer: { select: { id: true, title: true, price: true } },
+          buyer: { select: { id: true, displayName: true, email: true } },
         },
       }),
       this.prisma.transaction.count({

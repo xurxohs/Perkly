@@ -21,13 +21,27 @@ export class TransactionsController {
   @Post()
   async purchase(
     @Request() req: { user: { userId: string } },
-    @Body() body: { offerId: string; isGift?: boolean },
+    @Body()
+    body: {
+      offerId: string;
+      isGift?: boolean;
+      pointsUsed?: number;
+      promoCode?: string;
+    },
   ) {
     return this.transactionsService.purchase(
       req.user.userId,
       body.offerId,
       body.isGift,
+      body.pointsUsed ?? 0,
+      body.promoCode,
     );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('promo/validate')
+  async validatePromo(@Body() body: { code: string; amount: number }) {
+    return this.transactionsService.validatePromoCode(body.code, body.amount);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -78,8 +92,13 @@ export class TransactionsController {
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
+    @Request() req: { user: { userId: string } },
     @Body() body: { status: TransactionStatus },
   ) {
-    return this.transactionsService.updateStatus(id, body.status);
+    return this.transactionsService.updateStatus(
+      id,
+      body.status,
+      req.user.userId,
+    );
   }
 }
