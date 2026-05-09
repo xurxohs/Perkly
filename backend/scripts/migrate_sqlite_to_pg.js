@@ -34,13 +34,11 @@ function sanitizeRow(row) {
         // SQLite doesn't have true booleans, they are stored as 1/0
         // We need to guess booleans or just pass them if Prisma coerces.
         // Prisma createMany is strict, so we should map known boolean fields:
-        const boolFields = ['isActive', 'isFlashDrop', 'isSystem', 'isRead', 'isFeatured', 'hidden'];
+        const boolFields = ['isActive', 'isFlashDrop', 'isSystem', 'isRead', 'isFeatured', 'hidden', 'isGift', 'isRedeemed'];
         if (boolFields.includes(key) && (sanitized[key] === 0 || sanitized[key] === 1)) {
             sanitized[key] = sanitized[key] === 1;
         }
 
-        // SQLite doesn't have Date, it stores strings or numbers
-        // Let Prisma handle ISO strings if they are strings, but if they are numbers:
         const dateFields = ['createdAt', 'updatedAt', 'expiresAt', 'date', 'publishAt'];
         if (dateFields.includes(key) && typeof sanitized[key] === 'number') {
             sanitized[key] = new Date(sanitized[key]);
@@ -59,7 +57,6 @@ async function main() {
         console.log(`Migrating table: ${table}...`);
         
         try {
-            // Read from SQLite
             const rows = sqliteDb.prepare(`SELECT * FROM "${table}"`).all();
             console.log(`  Found ${rows.length} rows in SQLite.`);
 
@@ -67,15 +64,6 @@ async function main() {
 
             const sanitizedRows = rows.map(sanitizeRow);
 
-            // In Postgres, we should clear the table first (optional, but good for fresh sync)
-            // But due to foreign keys, we can't easily truncate. So we just skip if data exists, or handle gracefully.
-            const existingCount = await prisma[table[0].toLowerCase() + table.slice(1)].count();
-            if (existingCount > 0) {
-                console.log(`  Table ${table} already has ${existingCount} rows in Postgres. Skipping to avoid duplicates.`);
-                continue;
-            }
-
-            // Insert in chunks to avoid query too large
             const chunkSize = 100;
             for (let i = 0; i < sanitizedRows.length; i += chunkSize) {
                 const chunk = sanitizedRows.slice(i, i + chunkSize);
