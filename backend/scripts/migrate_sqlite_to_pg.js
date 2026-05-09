@@ -34,7 +34,7 @@ function sanitizeRow(row) {
         // SQLite doesn't have true booleans, they are stored as 1/0
         // We need to guess booleans or just pass them if Prisma coerces.
         // Prisma createMany is strict, so we should map known boolean fields:
-        const boolFields = ['isActive', 'isFlashDrop', 'isSystem', 'isRead', 'isFeatured', 'hidden', 'isGift', 'isRedeemed'];
+        const boolFields = ['isActive', 'isFlashDrop', 'isSystem', 'isRead', 'isFeatured', 'hidden', 'isGift', 'isRedeemed', 'isExclusive'];
         if (boolFields.includes(key) && (sanitized[key] === 0 || sanitized[key] === 1)) {
             sanitized[key] = sanitized[key] === 1;
         }
