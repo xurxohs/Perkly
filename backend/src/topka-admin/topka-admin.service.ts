@@ -6,7 +6,8 @@ import {
 import { Prisma, TopkaPost } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
-import { extname, join } from 'path';
+import { join } from 'path';
+import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type MediaVariant =
@@ -163,23 +164,20 @@ export class TopkaAdminService {
     }
 
     const parsed = this.parseDataUrl(input.dataUrl);
-    const extension =
-      this.extensionFromMime(parsed.mime) ||
-      extname(input.fileName || '').replace('.', '') ||
-      'jpg';
+    const optimized = await this.toWebp(parsed.buffer, parsed.mime);
     const variant = input.variant || 'original';
     const safeVariant = variant.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    const fileName = `${Date.now()}-${safeVariant}-${randomUUID()}.${extension}`;
+    const fileName = `${Date.now()}-${safeVariant}-${randomUUID()}.webp`;
     const uploadDir = join(process.cwd(), 'uploads', 'topka');
 
     await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, fileName), parsed.buffer);
+    await writeFile(join(uploadDir, fileName), optimized);
 
     return {
       url: `${this.publicBaseUrl()}/uploads/topka/${fileName}`,
       variant,
-      mime: parsed.mime,
-      size: parsed.buffer.length,
+      mime: 'image/webp',
+      size: optimized.length,
     };
   }
 
@@ -355,11 +353,16 @@ export class TopkaAdminService {
     };
   }
 
-  private extensionFromMime(mime: string) {
-    if (mime === 'image/png') return 'png';
-    if (mime === 'image/webp') return 'webp';
-    if (mime === 'image/jpeg' || mime === 'image/jpg') return 'jpg';
-    return null;
+  private async toWebp(buffer: Buffer, mime: string) {
+    if (!mime.startsWith('image/')) {
+      throw new BadRequestException('Expected an image data URL');
+    }
+
+    try {
+      return await sharp(buffer).rotate().webp({ quality: 80 }).toBuffer();
+    } catch {
+      throw new BadRequestException('Unsupported image data');
+    }
   }
 
   private publicBaseUrl() {

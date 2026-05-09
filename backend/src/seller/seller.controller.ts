@@ -1,17 +1,14 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-  Request,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionStatus } from '../common/enums';
 import { EntitlementsService } from '../entitlements/entitlements.service';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
-@UseGuards(AuthGuard('jwt'))
 @Controller('seller')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles('SELLER', 'ADMIN')
 export class SellerController {
   constructor(
     private readonly prisma: PrismaService,
