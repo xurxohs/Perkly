@@ -39,7 +39,7 @@ function sanitizeRow(row) {
             sanitized[key] = sanitized[key] === 1;
         }
 
-        const dateFields = ['createdAt', 'updatedAt', 'expiresAt', 'date', 'publishAt'];
+        const dateFields = ['createdAt', 'updatedAt', 'expiresAt', 'date', 'publishAt', 'featuredUntil'];
         if (dateFields.includes(key) && typeof sanitized[key] === 'number') {
             sanitized[key] = new Date(sanitized[key]);
         }
