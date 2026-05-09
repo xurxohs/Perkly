@@ -4,6 +4,7 @@ import {
   Patch,
   Post,
   Body,
+  Param,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -59,8 +60,47 @@ export class UsersController {
   @Post('me/rewards/claim')
   async claimWheelReward(
     @Req() req: AuthRequest,
-    @Body() body: { reward: string },
+    @Body() body: { reward?: string },
   ) {
     return this.usersService.claimWheelReward(req.user.userId, body.reward);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/wheel/status')
+  async getWheelStatus(@Req() req: AuthRequest) {
+    return this.usersService.getWheelStatus(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/wheel/spin')
+  async spinWheel(@Req() req: AuthRequest) {
+    return this.usersService.spinWheel(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/daily-bonus/status')
+  async getDailyBonusStatus(@Req() req: AuthRequest) {
+    return this.usersService.getDailyBonusStatus(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/daily-bonus/claim')
+  async claimDailyBonus(@Req() req: AuthRequest) {
+    return this.usersService.claimDailyBonus(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/missions')
+  async getDailyMissions(@Req() req: AuthRequest) {
+    return this.usersService.getDailyMissions(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/missions/:missionId/claim')
+  async claimDailyMission(
+    @Req() req: AuthRequest,
+    @Param('missionId') missionId: string,
+  ) {
+    return this.usersService.claimDailyMission(req.user.userId, missionId);
   }
 }

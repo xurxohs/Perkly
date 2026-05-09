@@ -23,9 +23,10 @@ const topkaDockItems = [
 ];
 
 const TOPKA_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
+type DockItem = (typeof marketplaceDockItems)[number] | (typeof topkaDockItems)[number];
 
 // Spring physics simulation
-function useSpring(target: number, config = { stiffness: 400, damping: 28, mass: 1 }) {
+function useSpring(target: number, { stiffness = 400, damping = 28, mass = 1 } = {}) {
     const [value, setValue] = useState(target);
     const velocity = useRef(0);
     const currentValue = useRef(target);
@@ -45,7 +46,6 @@ function useSpring(target: number, config = { stiffness: 400, damping: 28, mass:
             const dt = Math.min((now - lastTime.current) / 1000, 0.064); // cap dt
             lastTime.current = now;
 
-            const { stiffness, damping, mass } = config;
             const displacement = currentValue.current - targetRef.current;
             const springForce = -stiffness * displacement;
             const dampingForce = -damping * velocity.current;
@@ -68,13 +68,13 @@ function useSpring(target: number, config = { stiffness: 400, damping: 28, mass:
 
         frameRef.current = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(frameRef.current);
-    }, [target, config.stiffness, config.damping, config.mass]);
+    }, [target, stiffness, damping, mass]);
 
     return value;
 }
 
 function DockIcon({ item, isActive, onTap }: {
-    item: typeof dockItems[0];
+    item: DockItem;
     isActive: boolean;
     onTap: () => void;
 }) {
@@ -210,7 +210,6 @@ export function MobileDock() {
                     {currentItems.map((item) => (
                         <DockIcon
                             key={item.href}
-                            // @ts-ignore
                             item={item}
                             isActive={activeHref === item.href}
                             onTap={() => hapticImpact('light')}

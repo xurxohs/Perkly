@@ -20,7 +20,8 @@ export class SquadsService {
   async createSquad(userId: string, name: string): Promise<Squad> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    if (user.squadId) throw new BadRequestException('You are already in a squad');
+    if (user.squadId)
+      throw new BadRequestException('You are already in a squad');
 
     const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -37,7 +38,8 @@ export class SquadsService {
   async joinSquad(userId: string, inviteCode: string): Promise<Squad> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    if (user.squadId) throw new BadRequestException('You are already in a squad');
+    if (user.squadId)
+      throw new BadRequestException('You are already in a squad');
 
     const squad = await this.prisma.squad.findUnique({
       where: { inviteCode: inviteCode.toUpperCase() },
@@ -122,7 +124,10 @@ export class SquadsService {
     startOfMonth.setHours(0, 0, 0, 0);
 
     // If reward already triggered this month, skip
-    if (squad.rewardTriggeredDate && squad.rewardTriggeredDate >= startOfMonth) {
+    if (
+      squad.rewardTriggeredDate &&
+      squad.rewardTriggeredDate >= startOfMonth
+    ) {
       return;
     }
 

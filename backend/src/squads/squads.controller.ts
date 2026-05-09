@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { SquadsService } from './squads.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
@@ -20,10 +13,7 @@ export class SquadsController {
   constructor(private readonly squadsService: SquadsService) {}
 
   @Post()
-  async createSquad(
-    @Req() req: AuthRequest,
-    @Body() body: { name: string },
-  ) {
+  async createSquad(@Req() req: AuthRequest, @Body() body: { name: string }) {
     return this.squadsService.createSquad(req.user.userId, body.name);
   }
 

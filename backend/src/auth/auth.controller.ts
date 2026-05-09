@@ -7,7 +7,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import type { Prisma } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
@@ -46,7 +46,7 @@ export class AuthController {
   // ======= TELEGRAM PHONE LOGIN =======
 
   @Get('telegram-init')
-  telegramInit(@Req() req: Request) {
+  telegramInit(@Req() req: FastifyRequest) {
     let userId: string | undefined;
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {

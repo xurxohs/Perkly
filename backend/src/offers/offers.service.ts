@@ -12,6 +12,13 @@ export const FEATURE_PRICE_PER_DAY = 1; // $1 per day
 export class OffersService {
   constructor(private prisma: PrismaService) {}
 
+  private readonly relatedStatuses = [
+    'PAID',
+    'ESCROW',
+    'ACTIVATED',
+    'COMPLETED',
+  ];
+
   async create(data: Prisma.OfferCreateInput): Promise<Offer> {
     return this.prisma.offer.create({ data });
   }
@@ -130,6 +137,73 @@ export class OffersService {
     });
   }
 
+  async findRelatedOffers(
+    id: string,
+    take = 6,
+  ): Promise<{ data: Offer[]; total: number }> {
+    const normalizedTake = Math.min(Math.max(take, 1), 12);
+    const offer = await this.prisma.offer.findUnique({
+      where: { id },
+      select: { id: true, category: true },
+    });
+
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    const sourceTransactions = await this.prisma.transaction.findMany({
+      where: {
+        offerId: id,
+        status: { in: this.relatedStatuses },
+      },
+      select: { buyerId: true },
+    });
+
+    const buyerIds = Array.from(
+      new Set(sourceTransactions.map((tx) => tx.buyerId)),
+    );
+    const coPurchaseCounts = new Map<string, number>();
+
+    if (buyerIds.length > 0) {
+      const coPurchases = await this.prisma.transaction.findMany({
+        where: {
+          buyerId: { in: buyerIds },
+          offerId: { not: id },
+          status: { in: this.relatedStatuses },
+        },
+        select: { offerId: true },
+      });
+
+      for (const transaction of coPurchases) {
+        coPurchaseCounts.set(
+          transaction.offerId,
+          (coPurchaseCounts.get(transaction.offerId) ?? 0) + 1,
+        );
+      }
+    }
+
+    const rankedOfferIds = Array.from(coPurchaseCounts.entries())
+      .sort((lhs, rhs) => {
+        if (lhs[1] === rhs[1]) {
+          return lhs[0].localeCompare(rhs[0]);
+        }
+        return rhs[1] - lhs[1];
+      })
+      .slice(0, normalizedTake * 3)
+      .map(([offerId]) => offerId);
+
+    const relatedOffers = await this.loadRelatedOffersByIds(rankedOfferIds);
+    const fallbackOffers = await this.loadFallbackRelatedOffers(
+      offer.category,
+      id,
+      normalizedTake,
+      new Set(relatedOffers.map((relatedOffer) => relatedOffer.id)),
+    );
+
+    const data = [...relatedOffers, ...fallbackOffers].slice(0, normalizedTake);
+    return { data, total: data.length };
+  }
+
   async update(params: {
     where: Prisma.OfferWhereUniqueInput;
     data: Prisma.OfferUpdateInput;
@@ -200,6 +274,59 @@ export class OffersService {
     return this.prisma.offer.update({
       where: { id: offerId },
       data: { featuredUntil: newFeaturedUntil },
+    });
+  }
+
+  private async loadRelatedOffersByIds(offerIds: string[]): Promise<Offer[]> {
+    if (offerIds.length === 0) {
+      return [];
+    }
+
+    const offers = await this.prisma.offer.findMany({
+      where: {
+        id: { in: offerIds },
+        isActive: true,
+      },
+      include: {
+        seller: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
+    });
+
+    const offersById = new Map(offers.map((offer) => [offer.id, offer]));
+
+    const orderedOffers: Offer[] = [];
+
+    for (const offerId of offerIds) {
+      const offer = offersById.get(offerId);
+      if (offer) {
+        orderedOffers.push(offer as Offer);
+      }
+    }
+
+    return orderedOffers;
+  }
+
+  private async loadFallbackRelatedOffers(
+    category: string | null,
+    excludedOfferId: string,
+    take: number,
+    excludedIds: Set<string>,
+  ): Promise<Offer[]> {
+    if (!category || take <= 0) {
+      return [];
+    }
+
+    return this.prisma.offer.findMany({
+      where: {
+        id: { notIn: [excludedOfferId, ...Array.from(excludedIds)] },
+        category,
+        isActive: true,
+      },
+      orderBy: [{ featuredUntil: 'desc' }, { createdAt: 'desc' }],
+      take,
+      include: {
+        seller: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
     });
   }
 }

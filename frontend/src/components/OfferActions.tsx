@@ -63,7 +63,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
     if (webApp) {
-      (webApp as any).openTelegramLink(shareUrl);
+      (webApp as { openTelegramLink: (url: string) => void }).openTelegramLink(shareUrl);
     } else {
       window.open(shareUrl, '_blank');
     }

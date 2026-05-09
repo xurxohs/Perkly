@@ -8,7 +8,9 @@ import {
   UseGuards,
   Req,
   Query,
+  Sse,
 } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { ChatService } from './chat.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -18,14 +20,21 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get('rooms')
-  async getRooms(@Req() req: any) {
+  async getRooms(@Req() req: { user: { userId: string; role?: string } }) {
     return this.chatService.getRooms(req.user.userId, req.user.role);
+  }
+
+  @Sse('events')
+  events(
+    @Req() req: { user: { userId: string; role?: string } },
+  ): Observable<{ data: unknown }> {
+    return this.chatService.subscribeToEvents(req.user.userId, req.user.role);
   }
 
   @Get('rooms/:id/messages')
   async getMessages(
     @Param('id') roomId: string,
-    @Req() req: any,
+    @Req() req: { user: { userId: string; role?: string } },
     @Query('skip') skip: string = '0',
     @Query('take') take: string = '50',
   ) {
@@ -40,7 +49,7 @@ export class ChatController {
   @Post('rooms')
   async createDirectRoom(
     @Body() body: { targetUserId: string },
-    @Req() req: any,
+    @Req() req: { user: { userId: string; role?: string } },
   ) {
     return this.chatService.createOrGetDirectRoom(
       req.user.userId,
@@ -51,7 +60,7 @@ export class ChatController {
   @Post('messages')
   async sendMessage(
     @Body() body: { roomId: string; content: string },
-    @Req() req: any,
+    @Req() req: { user: { userId: string; role?: string } },
   ) {
     return this.chatService.sendMessage(
       body.roomId,
@@ -61,7 +70,23 @@ export class ChatController {
   }
 
   @Patch('messages/read')
-  async markAsRead(@Body() body: { roomId: string }, @Req() req: any) {
+  async markAsRead(
+    @Body() body: { roomId: string },
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
     return this.chatService.markAsRead(body.roomId, req.user.userId);
+  }
+
+  @Post('rooms/:id/typing')
+  async setTyping(
+    @Param('id') roomId: string,
+    @Body() body: { isTyping?: boolean },
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
+    return this.chatService.setTyping(
+      roomId,
+      req.user.userId,
+      body.isTyping ?? true,
+    );
   }
 }

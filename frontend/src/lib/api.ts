@@ -146,7 +146,66 @@ export interface Event {
     organizerId: string;
     createdAt: string;
     updatedAt: string;
+    postType?: 'event' | 'poster' | 'promo' | 'collection' | 'news' | 'place';
+    subtitle?: string | null;
+    tags?: string[];
+    badges?: string[];
+    endTime?: string | null;
+    priceText?: string | null;
+    ctaText?: string | null;
+    ctaUrl?: string | null;
+    priority?: number;
+    isFeatured?: boolean;
+    media?: {
+        originalUrl?: string | null;
+        poster3x4Url?: string | null;
+        story9x16Url?: string | null;
+        square1x1Url?: string | null;
+        preview16x9Url?: string | null;
+    };
 }
+
+export interface TopkaPost {
+    id: string;
+    postType: 'event' | 'poster' | 'promo' | 'collection' | 'news' | 'place';
+    status: 'draft' | 'scheduled' | 'published' | 'archived';
+    title: string;
+    subtitle: string | null;
+    description: string;
+    fullDescription: string | null;
+    category: string;
+    tags: string[];
+    badges: string[];
+    date: string | null;
+    startTime: string | null;
+    endTime: string | null;
+    location: string | null;
+    address: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    priceText: string | null;
+    ctaText: string | null;
+    ctaUrl: string | null;
+    priority: number;
+    isFeatured: boolean;
+    publishAt: string | null;
+    expiresAt: string | null;
+    media: {
+        originalUrl?: string | null;
+        poster3x4Url?: string | null;
+        story9x16Url?: string | null;
+        square1x1Url?: string | null;
+        preview16x9Url?: string | null;
+    };
+    dominantColor: string | null;
+    fallbackGradient: string | null;
+    createdBy: string | null;
+    updatedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type TopkaPostInput = Partial<Omit<TopkaPost, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'>>;
 
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
@@ -400,6 +459,39 @@ export const adminApi = {
         request<{ offers: Offer[] }>('/admin/offers'),
     getTransactions: () =>
         request<{ transactions: Transaction[] }>('/admin/transactions'),
+    getTopkaPosts: (filters: { status?: string; postType?: string; category?: string; search?: string } = {}) => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, val]) => {
+            if (val) params.set(key, val);
+        });
+        return request<{ data: TopkaPost[]; total: number }>(`/admin/topka/posts?${params.toString()}`);
+    },
+    getTopkaPost: (id: string) =>
+        request<TopkaPost>(`/admin/topka/posts/${id}`),
+    createTopkaPost: (data: TopkaPostInput) =>
+        request<TopkaPost>('/admin/topka/posts', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+    updateTopkaPost: (id: string, data: TopkaPostInput) =>
+        request<TopkaPost>(`/admin/topka/posts/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+    archiveTopkaPost: (id: string) =>
+        request<TopkaPost>(`/admin/topka/posts/${id}`, {
+            method: 'DELETE',
+        }),
+    uploadTopkaMedia: (data: { fileName?: string; dataUrl: string; variant?: string }) =>
+        request<{ url: string; variant: string; mime: string; size: number }>('/admin/topka/media/upload', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+    cropTopkaMedia: (data: { fileName?: string; dataUrl: string; variant?: string }) =>
+        request<{ url: string; variant: string; mime: string; size: number }>('/admin/topka/media/crop', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
 };
 
 // ===== SQUADS =====

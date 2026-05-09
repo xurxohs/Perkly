@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -33,6 +33,10 @@ model User {
   squad               Squad?        @relation("UserSquad", fields: [squadId], references: [id])
   hasSquadReward      Boolean       @default(false)
   organizedEvents     Event[]       @relation("OrganizerEvents")
+
+  @@index([role])
+  @@index([tier])
+  @@index([squadId])
 }
 
 model Event {
@@ -55,6 +59,53 @@ model Event {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   organizer         User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
+
+  @@index([date])
+  @@index([category])
+  @@index([organizerId])
+}
+
+model TopkaPost {
+  id              String   @id @default(uuid())
+  postType        String   @default("event")
+  status          String   @default("draft")
+  title           String
+  subtitle        String?
+  description     String
+  fullDescription String?
+  category        String
+  tags            String   @default("[]")
+  badges          String   @default("[]")
+  date            DateTime?
+  startTime       String?
+  endTime         String?
+  location        String?
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  priceText       String?
+  ctaText         String?
+  ctaUrl          String?
+  priority        Int      @default(0)
+  isFeatured      Boolean  @default(false)
+  publishAt       DateTime?
+  expiresAt       DateTime?
+  originalUrl     String?
+  poster3x4Url    String?
+  story9x16Url    String?
+  square1x1Url    String?
+  preview16x9Url  String?
+  dominantColor   String?
+  fallbackGradient String?
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, publishAt])
+  @@index([postType])
+  @@index([category])
+  @@index([priority])
 }
 
 model Squad {
@@ -77,6 +128,8 @@ model Deposit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation("UserDeposits", fields: [userId], references: [id])
+
+  @@index([userId, status])
 }
 
 model Offer {
@@ -103,6 +156,14 @@ model Offer {
   seller            User          @relation("SellerOffers", fields: [sellerId], references: [id])
   reviews           Review[]
   transactions      Transaction[]
+
+  @@index([isActive, isFlashDrop])
+  @@index([isActive, expiresAt])
+  @@index([sellerId, isActive])
+  @@index([category])
+  @@index([latitude, longitude])
+  @@index([featuredUntil])
+  @@index([createdAt])
 }
 
 model Transaction {
@@ -121,6 +182,11 @@ model Transaction {
   dispute   Dispute?
   buyer     User       @relation("BuyerTransactions", fields: [buyerId], references: [id])
   offer     Offer      @relation(fields: [offerId], references: [id])
+
+  @@index([buyerId, status])
+  @@index([buyerId, createdAt])
+  @@index([offerId])
+  @@index([status, createdAt])
 }
 
 model Subscription {
@@ -131,6 +197,8 @@ model Subscription {
   endDate   DateTime
   isActive  Boolean  @default(true)
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isActive])
 }
 
 model Review {
@@ -143,6 +211,9 @@ model Review {
   updatedAt DateTime @updatedAt
   author    User     @relation("AuthorReviews", fields: [authorId], references: [id])
   offer     Offer    @relation(fields: [offerId], references: [id])
+
+  @@index([offerId])
+  @@index([authorId])
 }
 
 model Dispute {
@@ -175,6 +246,10 @@ model Message {
   createdAt DateTime @default(now())
   sender    User?    @relation("SenderMessages", fields: [senderId], references: [id])
   room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, isRead])
+  @@index([roomId, createdAt])
+  @@index([senderId])
 }
 
 model AdminLog {
@@ -194,4 +269,7 @@ model AnalyticsEvent {
   offerId   String?
   metadata  String?
   createdAt DateTime @default(now())
+
+  @@index([userId, eventType, createdAt])
+  @@index([eventType, createdAt])
 }

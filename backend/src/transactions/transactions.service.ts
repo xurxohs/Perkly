@@ -57,7 +57,9 @@ export class TransactionsService {
     const buyer = await this.prisma.user.findUnique({ where: { id: buyerId } });
     if (!buyer) throw new NotFoundException('User not found');
 
-    const promo = promoCode ? this.validatePromoCode(promoCode, offer.price) : null;
+    const promo = promoCode
+      ? this.validatePromoCode(promoCode, offer.price)
+      : null;
     const promoDiscount = promo?.discountAmount ?? 0;
     const priceAfterPromo = Math.max(0, offer.price - promoDiscount);
     const normalizedPoints = Math.max(0, Math.floor(pointsUsed || 0));

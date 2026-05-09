@@ -20,6 +20,10 @@ import { PaymentsModule } from './payments/payments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SquadsModule } from './squads/squads.module';
 import { EventsModule } from './events/events.module';
+import { PartnerModule } from './partner/partner.module';
+import { WalletModule } from './wallet/wallet.module';
+import { HomeModule } from './home/home.module';
+import { TopkaAdminModule } from './topka-admin/topka-admin.module';
 
 @Module({
   imports: [
@@ -52,6 +56,10 @@ import { EventsModule } from './events/events.module';
     AnalyticsModule,
     SquadsModule,
     EventsModule,
+    PartnerModule,
+    WalletModule,
+    HomeModule,
+    TopkaAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

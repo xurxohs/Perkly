@@ -40,7 +40,7 @@ export class TransactionsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('promo/validate')
-  async validatePromo(@Body() body: { code: string; amount: number }) {
+  validatePromo(@Body() body: { code: string; amount: number }) {
     return this.transactionsService.validatePromoCode(body.code, body.amount);
   }
 

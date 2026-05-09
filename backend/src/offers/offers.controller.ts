@@ -93,6 +93,20 @@ export class OffersController {
     });
   }
 
+  @Get(':id/related')
+  findRelated(
+    @Param('id') id: string,
+    @Query('take') take?: string,
+  ): Promise<{ data: Offer[]; total: number }> {
+    const normalizedTake = take ? Number(take) : undefined;
+    return this.offersService.findRelatedOffers(
+      id,
+      normalizedTake !== undefined && Number.isFinite(normalizedTake)
+        ? normalizedTake
+        : undefined,
+    );
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string): Promise<Offer | null> {
     return this.offersService.findOne({ id });
@@ -163,10 +177,7 @@ export class OffersController {
     return payload;
   }
 
-  private requiredString(
-    body: Record<string, unknown>,
-    field: string,
-  ): string {
+  private requiredString(body: Record<string, unknown>, field: string): string {
     const value = this.optionalString(body, field);
     if (!value) {
       throw new BadRequestException(`${field} is required`);

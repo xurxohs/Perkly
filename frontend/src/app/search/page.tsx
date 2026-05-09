@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, X, TrendingUp, Clock, MapPin, Flame, Star, ArrowUpRight, Sparkles, Calendar, Users } from 'lucide-react';
+import { Search, X, TrendingUp, Clock, Flame, ArrowUpRight, Sparkles, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const TRENDING_TAGS = [

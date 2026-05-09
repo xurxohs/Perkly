@@ -3,3 +3,6 @@ node_modules
 .env
 
 /generated/prisma
+
+# Apple Wallet private signing material
+certs/wallet/

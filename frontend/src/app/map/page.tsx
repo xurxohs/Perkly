@@ -103,6 +103,7 @@ const CATEGORIES = ['Все', 'Фестиваль', 'Вечеринка', 'Вы�
 // Declare ymaps on window
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ymaps: any;
   }
 }
@@ -114,63 +115,17 @@ export default function MapPage() {
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
 
   const filteredPlaces = selectedCategory === 'Все'
     ? DEMO_PLACES
     : DEMO_PLACES.filter(p => p.category === selectedCategory);
 
-  // Load Yandex Maps
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.ymaps) {
-      initMap();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
-    script.async = true;
-    script.onload = () => initMap();
-    script.onerror = () => setMapError(true);
-    document.head.appendChild(script);
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.destroy();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  const initMap = useCallback(() => {
-    if (!window.ymaps || !mapContainerRef.current) return;
-
-    window.ymaps.ready(() => {
-      if (mapRef.current) return; // Already initialized
-
-      try {
-        const map = new window.ymaps.Map(mapContainerRef.current, {
-          center: [41.3111, 69.2797],
-          zoom: 12,
-          controls: ['zoomControl'],
-        }, {
-          suppressMapOpenBlock: true,
-          yandexMapDisablePoiInteractivity: true,
-        });
-
-        mapRef.current = map;
-        setMapReady(true);
-        addMarkers(DEMO_PLACES);
-      } catch (err) {
-        console.error('Map init error:', err);
-        setMapError(true);
-      }
-    });
-  }, []);
-
-  const addMarkers = (places: typeof DEMO_PLACES) => {
+  // Add markers helper — declared before initMap so it's available in the callback
+  const addMarkers = useCallback((places: typeof DEMO_PLACES) => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -217,13 +172,63 @@ export default function MapPage() {
       map.geoObjects.add(placemark);
       markersRef.current.push(placemark);
     });
-  };
+  }, []);
+
+  // Load Yandex Maps
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.ymaps) {
+      initMap();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
+    script.async = true;
+    script.onload = () => initMap();
+    script.onerror = () => setMapError(true);
+    document.head.appendChild(script);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.destroy();
+        mapRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const initMap = useCallback(() => {
+    if (!window.ymaps || !mapContainerRef.current) return;
+
+    window.ymaps.ready(() => {
+      if (mapRef.current) return; // Already initialized
+
+      try {
+        const map = new window.ymaps.Map(mapContainerRef.current, {
+          center: [41.3111, 69.2797],
+          zoom: 12,
+          controls: ['zoomControl'],
+        }, {
+          suppressMapOpenBlock: true,
+          yandexMapDisablePoiInteractivity: true,
+        });
+
+        mapRef.current = map;
+        setMapReady(true);
+        addMarkers(DEMO_PLACES);
+      } catch (err) {
+        console.error('Map init error:', err);
+        setMapError(true);
+      }
+    });
+  }, [addMarkers]);
 
   // Update markers on filter change
   useEffect(() => {
     if (!mapReady) return;
     addMarkers(filteredPlaces);
-  }, [selectedCategory, mapReady]);
+  }, [selectedCategory, mapReady, addMarkers, filteredPlaces]);
 
   // Pan to selected place
   useEffect(() => {

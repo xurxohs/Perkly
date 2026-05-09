@@ -39,7 +39,7 @@ export class AdminController {
   async updateUser(
     @Param('id') id: string,
     @Body() data: any,
-    @Req() req: any,
+    @Req() req: { user: { userId: string; role?: string } },
   ) {
     return this.adminService.updateUser(id, data, req.user.userId);
   }
@@ -57,13 +57,16 @@ export class AdminController {
   async updateOffer(
     @Param('id') id: string,
     @Body() data: any,
-    @Req() req: any,
+    @Req() req: { user: { userId: string; role?: string } },
   ) {
     return this.adminService.updateOffer(id, data, req.user.userId);
   }
 
   @Delete('offers/:id')
-  async deleteOffer(@Param('id') id: string, @Req() req: any) {
+  async deleteOffer(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
     return this.adminService.deleteOffer(id, req.user.userId);
   }
 
@@ -77,7 +80,10 @@ export class AdminController {
   }
 
   @Patch('transactions/:id/refund')
-  async refundTransaction(@Param('id') id: string, @Req() req: any) {
+  async refundTransaction(
+    @Param('id') id: string,
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
     return this.adminService.refundTransaction(id, req.user.userId);
   }
 
@@ -94,7 +100,7 @@ export class AdminController {
   async resolveDispute(
     @Param('id') id: string,
     @Body('resolution') resolution: 'BUYER' | 'SELLER',
-    @Req() req: any,
+    @Req() req: { user: { userId: string; role?: string } },
   ) {
     return this.adminService.resolveDispute(id, resolution, req.user.userId);
   }

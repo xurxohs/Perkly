@@ -44,6 +44,59 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Apple Wallet
+
+`GET /wallet/transactions/:id.pkpass` signs Apple Wallet passes for purchased transactions. Configure these environment variables before enabling the button in production:
+
+```bash
+APPLE_WALLET_PASS_TYPE_ID="pass.com.example.perkly"
+APPLE_WALLET_TEAM_ID="ABCDE12345"
+APPLE_WALLET_ORGANIZATION_NAME="Perkly"
+APPLE_WALLET_CERT_PATH="/secure/path/pass-certificate.pem"
+APPLE_WALLET_KEY_PATH="/secure/path/pass-key.pem"
+APPLE_WALLET_WWDR_CERT_PATH="/secure/path/apple-wwdr.pem"
+APPLE_WALLET_KEY_PASSPHRASE=""
+```
+
+If any required certificate setting is missing, the endpoint returns HTTP 503 instead of crashing the backend.
+
+To generate local PEM files from Apple exports:
+
+```bash
+npm run wallet:csr -- \
+  --pass-type-id pass.com.example.perkly \
+  --team-id ABCDE12345 \
+  --organization-name Perkly \
+  --frontend-url https://perkly.uz
+```
+
+Upload `certs/wallet/perkly-pass.certSigningRequest` in Apple Developer when creating the Pass Type ID Certificate. After downloading the generated `.cer`, finish setup with:
+
+```bash
+npm run wallet:setup -- \
+  --pass-type-id pass.com.example.perkly \
+  --team-id ABCDE12345 \
+  --pass-cert /path/to/pass.cer \
+  --signer-key certs/wallet/signer-key.pem \
+  --wwdr-cert certs/wallet/AppleWWDRCAG4.cer \
+  --organization-name Perkly \
+  --frontend-url https://perkly.uz
+```
+
+If you already have a `.p12` export from Keychain Access, use:
+
+```bash
+npm run wallet:setup -- \
+  --pass-type-id pass.com.example.perkly \
+  --team-id ABCDE12345 \
+  --signer-p12 /path/to/pass-certificate-private-key.p12 \
+  --wwdr-cert /path/to/AppleWWDRCAG4.cer \
+  --organization-name Perkly \
+  --frontend-url https://perkly.uz
+```
+
+If the `.p12` has a password, pass it with `--p12-passphrase` or `WALLET_P12_PASSPHRASE`. The generated PEM files are written to `certs/wallet/`, which is ignored by git. Run `npm run wallet:check` to verify the current `.env` and certificate files.
+
 ## Run tests
 
 ```bash

@@ -3,20 +3,30 @@ import {
   Get,
   UseGuards,
   Request,
-  ForbiddenException,
   Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
-import { TransactionStatus, Role } from '../common/enums';
+import { TransactionStatus } from '../common/enums';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('seller')
 export class SellerController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly entitlements: EntitlementsService,
+  ) {}
+
+  @Get('capabilities')
+  async getCapabilities(
+    @Request() req: { user: { userId: string; role?: string } },
+  ) {
+    return this.entitlements.getPartnerCapabilities(req.user.userId);
+  }
 
   @Get('stats')
-  async getStats(@Request() req: any) {
+  async getStats(@Request() req: { user: { userId: string; role?: string } }) {
     const sellerId = req.user.userId;
 
     // Total earnings from COMPLETED (or non-refunded) transactions
@@ -43,6 +53,15 @@ export class SellerController {
       },
     });
 
+    const eventStats = await this.prisma.event.aggregate({
+      where: { organizerId: sellerId },
+      _count: { id: true },
+      _sum: {
+        viewersCount: true,
+        participantsCount: true,
+      },
+    });
+
     // We can also fetch recent transactions
     const recentTransactions = await this.prisma.transaction.findMany({
       where: { offer: { sellerId } },
@@ -58,12 +77,17 @@ export class SellerController {
       totalEarnings: earningsAggregate._sum.price || 0,
       totalSales: totalSalesCount,
       activeOffers: activeOffersCount,
+      activeEvents: eventStats._count.id || 0,
+      eventViews: eventStats._sum.viewersCount || 0,
+      eventParticipants: eventStats._sum.participantsCount || 0,
       recentTransactions,
     };
   }
 
   @Get('offers')
-  async getMyOffers(@Request() req: any) {
+  async getMyOffers(
+    @Request() req: { user: { userId: string; role?: string } },
+  ) {
     return this.prisma.offer.findMany({
       where: { sellerId: req.user.userId },
       orderBy: { createdAt: 'desc' },
@@ -75,9 +99,19 @@ export class SellerController {
     });
   }
 
+  @Get('events')
+  async getMyEvents(
+    @Request() req: { user: { userId: string; role?: string } },
+  ) {
+    return this.prisma.event.findMany({
+      where: { organizerId: req.user.userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   @Get('transactions')
   async getMyTransactions(
-    @Request() req: any,
+    @Request() req: { user: { userId: string; role?: string } },
     @Query('skip') skip = '0',
     @Query('take') take = '20',
   ) {
