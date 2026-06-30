@@ -4,13 +4,14 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
-import { LayoutDashboard, Users, ShoppingBag, CreditCard, Scale, Image as ImageIcon, Settings, LogOut, MessageCircle, Activity, Sparkles, Flame } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, CreditCard, Scale, Image as ImageIcon, Settings, LogOut, MessageCircle, Activity, Sparkles, Flame, Building2 } from 'lucide-react';
 
 const ADMIN_LINKS = [
     { name: 'Обзор', href: '/admin', icon: LayoutDashboard },
     { name: 'Посещения', href: '/admin/analytics', icon: Activity },
     { name: 'Topka', href: '/admin/topka/posts', icon: Flame },
     { name: 'Пользователи', href: '/admin/users', icon: Users },
+    { name: 'Компании', href: '/admin/companies', icon: Building2 },
     { name: 'Товары', href: '/admin/offers', icon: ShoppingBag },
     { name: 'Транзакции', href: '/admin/transactions', icon: CreditCard },
     { name: 'Споры', href: '/admin/disputes', icon: Scale },

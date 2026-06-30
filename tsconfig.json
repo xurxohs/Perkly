@@ -3,8 +3,13 @@
         "strict": true,
         "forceConsistentCasingInFileNames": true
     },
-    "exclude": [
-        "frontend",
-        "backend"
+    "files": [],
+    "references": [
+        {
+            "path": "./backend"
+        },
+        {
+            "path": "./frontend"
+        }
     ]
 }

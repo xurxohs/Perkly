@@ -290,7 +290,12 @@ export default function MapPage() {
         </div>
 
         {/* Center on me button */}
-        <button className="map-center-btn" onClick={centerOnMe}>
+        <button
+          className="map-center-btn"
+          onClick={centerOnMe}
+          aria-label="Центрировать карту на моей позиции"
+          title="Центрировать карту"
+        >
           <Navigation className="w-5 h-5" />
         </button>
       </div>

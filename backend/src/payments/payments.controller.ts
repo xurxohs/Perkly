@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, HttpStatus, HttpCode } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -16,11 +16,17 @@ export class PaymentsController {
     return this.paymentsService.createTopUp(userId, amount);
   }
 
-  @Post('webhook/mock')
-  async mockWebhook(
-    @Body('depositId') depositId: string,
-    @Body('success') success: boolean,
-  ) {
-    return this.paymentsService.processMockWebhook(depositId, success);
+  @Post('webhook/click')
+  @HttpCode(HttpStatus.OK)
+  async clickWebhook(@Body() body: any) {
+    try {
+      return await this.paymentsService.processClickWebhook(body);
+    } catch (error: any) {
+      // Click expects { error: <code_number>, error_note: "..." }
+      return {
+        error: error.error || -8,
+        error_note: error.message || 'Unknown error',
+      };
+    }
   }
 }

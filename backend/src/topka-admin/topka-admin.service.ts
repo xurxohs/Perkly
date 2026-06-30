@@ -1,13 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, TopkaPost } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
-import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type MediaVariant =
@@ -63,6 +63,9 @@ export type TopkaPostInput = Partial<{
 
 @Injectable()
 export class TopkaAdminService {
+  private readonly logger = new Logger(TopkaAdminService.name);
+  private sharpUnavailableLogged = false;
+
   constructor(private prisma: PrismaService) {}
 
   async list(filters: {
@@ -164,20 +167,20 @@ export class TopkaAdminService {
     }
 
     const parsed = this.parseDataUrl(input.dataUrl);
-    const optimized = await this.toWebp(parsed.buffer, parsed.mime);
+    const optimized = await this.optimizeImage(parsed.buffer, parsed.mime);
     const variant = input.variant || 'original';
     const safeVariant = variant.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    const fileName = `${Date.now()}-${safeVariant}-${randomUUID()}.webp`;
+    const fileName = `${Date.now()}-${safeVariant}-${randomUUID()}.${optimized.extension}`;
     const uploadDir = join(process.cwd(), 'uploads', 'topka');
 
     await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, fileName), optimized);
+    await writeFile(join(uploadDir, fileName), optimized.buffer);
 
     return {
       url: `${this.publicBaseUrl()}/uploads/topka/${fileName}`,
       variant,
-      mime: 'image/webp',
-      size: optimized.length,
+      mime: optimized.mime,
+      size: optimized.buffer.length,
     };
   }
 
@@ -353,22 +356,73 @@ export class TopkaAdminService {
     };
   }
 
-  private async toWebp(buffer: Buffer, mime: string) {
+  private async optimizeImage(buffer: Buffer, mime: string) {
     if (!mime.startsWith('image/')) {
       throw new BadRequestException('Expected an image data URL');
     }
 
+    const fallback = this.originalImage(buffer, mime);
+    const sharp = await this.loadSharp();
+    if (!sharp) return fallback;
+
     try {
-      return await sharp(buffer).rotate().webp({ quality: 80 }).toBuffer();
+      return {
+        buffer: await sharp(buffer).rotate().webp({ quality: 80 }).toBuffer(),
+        mime: 'image/webp',
+        extension: 'webp',
+      };
     } catch {
       throw new BadRequestException('Unsupported image data');
     }
   }
 
+  private async loadSharp() {
+    try {
+      const sharpModule = await import('sharp');
+      return sharpModule.default;
+    } catch (error) {
+      if (!this.sharpUnavailableLogged) {
+        this.logger.warn(
+          `Image optimization disabled: ${this.errorMessage(error)}`,
+        );
+        this.sharpUnavailableLogged = true;
+      }
+      return null;
+    }
+  }
+
+  private originalImage(buffer: Buffer, mime: string) {
+    const extension = this.imageExtension(mime);
+    if (!extension) {
+      throw new BadRequestException('Unsupported image data');
+    }
+
+    return { buffer, mime, extension };
+  }
+
+  private imageExtension(mime: string) {
+    const normalized = mime.toLowerCase();
+    const extensions: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    };
+
+    return extensions[normalized];
+  }
+
+  private errorMessage(error: unknown) {
+    return error instanceof Error ? error.message : String(error);
+  }
+
   private publicBaseUrl() {
     const explicit = process.env.PUBLIC_API_URL?.trim();
     if (explicit) return explicit.replace(/\/+$/, '');
-    return `http://127.0.0.1:${process.env.PORT || 3001}`;
+    const frontendUrl = process.env.FRONTEND_URL?.trim();
+    if (frontendUrl) return frontendUrl.replace(/\/+$/, '');
+    return 'https://perkly.uz';
   }
 
   private async log(

@@ -15,22 +15,28 @@ import type { Request } from 'express';
 import { OffersService } from './offers.service';
 import { Prisma, Offer } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { PublicOffer, VendorOffer } from './offer.selects';
+import { normalizePagination, parseFiniteNumber } from '../common/pagination';
 
 interface AuthRequest extends Request {
-  user: { userId: string };
+  user: { userId: string; role?: string };
 }
 
 @Controller('offers')
 export class OffersController {
   constructor(private readonly offersService: OffersService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
   @Get('vendor/me')
-  getVendorOffers(@Req() req: AuthRequest): Promise<Offer[]> {
+  getVendorOffers(@Req() req: AuthRequest): Promise<VendorOffer[]> {
     return this.offersService.getVendorOffers(req.user.userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
   @Post('vendor')
   createVendorOffer(
     @Req() req: AuthRequest,
@@ -39,12 +45,14 @@ export class OffersController {
     return this.offersService.createVendorOffer(
       req.user.userId,
       this.normalizeVendorOfferBody(body),
+      req.user.role,
     );
   }
 
   // ======= FEATURED PLACEMENT =======
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
   @Post(':id/feature')
   featureOffer(
     @Param('id') id: string,
@@ -54,6 +62,8 @@ export class OffersController {
     return this.offersService.featureOffer(id, req.user.userId, body.days ?? 1);
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Post()
   create(@Body() createOfferDto: Prisma.OfferCreateInput): Promise<Offer> {
     return this.offersService.create(createOfferDto);
@@ -72,10 +82,15 @@ export class OffersController {
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
     @Query('radiusKm') radiusKm?: string,
-  ): Promise<{ data: Offer[]; total: number }> {
+  ): Promise<{ data: PublicOffer[]; total: number }> {
+    const pagination = normalizePagination(skip, take, {
+      defaultTake: 20,
+      maxTake: 100,
+    });
+    const geo = this.normalizeGeoQuery(lat, lng, radiusKm);
+
     return this.offersService.findAllFiltered({
-      skip: skip ? Number(skip) : undefined,
-      take: take ? Number(take) : undefined,
+      ...pagination,
       category,
       search,
       sort,
@@ -85,11 +100,9 @@ export class OffersController {
           : isFlashDrop === 'false'
             ? false
             : undefined,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      lat: lat ? Number(lat) : undefined,
-      lng: lng ? Number(lng) : undefined,
-      radiusKm: radiusKm ? Number(radiusKm) : undefined,
+      minPrice: this.normalizePriceQuery(minPrice),
+      maxPrice: this.normalizePriceQuery(maxPrice),
+      ...geo,
     });
   }
 
@@ -97,21 +110,18 @@ export class OffersController {
   findRelated(
     @Param('id') id: string,
     @Query('take') take?: string,
-  ): Promise<{ data: Offer[]; total: number }> {
-    const normalizedTake = take ? Number(take) : undefined;
-    return this.offersService.findRelatedOffers(
-      id,
-      normalizedTake !== undefined && Number.isFinite(normalizedTake)
-        ? normalizedTake
-        : undefined,
-    );
+  ): Promise<{ data: PublicOffer[]; total: number }> {
+    const normalizedTake = parseFiniteNumber(take);
+    return this.offersService.findRelatedOffers(id, normalizedTake);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Offer | null> {
+  findOne(@Param('id') id: string): Promise<PublicOffer | null> {
     return this.offersService.findOne({ id });
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -120,6 +130,8 @@ export class OffersController {
     return this.offersService.update({ where: { id }, data: updateOfferDto });
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string): Promise<Offer> {
     return this.offersService.remove({ id });
@@ -258,5 +270,37 @@ export class OffersController {
     }
 
     return parsed;
+  }
+
+  private normalizePriceQuery(value?: string): number | undefined {
+    return parseFiniteNumber(value);
+  }
+
+  private normalizeGeoQuery(
+    lat?: string,
+    lng?: string,
+    radiusKm?: string,
+  ): { lat?: number; lng?: number; radiusKm?: number } {
+    const parsedLat = parseFiniteNumber(lat);
+    const parsedLng = parseFiniteNumber(lng);
+    const parsedRadius = parseFiniteNumber(radiusKm);
+
+    if (
+      parsedLat === undefined ||
+      parsedLng === undefined ||
+      parsedRadius === undefined ||
+      parsedLat < -90 ||
+      parsedLat > 90 ||
+      parsedLng < -180 ||
+      parsedLng > 180
+    ) {
+      return {};
+    }
+
+    return {
+      lat: parsedLat,
+      lng: parsedLng,
+      radiusKm: Math.min(Math.max(parsedRadius, 0), 100),
+    };
   }
 }

@@ -34,7 +34,7 @@ export default function MessagesPage() {
     const loadRooms = async () => {
         try {
             const res = await api.chat.getRooms();
-            setRooms(res);
+            setRooms(res.data);
             // Пытаемся взять комнату по умолчанию (например из query)
             // Но пока просто берём первую, если ничего не выбрано
         } catch (error) {

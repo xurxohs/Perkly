@@ -6,7 +6,9 @@ import {
 } from '@nestjs/common';
 import { Observable, Subject, filter, map } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
-import { BotService } from '../bot/bot.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { Prisma } from '@prisma/client';
+import { normalizePagination } from '../common/pagination';
 
 const CHAT_PARTICIPANT_SELECT = {
   id: true,
@@ -65,11 +67,15 @@ export class ChatService {
 
   constructor(
     private prisma: PrismaService,
-    private botService: BotService,
+    private notificationsService: NotificationsService,
   ) {}
 
-  async getRooms(userId: string, role?: string) {
-    const whereClause =
+  async getRooms(userId: string, role?: string, skip = 0, take = 20) {
+    const pagination = normalizePagination(skip, take, {
+      defaultTake: 20,
+      maxTake: 100,
+    });
+    const whereClause: Prisma.ChatRoomWhereInput =
       role === 'ADMIN'
         ? {}
         : {
@@ -78,23 +84,28 @@ export class ChatService {
             },
           };
 
-    const rooms = await this.prisma.chatRoom.findMany({
-      where: whereClause,
-      include: {
-        participants: {
-          select: CHAT_PARTICIPANT_SELECT,
+    const [rooms, total] = await Promise.all([
+      this.prisma.chatRoom.findMany({
+        where: whereClause,
+        include: {
+          participants: {
+            select: CHAT_PARTICIPANT_SELECT,
+          },
+          transaction: {
+            include: CHAT_TRANSACTION_INCLUDE,
+          },
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: CHAT_MESSAGE_INCLUDE,
+          },
         },
-        transaction: {
-          include: CHAT_TRANSACTION_INCLUDE,
-        },
-        messages: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          include: CHAT_MESSAGE_INCLUDE,
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+        orderBy: { updatedAt: 'desc' },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+      this.prisma.chatRoom.count({ where: whereClause }),
+    ]);
 
     const roomIds = rooms.map((room) => room.id);
     const unreadRows =
@@ -113,7 +124,7 @@ export class ChatService {
       unreadRows.map((row) => [row.roomId, row._count._all]),
     );
 
-    return rooms.map((room) => {
+    const data = rooms.map((room) => {
       const lastMessage = room.messages[0] ?? null;
       const transactionSummary = room.transaction
         ? this.buildTransactionSummary(room.transaction, userId, role)
@@ -129,6 +140,18 @@ export class ChatService {
         transactionSummary,
       };
     });
+
+    return {
+      data,
+      rooms: data,
+      total,
+      pagination: {
+        ...pagination,
+        total,
+        hasMore: pagination.skip + data.length < total,
+        nextSkip: pagination.skip + data.length,
+      },
+    };
   }
 
   async getMessages(roomId: string, userId: string, skip = 0, take = 50) {
@@ -296,22 +319,19 @@ export class ChatService {
 
     if (room && room.participants) {
       const otherParticipants = room.participants.filter(
-        (p) => p.id !== senderId && p.telegramId,
+        (p) => p.id !== senderId,
       );
 
-      let title = 'вам новое сообщение';
-      if (room.type === 'DISPUTE')
-        title = `новое сообщение в споре (Заказ: ${room.transaction?.offer?.title})`;
-
-      for (const p of otherParticipants) {
-        if (p.telegramId) {
-          const telegramMessage = `💬 *У вас ${title}*\n\nОтправитель: ${message.sender?.displayName || message.sender?.email || 'Пользователь'}\nТекст: _${trimmedContent}_\n\nОтветьте прямо здесь или перейдите в приложение!`;
-          await this.botService.sendTelegramNotification(
-            p.telegramId,
-            telegramMessage,
-          );
-        }
-      }
+      void Promise.allSettled(
+        otherParticipants.map((p) =>
+          this.notificationsService.sendPushNotification(
+            p.id,
+            `Новое сообщение от ${message.sender?.displayName || 'Пользователя'}`,
+            trimmedContent,
+            { roomId },
+          ),
+        ),
+      );
     }
 
     const participantIds = this.mergeParticipantIds(

@@ -88,6 +88,21 @@ export interface ChatRoom {
     transaction?: Transaction;
 }
 
+export interface PaginationMeta {
+    skip: number;
+    take: number;
+    total: number;
+    hasMore: boolean;
+    nextSkip: number;
+}
+
+export interface ChatRoomsResponse {
+    data: ChatRoom[];
+    rooms?: ChatRoom[];
+    total: number;
+    pagination: PaginationMeta;
+}
+
 export interface Dispute {
     id: string;
     transactionId: string;
@@ -104,6 +119,39 @@ export interface SellerStats {
     totalSales: number;
     activeOffers: number;
     recentTransactions: Transaction[];
+}
+
+export type CompanyStatus = 'PENDING_MODERATION' | 'ACTIVE' | 'SUSPENDED';
+
+export interface Company {
+    id: string;
+    ownerUserId: string;
+    legalName: string;
+    brandName: string;
+    inn: string;
+    phone: string | null;
+    status: CompanyStatus;
+    createdAt: string;
+    updatedAt: string;
+    owner?: {
+        id: string;
+        email: string;
+        displayName: string | null;
+        role: string;
+        phone?: string | null;
+        telegramId?: string | null;
+    };
+    _count?: {
+        offers: number;
+        promocodes: number;
+    };
+}
+
+export interface CompanyApplicationInput {
+    legalName: string;
+    brandName: string;
+    inn: string;
+    phone?: string;
 }
 
 export interface AnalyticsEvent {
@@ -315,6 +363,9 @@ export const offersApi = {
     create: (data: unknown) =>
         request<Offer>('/offers', { method: 'POST', body: JSON.stringify(data) }),
 
+    createVendor: (data: unknown) =>
+        request<Offer>('/offers/vendor', { method: 'POST', body: JSON.stringify(data) }),
+
     featureOffer: (id: string, days: number) =>
         request<{ featuredUntil: string }>(`/offers/${id}/feature`, {
             method: 'POST',
@@ -374,6 +425,27 @@ export const usersApi = {
         ),
 };
 
+// ===== COMPANIES =====
+export const companiesApi = {
+    getMine: () =>
+        request<Company | null>('/companies/me'),
+
+    apply: (data: CompanyApplicationInput) =>
+        request<Company>('/companies/apply', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    list: (status?: CompanyStatus) =>
+        request<Company[]>(`/companies${status ? `?status=${status}` : ''}`),
+
+    updateStatus: (id: string, status: CompanyStatus) =>
+        request<Company>(`/companies/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
+        }),
+};
+
 
 
 // ===== PAYMENTS =====
@@ -409,8 +481,36 @@ export const analyticsApi = {
 
 // ===== CHAT =====
 export const chatApi = {
-    getRooms: () =>
-        request<ChatRoom[]>('/chat/rooms'),
+    getRooms: async (params?: { skip?: number; take?: number }) => {
+        const urlParams = new URLSearchParams();
+        if (params?.skip !== undefined) {
+            urlParams.append('skip', String(params.skip));
+        }
+        if (params?.take !== undefined) {
+            urlParams.append('take', String(params.take));
+        }
+        const query = urlParams.toString();
+        const response = await request<ChatRoomsResponse | ChatRoom[]>(
+            `/chat/rooms${query ? `?${query}` : ''}`,
+        );
+
+        if (Array.isArray(response)) {
+            return {
+                data: response,
+                rooms: response,
+                total: response.length,
+                pagination: {
+                    skip: params?.skip ?? 0,
+                    take: params?.take ?? response.length,
+                    total: response.length,
+                    hasMore: false,
+                    nextSkip: (params?.skip ?? 0) + response.length,
+                },
+            };
+        }
+
+        return response;
+    },
 
     getMessages: (roomId: string) =>
         request<{ data: ChatMessage[] }>(`/chat/rooms/${roomId}/messages`),
@@ -437,9 +537,9 @@ export const chatApi = {
 // ===== SELLER =====
 export const sellerApi = {
     getStats: () =>
-        request<{ data: SellerStats }>('/seller/stats'),
+        request<SellerStats>('/seller/stats'),
     getOffers: () =>
-        request<{ data: Offer[] }>('/seller/offers'),
+        request<Offer[]>('/seller/offers'),
 };
 
 // ===== ADMIN =====
@@ -534,6 +634,7 @@ const api = {
     chat: chatApi,
     admin: adminApi,
     seller: sellerApi,
+    companies: companiesApi,
     analytics: analyticsApi,
     squads: squadsApi,
     events: eventsApi,

@@ -18,6 +18,7 @@ import { Event, Prisma } from '@prisma/client';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthGuard } from '@nestjs/passport';
 import { EntitlementsService } from '../entitlements/entitlements.service';
+import { normalizePagination } from '../common/pagination';
 
 interface AuthRequest extends FastifyRequest {
   user: { userId: string; role?: string; tier?: string };
@@ -63,15 +64,21 @@ export class EventsController {
     @Query('category') category?: string,
     @Query('search') search?: string,
   ): Promise<{ data: Event[]; total: number }> {
+    const pagination = normalizePagination(skip, take, {
+      defaultTake: 20,
+      maxTake: 100,
+    });
+    const normalizedCategory = category?.trim() || undefined;
+    const normalizedSearch = search?.trim() || undefined;
+
     return this.eventsService.findAll({
-      skip: skip ? Number(skip) : undefined,
-      take: take ? Number(take) : undefined,
+      ...pagination,
       where: {
-        category,
-        OR: search
+        category: normalizedCategory,
+        OR: normalizedSearch
           ? [
-              { title: { contains: search } },
-              { description: { contains: search } },
+              { title: { contains: normalizedSearch } },
+              { description: { contains: normalizedSearch } },
             ]
           : undefined,
       },

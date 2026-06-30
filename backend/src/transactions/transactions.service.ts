@@ -8,10 +8,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BotService } from '../bot/bot.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Transaction } from '@prisma/client';
 import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
+import {
+  PURCHASED_OFFER_SELECT,
+  USER_ADMIN_SELECT,
+} from '../offers/offer.selects';
 
 const PROMO_CODES: Record<string, { percent: number; label: string }> = {
   WELCOME10: { percent: 10, label: 'Welcome discount' },
@@ -26,8 +30,7 @@ export class TransactionsService {
 
   constructor(
     private prisma: PrismaService,
-    @Inject(forwardRef(() => BotService))
-    private botService: BotService,
+    private notificationsService: NotificationsService,
     @Inject(forwardRef(() => SquadsService))
     private squadsService: SquadsService,
   ) {}
@@ -123,9 +126,7 @@ export class TransactionsService {
           giftCode,
         },
         include: {
-          offer: {
-            select: { id: true, title: true, category: true, hiddenData: true },
-          },
+          offer: { select: PURCHASED_OFFER_SELECT },
         },
       });
     });
@@ -142,29 +143,28 @@ export class TransactionsService {
       ],
     };
 
-    // Try to notify the buyer via Telegram
-    if (buyer.telegramId) {
-      let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${finalPrice}.\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
+    // Try to notify the buyer
+    let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${finalPrice}.\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
 
-      if (isGift) {
-        const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;
-        message += `\n\n🎁 *Это подарок!*\nВаша ссылка для друга:\n\`${giftLink}\`\n\n_Перешлите это сообщение другу, чтобы он мог забрать товар._`;
-      } else {
-        message += `\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
-      }
-
-      await this.botService.sendTelegramNotification(
-        buyer.telegramId,
-        message,
-        inlineKeyboard,
-      );
+    if (isGift) {
+      const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;
+      message += `\n\n🎁 *Это подарок!*\nВаша ссылка для друга:\n\`${giftLink}\`\n\n_Перешлите это сообщение другу, чтобы он мог забрать товар._`;
+    } else {
+      message += `\n\n🔐 *Ваш товар:*\n\`${offer.hiddenData}\``;
     }
 
-    // Try to notify the seller via Telegram
+    await this.notificationsService.sendPushNotification(
+      buyer.id,
+      '🎉 Покупка успешна!',
+      message,
+      { keyboard: inlineKeyboard },
+    );
+
+    // Try to notify the seller
     const seller = await this.prisma.user.findUnique({
       where: { id: offer.sellerId },
     });
-    if (seller && seller.telegramId) {
+    if (seller) {
       const sellerKeyboard = {
         inline_keyboard: [
           [
@@ -176,10 +176,11 @@ export class TransactionsService {
         ],
       };
       const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${finalPrice}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
-      await this.botService.sendTelegramNotification(
-        seller.telegramId,
+      await this.notificationsService.sendPushNotification(
+        seller.id,
+        '💰 Новая продажа!',
         message,
-        sellerKeyboard,
+        { keyboard: sellerKeyboard },
       );
     }
 
@@ -239,10 +240,11 @@ export class TransactionsService {
     const seller = await this.prisma.user.findUnique({
       where: { id: transaction.offer.sellerId },
     });
-    if (seller && seller.telegramId) {
+    if (seller) {
       const message = `✅ *Покупатель подтвердил получение!*\n\nСделка по "${transaction.offer.title}" успешно завершена.\nСредства ($${transaction.price}) зачислены на ваш баланс.`;
-      await this.botService.sendTelegramNotification(
-        seller.telegramId,
+      await this.notificationsService.sendPushNotification(
+        seller.id,
+        '✅ Покупатель подтвердил получение!',
         message,
       );
     }
@@ -268,16 +270,7 @@ export class TransactionsService {
         take,
         orderBy: { createdAt: 'desc' },
         include: {
-          offer: {
-            select: {
-              id: true,
-              title: true,
-              category: true,
-              price: true,
-              hiddenData: true,
-              sellerId: true,
-            },
-          },
+          offer: { select: PURCHASED_OFFER_SELECT },
         },
       }),
       this.prisma.transaction.count({ where }),
@@ -285,14 +278,38 @@ export class TransactionsService {
     return { data, total };
   }
 
-  async findOne(id: string): Promise<Transaction | null> {
-    return this.prisma.transaction.findUnique({
+  async findOne(
+    id: string,
+    actor: { userId: string; role?: string },
+  ): Promise<Transaction | null> {
+    const transaction = await this.prisma.transaction.findUnique({
       where: { id },
       include: {
-        offer: true,
-        buyer: { select: { id: true, displayName: true, email: true } },
+        offer: { select: PURCHASED_OFFER_SELECT },
+        buyer: { select: USER_ADMIN_SELECT },
       },
     });
+
+    if (!transaction) return null;
+
+    const actorUser = await this.prisma.user.findUnique({
+      where: { id: actor.userId },
+      select: { role: true },
+    });
+
+    if (!actorUser) {
+      throw new ForbiddenException('You cannot access this transaction');
+    }
+
+    const isBuyer = transaction.buyerId === actor.userId;
+    const isSeller = transaction.offer.sellerId === actor.userId;
+    const isAdmin = actorUser.role === 'ADMIN';
+
+    if (!isBuyer && !isSeller && !isAdmin) {
+      throw new ForbiddenException('You cannot access this transaction');
+    }
+
+    return transaction as unknown as Transaction;
   }
 
   async updateStatus(
@@ -348,13 +365,12 @@ export class TransactionsService {
         });
       });
 
-      if (transaction.buyer.telegramId) {
-        const message = `❌ *Заказ отменен*\n\nТранзакция по "${transaction.offer.title}" была отменена. Средства за нее возвращены на ваш баланс.`;
-        await this.botService.sendTelegramNotification(
-          transaction.buyer.telegramId,
-          message,
-        );
-      }
+      const message = `❌ *Заказ отменен*\n\nТранзакция по "${transaction.offer.title}" была отменена. Средства за нее возвращены на ваш баланс.`;
+      await this.notificationsService.sendPushNotification(
+        existing.buyerId,
+        '❌ Заказ отменен',
+        message,
+      );
 
       return transaction;
     }
@@ -392,25 +408,24 @@ export class TransactionsService {
     });
 
     // Notify the redeemer
-    if (updated.buyer.telegramId) {
-      const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
-      const keyboard = {
-        inline_keyboard: [
-          [
-            {
-              text: '🔥 Посмотреть товар',
-              web_app: { url: `${webAppUrl}/profile/orders` },
-            },
-          ],
+    const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
+    const keyboard = {
+      inline_keyboard: [
+        [
+          {
+            text: '🔥 Посмотреть товар',
+            web_app: { url: `${webAppUrl}/profile/orders` },
+          },
         ],
-      };
-      const message = `🎁 *Подарок активирован!*\n\nВы получили "${updated.offer.title}".\n\n🔐 *Ваш товар:*\n\`${updated.offer.hiddenData}\``;
-      await this.botService.sendTelegramNotification(
-        updated.buyer.telegramId,
-        message,
-        keyboard,
-      );
-    }
+      ],
+    };
+    const message = `🎁 *Подарок активирован!*\n\nВы получили "${updated.offer.title}".\n\n🔐 *Ваш товар:*\n\`${updated.offer.hiddenData}\``;
+    await this.notificationsService.sendPushNotification(
+      updated.buyer.id,
+      '🎁 Подарок активирован!',
+      message,
+      { keyboard },
+    );
 
     return updated;
   }
@@ -421,7 +436,7 @@ export class TransactionsService {
         buyerId: userId,
         expiresAt: { not: null },
       },
-      include: { offer: true },
+      include: { offer: { select: PURCHASED_OFFER_SELECT } },
       orderBy: { expiresAt: 'asc' },
     });
   }

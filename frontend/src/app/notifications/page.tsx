@@ -66,6 +66,8 @@ export default function NotificationsPage() {
                 <button 
                     onClick={() => router.back()} 
                     className="p-2 -ml-2 rounded-full hover:bg-white/10 transition text-white/70"
+                    aria-label="Назад"
+                    title="Назад"
                 >
                     <ChevronLeft className="w-6 h-6" />
                 </button>

@@ -24,6 +24,7 @@ import { PartnerModule } from './partner/partner.module';
 import { WalletModule } from './wallet/wallet.module';
 import { HomeModule } from './home/home.module';
 import { TopkaAdminModule } from './topka-admin/topka-admin.module';
+import { CompaniesModule } from './companies/companies.module';
 
 @Module({
   imports: [
@@ -33,9 +34,13 @@ import { TopkaAdminModule } from './topka-admin/topka-admin.module';
     TelegrafModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        token:
-          configService.get<string>('TELEGRAM_BOT_TOKEN') ||
-          '8628879213:AAEjcYGFEDhgFhMQw4qZya8L1XY5Q3tUe1I',
+        token: (() => {
+          const token = configService.get<string>('TELEGRAM_BOT_TOKEN');
+          if (!token && process.env.NODE_ENV !== 'test') {
+            throw new Error('TELEGRAM_BOT_TOKEN is required');
+          }
+          return token || 'test-only-telegram-token';
+        })(),
       }),
       inject: [ConfigService],
     }),
@@ -60,6 +65,7 @@ import { TopkaAdminModule } from './topka-admin/topka-admin.module';
     WalletModule,
     HomeModule,
     TopkaAdminModule,
+    CompaniesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

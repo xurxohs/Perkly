@@ -6,11 +6,12 @@ import {
   Get,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
-import type { Prisma } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
+import { AuthRateLimitGuard } from './auth-rate-limit.guard';
 
 interface TgWidgetBody {
   id: string | number;
@@ -23,6 +24,7 @@ interface TgWidgetBody {
 }
 
 @Controller('auth')
+@UseGuards(AuthRateLimitGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -39,7 +41,14 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: Prisma.UserCreateInput) {
+  async register(
+    @Body()
+    body: {
+      email?: string;
+      password?: string;
+      displayName?: string;
+    },
+  ) {
     return this.authService.register(body as Record<string, unknown>);
   }
 

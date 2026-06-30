@@ -13,6 +13,7 @@ import {
 import { Observable } from 'rxjs';
 import { ChatService } from './chat.service';
 import { AuthGuard } from '@nestjs/passport';
+import { normalizePagination } from '../common/pagination';
 
 @Controller('chat')
 @UseGuards(AuthGuard('jwt'))
@@ -20,8 +21,22 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get('rooms')
-  async getRooms(@Req() req: { user: { userId: string; role?: string } }) {
-    return this.chatService.getRooms(req.user.userId, req.user.role);
+  async getRooms(
+    @Req() req: { user: { userId: string; role?: string } },
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
+    const pagination = normalizePagination(skip, take, {
+      defaultTake: 20,
+      maxTake: 100,
+    });
+
+    return this.chatService.getRooms(
+      req.user.userId,
+      req.user.role,
+      pagination.skip,
+      pagination.take,
+    );
   }
 
   @Sse('events')

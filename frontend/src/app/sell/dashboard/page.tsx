@@ -11,6 +11,7 @@ import Image from 'next/image';
 export default function SellerDashboard() {
     const { user, isAuthenticated, loading } = useAuth();
     const router = useRouter();
+    const canUseSellerDashboard = user?.role === 'VENDOR' || user?.role === 'ADMIN';
     const [stats, setStats] = useState<SellerStats | null>(null);
     const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +31,13 @@ export default function SellerDashboard() {
 
     useEffect(() => {
         if (!loading && (!isAuthenticated || !user)) {
-            router.push('/auth/login');
+            router.push('/login');
+            return;
+        }
+
+        if (!loading && user && !canUseSellerDashboard) {
+            setIsLoading(false);
+            router.replace('/sell');
             return;
         }
 
@@ -40,8 +47,8 @@ export default function SellerDashboard() {
                     api.seller.getStats(),
                     api.seller.getOffers()
                 ]);
-                setStats(statsRes.data);
-                setOffers(offersRes.data);
+                setStats(statsRes);
+                setOffers(offersRes);
             } catch (err) {
                 console.error('Failed to fetch seller data', err);
             } finally {
@@ -49,15 +56,15 @@ export default function SellerDashboard() {
             }
         }
 
-        if (isAuthenticated) {
+        if (isAuthenticated && canUseSellerDashboard) {
             fetchData();
         }
-    }, [isAuthenticated, loading, user, router]);
+    }, [isAuthenticated, loading, user, canUseSellerDashboard, router]);
 
     const handleCreateOffer = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.offers.create(newOffer);
+            await api.offers.createVendor(newOffer);
             setIsCreateModalOpen(false);
             setNewOffer({ title: '', description: '', price: 0, category: 'SUBSCRIPTIONS', hiddenData: '', latitude: null, longitude: null, periodDays: 30, isFlashDrop: false });
             // Refresh data
@@ -65,8 +72,8 @@ export default function SellerDashboard() {
                 api.seller.getStats(),
                 api.seller.getOffers()
             ]);
-            setStats(statsRes.data);
-            setOffers(offersRes.data);
+            setStats(statsRes);
+            setOffers(offersRes);
         } catch (err) {
             alert('Failed to create offer: ' + (err instanceof Error ? err.message : String(err)));
         }
@@ -83,6 +90,10 @@ export default function SellerDashboard() {
             });
         }
     };
+
+    if (!loading && user && !canUseSellerDashboard) {
+        return null;
+    }
 
     if (loading || isLoading) {
         return (

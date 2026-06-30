@@ -14,8 +14,16 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({ bodyLimit: 25 * 1024 * 1024 }),
   );
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ||
+    'https://perkly.uz,https://www.perkly.uz,http://localhost:3000,http://127.0.0.1:3000'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: '*',
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Event, Prisma, TopkaPost } from '@prisma/client';
 import { TtlCache } from '../common/ttl-cache';
+import {
+  NormalizedPagination,
+  normalizePagination,
+} from '../common/pagination';
 
 type EventMedia = {
   originalUrl?: string | null;
@@ -60,6 +64,16 @@ type TopkaPublishedResponse = {
   updated_at?: string;
 };
 
+type EventQueryFilters = {
+  category?: string;
+  search?: string;
+};
+
+type EventFeedSlice = {
+  data: EventFeedItem[];
+  total: number;
+};
+
 @Injectable()
 export class EventsService {
   private readonly cache = new TtlCache();
@@ -91,40 +105,48 @@ export class EventsService {
     where?: Prisma.EventWhereInput;
     orderBy?: Prisma.EventOrderByWithRelationInput;
   }): Promise<{ data: EventFeedItem[]; total: number }> {
-    const { skip, take, where, orderBy } = params;
-    const [dbEvents, parserTopkaEvents, adminTopkaPosts] = await Promise.all([
-      this.prisma.event.findMany({
-        where,
-        orderBy,
-      }),
-      this.cache.getOrSet('topkaEvents', 300_000, () =>
-        this.fetchTopkaEvents(),
-      ),
-      this.cache.getOrSet('adminTopkaPosts', 120_000, () =>
-        this.fetchAdminTopkaPosts(),
-      ),
-    ]);
+    const pagination = normalizePagination(params.skip, params.take, {
+      defaultTake: 20,
+      maxTake: 100,
+    });
+    const { where } = params;
+    const orderBy = params.orderBy ?? { createdAt: 'desc' };
+    const filters = this.extractEventQueryFilters(where);
+    const sourceWindow: NormalizedPagination = {
+      skip: 0,
+      take: pagination.skip + pagination.take,
+    };
+    const [dbEvents, dbTotal, parserTopkaEvents, adminTopkaPosts] =
+      await Promise.all([
+        this.prisma.event.findMany({
+          where,
+          orderBy,
+          skip: sourceWindow.skip,
+          take: sourceWindow.take,
+        }),
+        this.prisma.event.count({ where }),
+        this.cache.getOrSet(
+          this.buildEventCacheKey('topkaEvents', filters, sourceWindow),
+          300_000,
+          () => this.fetchTopkaEventSlice(filters, sourceWindow),
+        ),
+        this.cache.getOrSet(
+          this.buildEventCacheKey('adminTopkaPosts', filters, sourceWindow),
+          120_000,
+          () => this.fetchAdminTopkaPosts(filters, sourceWindow),
+        ),
+      ]);
 
     const merged = this.mergeEvents(dbEvents, [
-      ...adminTopkaPosts,
-      ...parserTopkaEvents,
+      ...adminTopkaPosts.data,
+      ...parserTopkaEvents.data,
     ])
       .filter((event) => this.matchesWhere(event, where))
-      .sort((left, right) => {
-        const priorityDiff = (right.priority || 0) - (left.priority || 0);
-        if (priorityDiff !== 0) return priorityDiff;
-        if (left.isFeatured !== right.isFeatured)
-          return right.isFeatured ? 1 : -1;
-        const leftDate = new Date(left.createdAt).getTime();
-        const rightDate = new Date(right.createdAt).getTime();
-        return rightDate - leftDate;
-      });
+      .sort((left, right) => this.compareEventFeedItems(left, right));
 
-    const start = skip ?? 0;
-    const end = take ? start + take : undefined;
     return {
-      data: merged.slice(start, end),
-      total: merged.length,
+      data: merged.slice(pagination.skip, pagination.skip + pagination.take),
+      total: dbTotal + adminTopkaPosts.total + parserTopkaEvents.total,
     };
   }
 
@@ -250,22 +272,66 @@ export class EventsService {
     }
   }
 
-  private async fetchAdminTopkaPosts(): Promise<EventFeedItem[]> {
-    const now = new Date();
-    const posts = await this.prisma.topkaPost.findMany({
-      where: {
-        status: 'published',
-        OR: [{ publishAt: null }, { publishAt: { lte: now } }],
-        AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }],
-      },
-      orderBy: [
-        { priority: 'desc' },
-        { publishAt: 'desc' },
-        { createdAt: 'desc' },
-      ],
-    });
+  private async fetchTopkaEventSlice(
+    filters: EventQueryFilters,
+    pagination: NormalizedPagination,
+  ): Promise<EventFeedSlice> {
+    const parserUrl = this.getTopkaParserUrl();
 
-    return posts.map((post) => this.mapAdminTopkaPost(post));
+    try {
+      const response = await fetch(`${parserUrl}/topka/published`);
+      if (!response.ok) {
+        return { data: [], total: 0 };
+      }
+
+      const payload = (await response.json()) as TopkaPublishedResponse;
+      const updatedAt =
+        payload.updated_at && !Number.isNaN(Date.parse(payload.updated_at))
+          ? new Date(payload.updated_at)
+          : new Date();
+      const limit = pagination.skip + pagination.take;
+      const data: EventFeedItem[] = [];
+      let matched = 0;
+
+      for (const [index, item] of (payload.events || []).entries()) {
+        const event = this.mapTopkaEvent(item, updatedAt, index);
+        if (!event || !this.matchesEventQueryFilters(event, filters)) {
+          continue;
+        }
+
+        if (matched >= pagination.skip && data.length < pagination.take) {
+          data.push(event);
+        }
+        matched += 1;
+      }
+
+      return { data, total: matched };
+    } catch {
+      return { data: [], total: 0 };
+    }
+  }
+
+  private async fetchAdminTopkaPosts(
+    filters: EventQueryFilters,
+    pagination: NormalizedPagination,
+  ): Promise<EventFeedSlice> {
+    const now = new Date();
+    const where = this.buildAdminTopkaPostWhere(filters, now);
+    const [posts, total] = await Promise.all([
+      this.prisma.topkaPost.findMany({
+        where,
+        orderBy: [
+          { priority: 'desc' },
+          { publishAt: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+      this.prisma.topkaPost.count({ where }),
+    ]);
+
+    return { data: posts.map((post) => this.mapAdminTopkaPost(post)), total };
   }
 
   private mapAdminTopkaPost(post: TopkaPost): EventFeedItem {
@@ -389,6 +455,120 @@ export class EventsService {
     }
 
     return result;
+  }
+
+  private compareEventFeedItems(left: EventFeedItem, right: EventFeedItem) {
+    const priorityDiff = (right.priority || 0) - (left.priority || 0);
+    if (priorityDiff !== 0) return priorityDiff;
+    if (left.isFeatured !== right.isFeatured) {
+      return right.isFeatured ? 1 : -1;
+    }
+    const leftDate = new Date(left.createdAt).getTime();
+    const rightDate = new Date(right.createdAt).getTime();
+    return rightDate - leftDate;
+  }
+
+  private buildEventCacheKey(
+    source: string,
+    filters: EventQueryFilters,
+    pagination: NormalizedPagination,
+  ) {
+    return `${source}:${JSON.stringify({
+      category: filters.category ?? null,
+      search: filters.search ?? null,
+      skip: pagination.skip,
+      take: pagination.take,
+    })}`;
+  }
+
+  private extractEventQueryFilters(
+    where?: Prisma.EventWhereInput,
+  ): EventQueryFilters {
+    const filters: EventQueryFilters = {};
+
+    if (typeof where?.category === 'string') {
+      filters.category = where.category;
+    }
+
+    const search = this.extractContainsSearch(where);
+    if (search) {
+      filters.search = search;
+    }
+
+    return filters;
+  }
+
+  private extractContainsSearch(where?: Prisma.EventWhereInput) {
+    const rules = Array.isArray(where?.OR) ? where.OR : [];
+
+    for (const rule of rules) {
+      const titleSearch = this.getContainsValue(rule.title);
+      if (titleSearch) return titleSearch;
+
+      const descriptionSearch = this.getContainsValue(rule.description);
+      if (descriptionSearch) return descriptionSearch;
+    }
+
+    return undefined;
+  }
+
+  private getContainsValue(filter: unknown): string | undefined {
+    const candidate = filter as { contains?: unknown } | null;
+    if (
+      candidate &&
+      typeof candidate === 'object' &&
+      typeof candidate.contains === 'string'
+    ) {
+      return candidate.contains;
+    }
+
+    return undefined;
+  }
+
+  private matchesEventQueryFilters(
+    event: EventFeedItem,
+    filters: EventQueryFilters,
+  ) {
+    if (filters.category && event.category !== filters.category) {
+      return false;
+    }
+
+    if (filters.search) {
+      const text = `${event.title}\n${event.description}`.toLowerCase();
+      return text.includes(filters.search.toLowerCase());
+    }
+
+    return true;
+  }
+
+  private buildAdminTopkaPostWhere(
+    filters: EventQueryFilters,
+    now: Date,
+  ): Prisma.TopkaPostWhereInput {
+    const and: Prisma.TopkaPostWhereInput[] = [
+      { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+    ];
+
+    if (filters.search) {
+      and.push({
+        OR: [
+          { title: { contains: filters.search, mode: 'insensitive' } },
+          { description: { contains: filters.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    const where: Prisma.TopkaPostWhereInput = {
+      status: 'published',
+      OR: [{ publishAt: null }, { publishAt: { lte: now } }],
+      AND: and,
+    };
+
+    if (filters.category) {
+      where.category = filters.category;
+    }
+
+    return where;
   }
 
   private matchesWhere(
@@ -563,7 +743,8 @@ export class EventsService {
   private getTopkaParserPublicUrl(): string {
     return (
       process.env.TOPKA_PARSER_PUBLIC_URL?.trim().replace(/\/+$/, '') ||
-      'http://95.130.227.217:8000'
+      process.env.FRONTEND_URL?.trim().replace(/\/+$/, '') ||
+      'https://perkly.uz'
     );
   }
 

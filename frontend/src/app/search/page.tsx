@@ -111,7 +111,12 @@ export default function SearchPage() {
             id="search-events-input"
           />
           {query && (
-            <button className="search-clear-btn" onClick={() => setQuery('')}>
+            <button
+              className="search-clear-btn"
+              onClick={() => setQuery('')}
+              aria-label="Очистить поиск"
+              title="Очистить поиск"
+            >
               <X className="w-4 h-4" />
             </button>
           )}

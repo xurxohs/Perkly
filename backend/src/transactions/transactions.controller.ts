@@ -75,8 +75,11 @@ export class TransactionsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.transactionsService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string; role?: string } },
+  ) {
+    return this.transactionsService.findOne(id, req.user);
   }
 
   @UseGuards(AuthGuard('jwt'))

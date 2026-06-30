@@ -1,16 +1,90 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { BotService } from '../bot/bot.service';
+import * as apn from 'apn';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
+  private apnProvider: apn.Provider | null = null;
 
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => BotService))
     private botService: BotService,
-  ) {}
+  ) {
+    this.initApnProvider();
+  }
+
+  private initApnProvider() {
+    // In production, ensure APN_KEY, APN_KEY_ID, APN_TEAM_ID, and APN_BUNDLE_ID are set in .env
+    const key = process.env.APN_KEY; // can be path or base64 string
+    const keyId = process.env.APN_KEY_ID;
+    const teamId = process.env.APN_TEAM_ID;
+
+    if (!key || !keyId || !teamId) {
+      this.logger.warn('APNs credentials not fully configured. Push notifications are disabled.');
+      return;
+    }
+
+    try {
+      this.apnProvider = new apn.Provider({
+        token: {
+          key: Buffer.from(key, 'base64').toString() === key ? key : Buffer.from(key, 'base64'),
+          keyId: keyId,
+          teamId: teamId,
+        },
+        production: process.env.NODE_ENV === 'production',
+      });
+      this.logger.log('APNs Provider initialized successfully.');
+    } catch (e: any) {
+      this.logger.error(`Failed to initialize APNs: ${e.message}`);
+    }
+  }
+
+  async updateDeviceToken(userId: string, token: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { deviceToken: token },
+    });
+    return { success: true };
+  }
+
+  async sendPushNotification(userId: string, title: string, body: string, payload?: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { deviceToken: true, telegramId: true },
+    });
+
+    // 1. Send via Telegram if connected
+    if (user?.telegramId) {
+      await this.botService.sendTelegramNotification(user.telegramId, `🔔 *${title}*\n\n${body}`);
+    }
+
+    // 2. Send via APNs if token exists
+    if (!user?.deviceToken || !this.apnProvider) {
+      return;
+    }
+
+    const note = new apn.Notification();
+    note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
+    note.badge = 1;
+    note.sound = 'ping.aiff';
+    note.alert = { title, body };
+    note.topic = process.env.APN_BUNDLE_ID || 'com.perkly.app'; // Your iOS App Bundle ID
+    if (payload) note.payload = payload;
+
+    try {
+      const result = await this.apnProvider.send(note, user.deviceToken);
+      if (result.failed.length > 0) {
+        this.logger.error(`APNs Send Error: ${JSON.stringify(result.failed)}`);
+        // If token is unregistered, we could remove it from DB
+      }
+    } catch (e: any) {
+      this.logger.error(`APNs Exception: ${e.message}`);
+    }
+  }
 
   // Run every hour to check for expiring flash drops
   @Cron(CronExpression.EVERY_HOUR)

@@ -201,6 +201,7 @@ export default function ProfilePage() {
     }
 
     const tier = TIER_COLORS[user.tier] || TIER_COLORS.SILVER;
+    const canUseVendorHub = user.role === 'VENDOR' || user.role === 'ADMIN';
 
     return (
         <>
@@ -242,14 +243,23 @@ export default function ProfilePage() {
                                     <Crown className="w-3 h-3 inline mr-1" />{user.tier}
                                 </span>
 
-                                {/* Vendor Dashboard Button */}
-                                <Link
-                                    href="/vendor"
-                                    className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 group w-fit no-underline bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_0_10px_rgba(168,85,247,0.1)]"
-                                >
-                                    <Store className="w-3.5 h-3.5 text-purple-400 group-hover:text-white transition-colors" />
-                                    <span className="tracking-wide">Кабинет Продавца</span>
-                                </Link>
+                                {canUseVendorHub ? (
+                                    <Link
+                                        href="/vendor"
+                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 group w-fit no-underline bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_0_10px_rgba(168,85,247,0.1)]"
+                                    >
+                                        <Store className="w-3.5 h-3.5 text-purple-400 group-hover:text-white transition-colors" />
+                                        <span className="tracking-wide">Кабинет Продавца</span>
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        href="/sell"
+                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 group w-fit no-underline bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_0_10px_rgba(16,185,129,0.1)]"
+                                    >
+                                        <Store className="w-3.5 h-3.5 text-emerald-400 group-hover:text-white transition-colors" />
+                                        <span className="tracking-wide">Стать партнером</span>
+                                    </Link>
+                                )}
 
                                 {/* Admin Dashboard Button */}
                                 {user.role === 'ADMIN' && (

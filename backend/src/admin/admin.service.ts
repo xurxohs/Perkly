@@ -1,5 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  ADMIN_OFFER_SELECT,
+  USER_ADMIN_SELECT,
+} from '../offers/offer.selects';
 
 @Injectable()
 export class AdminService {
@@ -34,12 +38,16 @@ export class AdminService {
     const recentTransactions = await this.prisma.transaction.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
-      include: { buyer: true, offer: true },
+      include: {
+        buyer: { select: USER_ADMIN_SELECT },
+        offer: { select: ADMIN_OFFER_SELECT },
+      },
     });
 
     const recentUsers = await this.prisma.user.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
+      select: USER_ADMIN_SELECT,
     });
 
     return {
@@ -72,6 +80,7 @@ export class AdminService {
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
+        select: USER_ADMIN_SELECT,
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -108,7 +117,7 @@ export class AdminService {
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
-        include: { seller: true },
+        select: ADMIN_OFFER_SELECT,
       }),
       this.prisma.offer.count(),
     ]);
@@ -147,7 +156,10 @@ export class AdminService {
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
-        include: { buyer: true, offer: { include: { seller: true } } },
+        include: {
+          buyer: { select: USER_ADMIN_SELECT },
+          offer: { select: ADMIN_OFFER_SELECT },
+        },
       }),
       this.prisma.transaction.count(),
     ]);
@@ -157,7 +169,10 @@ export class AdminService {
   async refundTransaction(id: string, adminId: string) {
     const tx = await this.prisma.transaction.findUnique({
       where: { id },
-      include: { buyer: true, offer: { include: { seller: true } } },
+      include: {
+        buyer: { select: USER_ADMIN_SELECT },
+        offer: { select: ADMIN_OFFER_SELECT },
+      },
     });
     if (!tx || (tx.status !== 'COMPLETED' && tx.status !== 'PAID')) {
       throw new NotFoundException('Transaction not valid for refund');
@@ -209,7 +224,10 @@ export class AdminService {
         orderBy: { createdAt: 'desc' },
         include: {
           transaction: {
-            include: { buyer: true, offer: { include: { seller: true } } },
+            include: {
+              buyer: { select: USER_ADMIN_SELECT },
+              offer: { select: ADMIN_OFFER_SELECT },
+            },
           },
         },
       }),

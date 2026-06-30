@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { TtlCache } from '../common/ttl-cache';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { EventsService } from '../events/events.service';
+import { PUBLIC_OFFER_SELECT } from '../offers/offer.selects';
 import { PrismaService } from '../prisma/prisma.service';
 
 type OptionalUser = {
@@ -18,9 +19,7 @@ type HomeGeoQuery = {
 };
 
 type HomeOfferWithSeller = Prisma.OfferGetPayload<{
-  include: {
-    seller: { select: { id: true; displayName: true; avatarUrl: true } };
-  };
+  select: typeof PUBLIC_OFFER_SELECT;
 }>;
 
 type HomeBadge = {
@@ -271,9 +270,7 @@ export class HomeService {
       where: { isActive: true },
       orderBy: [{ featuredUntil: 'desc' }, { createdAt: 'desc' }],
       take,
-      include: {
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: PUBLIC_OFFER_SELECT,
     });
   }
 
@@ -286,9 +283,7 @@ export class HomeService {
       },
       orderBy: [{ expiresAt: 'asc' }, { discountPercent: 'desc' }],
       take,
-      include: {
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: PUBLIC_OFFER_SELECT,
     });
   }
 
@@ -315,9 +310,7 @@ export class HomeService {
       },
       orderBy: { createdAt: 'desc' },
       take: take * 3,
-      include: {
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: PUBLIC_OFFER_SELECT,
     });
 
     return offers
@@ -844,7 +837,7 @@ export class HomeService {
             ? `-${offer.discountPercent}% сегодня`
             : offer.title,
       subtitle: offer.title,
-      imageUrl: offer.vendorLogo,
+      imageUrl: offer.vendorLogo || 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&q=80',
       ctaTitle: 'Забрать',
       destinationType: 'offer',
       destinationId: offer.id,

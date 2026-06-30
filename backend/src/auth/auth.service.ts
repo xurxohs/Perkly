@@ -1,10 +1,13 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { Prisma } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
 import { AnalyticsService } from '../analytics/analytics.service';
 
 export interface JwtPayload {
@@ -56,7 +59,7 @@ export class AuthService {
     private analyticsService: AnalyticsService,
   ) {
     // Clean up expired tokens every 10 minutes
-    setInterval(
+    const cleanupInterval = setInterval(
       () => {
         const now = Date.now();
         for (const [key, token] of this.loginTokens.entries()) {
@@ -67,6 +70,7 @@ export class AuthService {
       },
       10 * 60 * 1000,
     );
+    cleanupInterval.unref?.();
   }
 
   async validateUser(
@@ -99,14 +103,31 @@ export class AuthService {
   }
 
   async register(data: Record<string, unknown>) {
-    const mutableData = { ...data };
-    if (mutableData.password && typeof mutableData.password === 'string') {
-      const salt = await bcrypt.genSalt();
-      mutableData.passwordHash = await bcrypt.hash(mutableData.password, salt);
-      delete mutableData.password;
+    const email =
+      typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
+    const password = typeof data.password === 'string' ? data.password : '';
+    const displayName =
+      typeof data.displayName === 'string'
+        ? data.displayName.trim().slice(0, 80)
+        : undefined;
+
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
     }
+
+    if (password.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters');
+    }
+
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(password, salt);
+
     const user = await this.prisma.user.create({
-      data: mutableData as Prisma.UserCreateInput,
+      data: {
+        email,
+        passwordHash,
+        ...(displayName ? { displayName } : {}),
+      },
     });
     // Notify admin and webhook about new user
     this.analyticsService.onNewUserRegistered(user).catch(() => {});
@@ -118,7 +139,7 @@ export class AuthService {
   // ======= TELEGRAM PHONE LOGIN =======
 
   createLoginToken(userId?: string): { token: string; url: string } {
-    const token = uuidv4();
+    const token = crypto.randomUUID();
     const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME ?? 'PerklyLoginBot';
     this.loginTokens.set(token, {
       status: 'pending',

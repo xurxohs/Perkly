@@ -26,15 +26,18 @@ export default function VendorLayout({
     const router = useRouter();
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const canUseVendorHub = user?.role === 'VENDOR' || user?.role === 'ADMIN';
 
     // Protect route
     useEffect(() => {
         if (!loading && !user) {
             router.push('/profile');
+        } else if (!loading && user && !canUseVendorHub) {
+            router.replace('/sell');
         }
-    }, [user, loading, router]);
+    }, [user, loading, canUseVendorHub, router]);
 
-    if (loading || !user) return null;
+    if (loading || !user || !canUseVendorHub) return null;
 
     const navItems = [
         { name: 'Дашборд', path: '/vendor', icon: LayoutDashboard },

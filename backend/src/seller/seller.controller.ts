@@ -8,7 +8,7 @@ import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('seller')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
-@Roles('SELLER', 'ADMIN')
+@Roles('VENDOR', 'ADMIN')
 export class SellerController {
   constructor(
     private readonly prisma: PrismaService,

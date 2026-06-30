@@ -2,9 +2,17 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Offer } from '@prisma/client';
+import {
+  PublicOffer,
+  PUBLIC_OFFER_SELECT,
+  VendorOffer,
+  VENDOR_OFFER_SELECT,
+} from './offer.selects';
+import { normalizePagination, parseFiniteNumber } from '../common/pagination';
 
 export const FEATURE_PRICE_PER_DAY = 1; // $1 per day
 
@@ -35,20 +43,15 @@ export class OffersService {
     lat?: number;
     lng?: number;
     radiusKm?: number;
-  }): Promise<{ data: Offer[]; total: number }> {
-    const {
-      skip = 0,
-      take = 20,
-      category,
-      search,
-      sort,
-      isFlashDrop,
-      minPrice,
-      maxPrice,
-      lat,
-      lng,
-      radiusKm,
-    } = params;
+  }): Promise<{ data: PublicOffer[]; total: number }> {
+    const { skip, take } = normalizePagination(params.skip, params.take, {
+      defaultTake: 20,
+      maxTake: 100,
+    });
+    const { category, search, sort, isFlashDrop } = params;
+    const minPrice = parseFiniteNumber(params.minPrice);
+    const maxPrice = parseFiniteNumber(params.maxPrice);
+    const geo = this.normalizeGeoFilter(params.lat, params.lng, params.radiusKm);
 
     const where: Prisma.OfferWhereInput = { isActive: true };
 
@@ -69,7 +72,8 @@ export class OffersService {
       where.price = priceFilter;
     }
 
-    if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+    if (geo) {
+      const { lat, lng, radiusKm } = geo;
       const ky = 40000 / 360;
       const kx = Math.cos((Math.PI * lat) / 180.0) * ky;
       const dx = radiusKm / kx;
@@ -96,9 +100,7 @@ export class OffersService {
         take,
         where,
         orderBy,
-        include: {
-          seller: { select: { id: true, displayName: true, avatarUrl: true } },
-        },
+        select: PUBLIC_OFFER_SELECT,
       }),
       this.prisma.offer.count({ where }),
     ]);
@@ -128,19 +130,17 @@ export class OffersService {
 
   async findOne(
     offerWhereUniqueInput: Prisma.OfferWhereUniqueInput,
-  ): Promise<Offer | null> {
+  ): Promise<PublicOffer | null> {
     return this.prisma.offer.findUnique({
       where: offerWhereUniqueInput,
-      include: {
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: PUBLIC_OFFER_SELECT,
     });
   }
 
   async findRelatedOffers(
     id: string,
     take = 6,
-  ): Promise<{ data: Offer[]; total: number }> {
+  ): Promise<{ data: PublicOffer[]; total: number }> {
     const normalizedTake = Math.min(Math.max(take, 1), 12);
     const offer = await this.prisma.offer.findUnique({
       where: { id },
@@ -216,17 +216,40 @@ export class OffersService {
     return this.prisma.offer.delete({ where });
   }
 
-  async getVendorOffers(sellerId: string): Promise<Offer[]> {
+  async getVendorOffers(sellerId: string): Promise<VendorOffer[]> {
     return this.prisma.offer.findMany({
       where: { sellerId },
       orderBy: { createdAt: 'desc' },
+      select: VENDOR_OFFER_SELECT,
     });
   }
 
   async createVendorOffer(
     sellerId: string,
     data: Omit<Prisma.OfferCreateInput, 'seller'>,
+    sellerRole?: string,
   ): Promise<Offer> {
+    if (sellerRole !== 'ADMIN') {
+      const activeCompany = await this.prisma.company.findUnique({
+        where: { ownerUserId: sellerId },
+        select: { id: true, status: true },
+      });
+
+      if (!activeCompany || activeCompany.status !== 'ACTIVE') {
+        throw new ForbiddenException(
+          'Active company approval is required to create vendor offers',
+        );
+      }
+
+      return this.prisma.offer.create({
+        data: {
+          ...data,
+          seller: { connect: { id: sellerId } },
+          company: { connect: { id: activeCompany.id } },
+        },
+      });
+    }
+
     return this.prisma.offer.create({
       data: { ...data, seller: { connect: { id: sellerId } } },
     });
@@ -277,7 +300,9 @@ export class OffersService {
     });
   }
 
-  private async loadRelatedOffersByIds(offerIds: string[]): Promise<Offer[]> {
+  private async loadRelatedOffersByIds(
+    offerIds: string[],
+  ): Promise<PublicOffer[]> {
     if (offerIds.length === 0) {
       return [];
     }
@@ -287,19 +312,17 @@ export class OffersService {
         id: { in: offerIds },
         isActive: true,
       },
-      include: {
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: PUBLIC_OFFER_SELECT,
     });
 
     const offersById = new Map(offers.map((offer) => [offer.id, offer]));
 
-    const orderedOffers: Offer[] = [];
+    const orderedOffers: PublicOffer[] = [];
 
     for (const offerId of offerIds) {
       const offer = offersById.get(offerId);
       if (offer) {
-        orderedOffers.push(offer as Offer);
+        orderedOffers.push(offer);
       }
     }
 
@@ -311,7 +334,7 @@ export class OffersService {
     excludedOfferId: string,
     take: number,
     excludedIds: Set<string>,
-  ): Promise<Offer[]> {
+  ): Promise<PublicOffer[]> {
     if (!category || take <= 0) {
       return [];
     }
@@ -324,9 +347,35 @@ export class OffersService {
       },
       orderBy: [{ featuredUntil: 'desc' }, { createdAt: 'desc' }],
       take,
-      include: {
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: PUBLIC_OFFER_SELECT,
     });
+  }
+
+  private normalizeGeoFilter(
+    lat: unknown,
+    lng: unknown,
+    radiusKm: unknown,
+  ): { lat: number; lng: number; radiusKm: number } | null {
+    const parsedLat = parseFiniteNumber(lat);
+    const parsedLng = parseFiniteNumber(lng);
+    const parsedRadius = parseFiniteNumber(radiusKm);
+
+    if (
+      parsedLat === undefined ||
+      parsedLng === undefined ||
+      parsedRadius === undefined ||
+      parsedLat < -90 ||
+      parsedLat > 90 ||
+      parsedLng < -180 ||
+      parsedLng > 180
+    ) {
+      return null;
+    }
+
+    return {
+      lat: parsedLat,
+      lng: parsedLng,
+      radiusKm: Math.min(Math.max(parsedRadius, 0), 100),
+    };
   }
 }
