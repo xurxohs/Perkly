@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle } from 'lucide-react';
+import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { usersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction } from '@/lib/api';
+import { usersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -15,6 +15,21 @@ const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderCl
     SILVER: { bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', borderClass: 'border-slate-400/30', glowClass: 'bg-[radial-gradient(circle,_rgba(148,163,184,0.2),_transparent_70%)]' },
     GOLD: { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-500', borderClass: 'border-yellow-500/30', glowClass: 'bg-[radial-gradient(circle,_rgba(234,179,8,0.2),_transparent_70%)]' },
     PLATINUM: { bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', borderClass: 'border-purple-500/30', glowClass: 'bg-[radial-gradient(circle,_rgba(168,85,247,0.2),_transparent_70%)]' },
+};
+
+const PROMOCODE_ACTIVATION_META: Record<string, { label: string; className: string }> = {
+    ISSUED: {
+        label: 'Выдан',
+        className: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    },
+    COPIED: {
+        label: 'Скопирован',
+        className: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    },
+    USED: {
+        label: 'Использован',
+        className: 'bg-green-500/10 text-green-400 border-green-500/20',
+    },
 };
 
 
@@ -28,8 +43,11 @@ export default function ProfilePage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState('');
-    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'settings'>('history');
+    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'promocodes' | 'settings'>('history');
     const [subscriptions, setSubscriptions] = useState<Transaction[]>([]);
+    const [promocodeActivations, setPromocodeActivations] = useState<PromocodeActivation[]>([]);
+    const [promocodesLoading, setPromocodesLoading] = useState(false);
+    const [promocodeError, setPromocodeError] = useState<string | null>(null);
     const [redeemModalOpen, setRedeemModalOpen] = useState(false);
     const [redeemCode, setRedeemCode] = useState('');
     const [redeeming, setRedeeming] = useState(false);
@@ -71,6 +89,14 @@ export default function ProfilePage() {
                 setTransactions(res.data);
             }).catch(() => { });
             transactionsApi.getSubscriptions().then(setSubscriptions).catch(() => { });
+            setPromocodesLoading(true);
+            api.promocodes.listMyActivations()
+                .then(setPromocodeActivations)
+                .catch((err) => {
+                    console.error('Failed to load promocode activations', err);
+                    setPromocodeError('Не удалось загрузить активированные промокоды.');
+                })
+                .finally(() => setPromocodesLoading(false));
         }
     }, [isAuthenticated]);
 
@@ -159,6 +185,43 @@ export default function ProfilePage() {
             alert(error.message || 'Ошибка активации подарка');
         } finally {
             setRedeeming(false);
+        }
+    };
+
+    const handleCopyPromocode = async (activation: PromocodeActivation) => {
+        if (!activation.codeSnapshot) return;
+
+        try {
+            const updated = await api.promocodes.copyActivation(activation.id);
+            await navigator.clipboard.writeText(updated.codeSnapshot || activation.codeSnapshot);
+            setPromocodeActivations((current) =>
+                current.map((item) => item.id === activation.id ? { ...item, ...updated } : item),
+            );
+            setCopiedId(`promo-${activation.id}`);
+            hapticNotification('success');
+            analyticsApi.trackEvent({
+                eventType: 'promocode_copy',
+                metadata: JSON.stringify({ activationId: activation.id, promocodeId: activation.promocodeId }),
+            }).catch(() => {});
+            setTimeout(() => setCopiedId(null), 2000);
+        } catch (err) {
+            hapticNotification('error');
+            alert(err instanceof Error ? err.message : 'Не удалось скопировать промокод');
+        }
+    };
+
+    const handleUsePromocode = async (activation: PromocodeActivation) => {
+        if (!confirm('Отметить промокод как использованный?')) return;
+
+        try {
+            const updated = await api.promocodes.useActivation(activation.id);
+            setPromocodeActivations((current) =>
+                current.map((item) => item.id === activation.id ? { ...item, ...updated } : item),
+            );
+            hapticNotification('success');
+        } catch (err) {
+            hapticNotification('error');
+            alert(err instanceof Error ? err.message : 'Не удалось обновить промокод');
         }
     };
 
@@ -423,6 +486,12 @@ export default function ProfilePage() {
                         <span className="flex items-center justify-center gap-1.5"><Key className="w-4 h-4" /> Подписки</span>
                     </button>
                     <button
+                        onClick={() => setActiveTab('promocodes')}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'promocodes' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
+                    >
+                        <span className="flex items-center justify-center gap-1.5"><Ticket className="w-4 h-4" /> Промокоды</span>
+                    </button>
+                    <button
                         onClick={() => setActiveTab('settings')}
                         className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'settings' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
@@ -679,6 +748,91 @@ export default function ProfilePage() {
                                         >
                                             Продлить
                                         </button>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'promocodes' && (
+                    <div className="space-y-4">
+                        {promocodesLoading ? (
+                            <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                                <div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
+                                <p className="text-white/30">Загружаем промокоды...</p>
+                            </div>
+                        ) : promocodeError ? (
+                            <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+                                {promocodeError}
+                            </div>
+                        ) : promocodeActivations.length === 0 ? (
+                            <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                                <Ticket className="w-12 h-12 text-white/10 mx-auto mb-3" />
+                                <p className="text-white/30 mb-3">Активированных промокодов пока нет</p>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Перейти в каталог →</Link>
+                            </div>
+                        ) : (
+                            promocodeActivations.map((activation) => {
+                                const statusMeta = PROMOCODE_ACTIVATION_META[activation.status] ?? PROMOCODE_ACTIVATION_META.ISSUED;
+                                const expiresAt = activation.expiresAt ? new Date(activation.expiresAt) : null;
+                                const isExpired = Boolean(expiresAt && expiresAt < new Date());
+                                const canUse = activation.status !== 'USED' && !isExpired;
+                                const copied = copiedId === `promo-${activation.id}`;
+
+                                return (
+                                    <div key={activation.id} className="rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06]">
+                                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                            <div className="flex items-start gap-4 min-w-0">
+                                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-purple-500/10 border border-purple-500/20">
+                                                    <Ticket className="w-6 h-6 text-purple-400" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                        <h4 className="text-white font-bold truncate">{activation.promocode?.title ?? 'Промокод'}</h4>
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${statusMeta.className}`}>
+                                                            {isExpired && activation.status !== 'USED' ? 'Истёк' : statusMeta.label}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-white/40 truncate">
+                                                        {activation.promocode?.company?.brandName ?? 'Perkly'} · {activation.promocode?.offer?.title ?? 'Любой подходящий оффер'}
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-white/35">
+                                                        <span className="inline-flex items-center gap-1 text-green-400 font-semibold">
+                                                            <Percent className="w-3 h-3" />
+                                                            {activation.promocode?.discountValue ?? 0}%
+                                                        </span>
+                                                        <span>{activation.promocode?.codeType ?? 'CODE'}</span>
+                                                        <span>{expiresAt ? `до ${expiresAt.toLocaleDateString('ru-RU')}` : 'без срока'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="md:text-right shrink-0">
+                                                <div className="rounded-xl px-4 py-3 bg-black/20 border border-white/5 mb-3 md:min-w-[180px]">
+                                                    <p className="text-[10px] text-white/30 uppercase font-bold mb-1">Код</p>
+                                                    <code className="block text-sm text-purple-300 font-mono break-all select-all">
+                                                        {activation.codeSnapshot ?? 'Будет создан при копировании'}
+                                                    </code>
+                                                </div>
+                                                <div className="flex md:justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleCopyPromocode(activation)}
+                                                        disabled={!activation.codeSnapshot || activation.status === 'USED' || isExpired}
+                                                        className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${copied ? 'bg-green-500/15 text-green-400 border-green-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20'}`}
+                                                    >
+                                                        {copied ? 'Скопировано' : 'Копировать'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleUsePromocode(activation)}
+                                                        disabled={!canUse}
+                                                        className="px-3 py-2 rounded-lg text-xs font-bold cursor-pointer border border-white/10 bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        Использован
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 );
                             })
