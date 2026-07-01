@@ -165,6 +165,9 @@ export class TransactionsService {
           expiresAt,
           isGift,
           giftCode,
+          promocodeActivationId: promo?.activationId,
+          promocodeDiscount: promo?.discountAmount,
+          promocodeCodeSnapshot: promo?.code,
         },
         include: {
           offer: { select: PURCHASED_OFFER_SELECT },

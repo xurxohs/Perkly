@@ -132,6 +132,9 @@ describe('TransactionsService', () => {
           offerId: 'offer-1',
           buyerId: 'buyer-1',
           price: 80,
+          promocodeActivationId: 'activation-1',
+          promocodeDiscount: 20,
+          promocodeCodeSnapshot: 'COFFEE20',
         }),
       }),
     );

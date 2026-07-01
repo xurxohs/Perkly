@@ -62,6 +62,9 @@ export interface Transaction {
     isGift?: boolean;
     giftCode?: string | null;
     isRedeemed?: boolean;
+    promocodeActivationId?: string | null;
+    promocodeDiscount?: number | null;
+    promocodeCodeSnapshot?: string | null;
     createdAt: string;
     offer?: Offer;
     buyer?: User;
