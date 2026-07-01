@@ -225,6 +225,8 @@ model Promocode {
   codeType      String                @default("STATIC")
   code          String?
   discountValue Float
+  maxActivations Int?
+  perUserLimit   Int                   @default(1)
   validFrom     DateTime?
   validTo       DateTime?
   status        String                @default("ACTIVE")
@@ -238,6 +240,7 @@ model Promocode {
   @@index([offerId])
   @@index([codeType])
   @@index([validTo])
+  @@index([maxActivations])
 }
 
 model PromocodeActivation {

@@ -23,6 +23,7 @@ describe('PromocodesService', () => {
       findFirst: jest.Mock;
       findUnique: jest.Mock;
       findMany: jest.Mock;
+      count: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
     };
@@ -53,6 +54,7 @@ describe('PromocodesService', () => {
         findFirst: jest.fn(),
         findUnique: jest.fn(),
         findMany: jest.fn(),
+        count: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
       },
@@ -87,6 +89,8 @@ describe('PromocodesService', () => {
         codeType: 'STATIC',
         code: 'LAUNCH10',
         discountValue: 10,
+        maxActivations: undefined,
+        perUserLimit: 1,
         validFrom: undefined,
         validTo: undefined,
         status: 'ACTIVE',
@@ -241,9 +245,14 @@ describe('PromocodesService', () => {
       status: 'ACTIVE',
       validFrom: null,
       validTo,
+      maxActivations: null,
+      perUserLimit: 1,
       offer: { id: 'offer-1', isActive: true },
     });
     prisma.promocodeActivation.findFirst.mockResolvedValueOnce(null);
+    prisma.promocodeActivation.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0);
     prisma.promocodeActivation.create.mockResolvedValue({
       id: 'activation-1',
       codeSnapshot: 'LAUNCH10',
@@ -270,11 +279,47 @@ describe('PromocodesService', () => {
       id: 'activation-1',
       status: 'ISSUED',
     });
+    prisma.promocodeActivation.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0);
 
     await expect(service.activate('user-1', 'promo-1')).resolves.toEqual({
       id: 'activation-1',
       status: 'ISSUED',
     });
+  });
+
+  it('rejects promocode activation when user or total limits are reached', async () => {
+    prisma.promocode.findUnique.mockResolvedValue({
+      id: 'promo-1',
+      offerId: null,
+      codeType: 'STATIC',
+      code: 'LIMIT10',
+      status: 'ACTIVE',
+      validFrom: null,
+      validTo: null,
+      maxActivations: 2,
+      perUserLimit: 1,
+      offer: null,
+    });
+    prisma.promocodeActivation.findFirst.mockResolvedValue(null);
+    prisma.promocodeActivation.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(1);
+
+    await expect(service.activate('user-1', 'promo-1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    prisma.promocodeActivation.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(2);
+
+    await expect(service.activate('user-2', 'promo-1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    expect(prisma.promocodeActivation.create).not.toHaveBeenCalled();
   });
 
   it('rejects inactive, expired or already used activations', async () => {

@@ -167,6 +167,8 @@ export interface Promocode {
     codeType: PromocodeCodeType;
     code: string | null;
     discountValue: number;
+    maxActivations: number | null;
+    perUserLimit: number;
     validFrom: string | null;
     validTo: string | null;
     status: PromocodeStatus;
@@ -186,6 +188,8 @@ export interface PromocodeInput {
     codeType?: PromocodeCodeType;
     code?: string;
     discountValue?: number;
+    maxActivations?: number | null;
+    perUserLimit?: number;
     validFrom?: string | null;
     validTo?: string | null;
     status?: PromocodeStatus;

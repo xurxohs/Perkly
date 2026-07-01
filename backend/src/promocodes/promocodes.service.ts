@@ -28,6 +28,8 @@ const ACTIVATION_SELECT = {
       title: true,
       description: true,
       discountValue: true,
+      maxActivations: true,
+      perUserLimit: true,
       codeType: true,
       status: true,
       validFrom: true,
@@ -61,6 +63,8 @@ export interface PromocodeInput {
   codeType?: unknown;
   code?: unknown;
   discountValue?: unknown;
+  maxActivations?: unknown;
+  perUserLimit?: unknown;
   validFrom?: unknown;
   validTo?: unknown;
   status?: unknown;
@@ -111,6 +115,8 @@ export class PromocodesService {
         codeType: data.codeType,
         code: data.code,
         discountValue: data.discountValue!,
+        maxActivations: data.maxActivations,
+        perUserLimit: data.perUserLimit,
         validFrom: data.validFrom,
         validTo: data.validTo,
         status: data.status,
@@ -149,6 +155,12 @@ export class PromocodesService {
         ...(data.discountValue !== undefined
           ? { discountValue: data.discountValue }
           : {}),
+        ...(data.maxActivations !== undefined
+          ? { maxActivations: data.maxActivations }
+          : {}),
+        ...(data.perUserLimit !== undefined
+          ? { perUserLimit: data.perUserLimit }
+          : {}),
         ...(data.validFrom !== undefined ? { validFrom: data.validFrom } : {}),
         ...(data.validTo !== undefined ? { validTo: data.validTo } : {}),
         ...(data.status !== undefined ? { status: data.status } : {}),
@@ -184,17 +196,40 @@ export class PromocodesService {
     if (!promocode) throw new NotFoundException('Promocode not found');
     this.ensurePromocodeUsable(promocode);
 
-    const existing = await this.prisma.promocodeActivation.findFirst({
-      where: { userId, promocodeId },
-      orderBy: { createdAt: 'desc' },
-      select: ACTIVATION_SELECT,
-    });
+    const [existing, userActivationCount, totalActivationCount] =
+      await Promise.all([
+        this.prisma.promocodeActivation.findFirst({
+          where: {
+            userId,
+            promocodeId,
+            status: { in: ['ISSUED', 'COPIED'] },
+          },
+          orderBy: { createdAt: 'desc' },
+          select: ACTIVATION_SELECT,
+        }),
+        this.prisma.promocodeActivation.count({
+          where: { userId, promocodeId },
+        }),
+        promocode.maxActivations
+          ? this.prisma.promocodeActivation.count({
+              where: { promocodeId },
+            })
+          : Promise.resolve(0),
+      ]);
 
     if (existing) {
-      if (existing.status === 'USED') {
-        throw new BadRequestException('Promocode is already used');
-      }
       return existing as PromocodeActivation;
+    }
+
+    if (userActivationCount >= promocode.perUserLimit) {
+      throw new BadRequestException('Promocode user limit reached');
+    }
+
+    if (
+      promocode.maxActivations &&
+      totalActivationCount >= promocode.maxActivations
+    ) {
+      throw new BadRequestException('Promocode activation limit reached');
     }
 
     return this.prisma.promocodeActivation.create({
@@ -320,6 +355,16 @@ export class PromocodesService {
       : input.discountValue !== undefined
         ? this.normalizeDiscount(input.discountValue)
         : undefined;
+    const maxActivations =
+      input.maxActivations !== undefined
+        ? this.optionalPositiveInteger(input.maxActivations, 'maxActivations')
+        : undefined;
+    const perUserLimit =
+      input.perUserLimit !== undefined
+        ? this.normalizePositiveInteger(input.perUserLimit, 'perUserLimit')
+        : requireAll
+          ? 1
+          : undefined;
     const codeType = requireAll
       ? this.normalizeCodeType(input.codeType ?? 'STATIC')
       : input.codeType !== undefined
@@ -368,6 +413,8 @@ export class PromocodesService {
       codeType,
       code,
       discountValue,
+      maxActivations,
+      perUserLimit,
       validFrom,
       validTo,
       status,
@@ -453,6 +500,19 @@ export class PromocodesService {
       throw new BadRequestException('discountValue must be between 0 and 100');
     }
     return discount;
+  }
+
+  private optionalPositiveInteger(value: unknown, field: string): number | null {
+    if (value === null || value === '') return null;
+    return this.normalizePositiveInteger(value, field);
+  }
+
+  private normalizePositiveInteger(value: unknown, field: string): number {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      throw new BadRequestException(`${field} must be a positive integer`);
+    }
+    return parsed;
   }
 
   private normalizeCodeType(value: unknown): PromocodeCodeType {

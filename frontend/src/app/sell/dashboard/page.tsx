@@ -53,6 +53,8 @@ export default function SellerDashboard() {
         codeType: 'STATIC' as PromocodeCodeType,
         code: '',
         discountValue: 10,
+        maxActivations: '',
+        perUserLimit: 1,
         offerId: '',
         validTo: '',
     });
@@ -130,6 +132,8 @@ export default function SellerDashboard() {
                 codeType: newPromo.codeType,
                 code: newPromo.codeType === 'STATIC' ? newPromo.code : undefined,
                 discountValue: newPromo.discountValue,
+                maxActivations: newPromo.maxActivations ? Number(newPromo.maxActivations) : null,
+                perUserLimit: newPromo.perUserLimit,
                 offerId: newPromo.offerId || null,
                 validTo: newPromo.validTo || null,
                 status: 'ACTIVE',
@@ -141,6 +145,8 @@ export default function SellerDashboard() {
                 codeType: 'STATIC',
                 code: '',
                 discountValue: 10,
+                maxActivations: '',
+                perUserLimit: 1,
                 offerId: '',
                 validTo: '',
             });
@@ -365,6 +371,33 @@ export default function SellerDashboard() {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="promo-max-activations" className="block text-sm text-white/50 mb-1">Общий лимит активаций</label>
+                                    <input
+                                        id="promo-max-activations"
+                                        type="number"
+                                        min={1}
+                                        value={newPromo.maxActivations}
+                                        onChange={e => setNewPromo({ ...newPromo, maxActivations: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none"
+                                        placeholder="Без лимита"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="promo-per-user-limit" className="block text-sm text-white/50 mb-1">Лимит на пользователя</label>
+                                    <input
+                                        id="promo-per-user-limit"
+                                        type="number"
+                                        min={1}
+                                        required
+                                        value={newPromo.perUserLimit}
+                                        onChange={e => setNewPromo({ ...newPromo, perUserLimit: Number(e.target.value) })}
+                                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none"
+                                    />
+                                </div>
+                            </div>
+
                             <div>
                                 <label htmlFor="promo-description" className="block text-sm text-white/50 mb-1">Описание</label>
                                 <textarea
@@ -555,8 +588,11 @@ export default function SellerDashboard() {
                                                 </p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <p className="text-sm font-bold text-white">{promo._count?.activations ?? 0}</p>
+                                                <p className="text-sm font-bold text-white">
+                                                    {promo._count?.activations ?? 0}{promo.maxActivations ? ` / ${promo.maxActivations}` : ''}
+                                                </p>
                                                 <p className="text-[10px] text-white/30">активаций</p>
+                                                <p className="text-[10px] text-white/30">на юзера: {promo.perUserLimit}</p>
                                             </div>
                                         </div>
 
