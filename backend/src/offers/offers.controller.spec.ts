@@ -8,12 +8,16 @@ describe('OffersController', () => {
   let offersService: {
     findAllFiltered: jest.Mock;
     findRelatedOffers: jest.Mock;
+    saveOffer: jest.Mock;
+    unsaveOffer: jest.Mock;
   };
 
   beforeEach(async () => {
     offersService = {
       findAllFiltered: jest.fn().mockResolvedValue({ data: [], total: 0 }),
       findRelatedOffers: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+      saveOffer: jest.fn().mockResolvedValue({ id: 'saved-1' }),
+      unsaveOffer: jest.fn().mockResolvedValue({ deleted: true }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -101,5 +105,15 @@ describe('OffersController', () => {
       'offer-1',
       undefined,
     );
+  });
+
+  it('saves and unsaves offers for the authenticated user', async () => {
+    const req = { user: { userId: 'user-1' } } as never;
+
+    await controller.saveOffer(req, 'offer-1');
+    await controller.unsaveOffer(req, 'offer-1');
+
+    expect(offersService.saveOffer).toHaveBeenCalledWith('user-1', 'offer-1');
+    expect(offersService.unsaveOffer).toHaveBeenCalledWith('user-1', 'offer-1');
   });
 });

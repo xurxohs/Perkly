@@ -12,6 +12,10 @@ describe('OffersService', () => {
       findUnique: jest.Mock;
       create: jest.Mock;
     };
+    savedOffer: {
+      upsert: jest.Mock;
+      deleteMany: jest.Mock;
+    };
     company: {
       findUnique: jest.Mock;
     };
@@ -24,6 +28,10 @@ describe('OffersService', () => {
         count: jest.fn(),
         findUnique: jest.fn(),
         create: jest.fn(),
+      },
+      savedOffer: {
+        upsert: jest.fn(),
+        deleteMany: jest.fn(),
       },
       company: {
         findUnique: jest.fn(),
@@ -176,6 +184,47 @@ describe('OffersService', () => {
       data: expect.objectContaining({
         seller: { connect: { id: 'admin-1' } },
       }),
+    });
+  });
+
+  it('saves active offers without creating duplicates', async () => {
+    prisma.offer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      isActive: true,
+    });
+    prisma.savedOffer.upsert.mockResolvedValue({
+      id: 'saved-1',
+      userId: 'user-1',
+      offerId: 'offer-1',
+    });
+
+    await expect(service.saveOffer('user-1', 'offer-1')).resolves.toEqual({
+      id: 'saved-1',
+      userId: 'user-1',
+      offerId: 'offer-1',
+    });
+
+    expect(prisma.savedOffer.upsert).toHaveBeenCalledWith({
+      where: { userId_offerId: { userId: 'user-1', offerId: 'offer-1' } },
+      create: {
+        user: { connect: { id: 'user-1' } },
+        offer: { connect: { id: 'offer-1' } },
+        source: 'USER',
+      },
+      update: {},
+      select: expect.any(Object),
+    });
+  });
+
+  it('unsaves offers idempotently', async () => {
+    prisma.savedOffer.deleteMany.mockResolvedValue({ count: 1 });
+
+    await expect(service.unsaveOffer('user-1', 'offer-1')).resolves.toEqual({
+      deleted: true,
+    });
+
+    expect(prisma.savedOffer.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', offerId: 'offer-1' },
     });
   });
 });

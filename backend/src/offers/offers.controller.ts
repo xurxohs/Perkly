@@ -115,6 +115,18 @@ export class OffersController {
     return this.offersService.findRelatedOffers(id, normalizedTake);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/save')
+  saveOffer(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.offersService.saveOffer(req.user.userId, id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/save')
+  unsaveOffer(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.offersService.unsaveOffer(req.user.userId, id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string): Promise<PublicOffer | null> {
     return this.offersService.findOne({ id });

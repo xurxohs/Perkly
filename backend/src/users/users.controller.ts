@@ -41,6 +41,12 @@ export class UsersController {
     return this.usersService.getStats(req.user.userId);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/saved-offers')
+  async getMySavedOffers(@Req() req: AuthRequest) {
+    return this.usersService.listSavedOffers(req.user.userId);
+  }
+
   // ======= PREMIUM SUBSCRIPTION =======
 
   @UseGuards(AuthGuard('jwt'))

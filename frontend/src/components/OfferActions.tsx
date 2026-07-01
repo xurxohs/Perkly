@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, CheckCircle, Share2 } from 'lucide-react';
-import { transactionsApi } from '@/lib/api';
+import { Bookmark, ShoppingCart, CheckCircle, Share2 } from 'lucide-react';
+import { offersApi, transactionsApi, usersApi } from '@/lib/api';
 import { useCart } from '@/lib/CartContext';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -27,7 +27,22 @@ export default function OfferActions({ offer }: OfferActionsProps) {
   const [purchased, setPurchased] = useState(false);
   const [isGift, setIsGift] = useState(false);
   const [giftCode, setGiftCode] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsSaved(false);
+      return;
+    }
+
+    usersApi.getSavedOffers()
+      .then((savedOffers) => {
+        setIsSaved(savedOffers.some((savedOffer) => savedOffer.offerId === offer.id));
+      })
+      .catch(() => setIsSaved(false));
+  }, [isAuthenticated, offer.id]);
 
   const handleBuy = async () => {
     if (!isAuthenticated) {
@@ -66,6 +81,33 @@ export default function OfferActions({ offer }: OfferActionsProps) {
       (webApp as { openTelegramLink: (url: string) => void }).openTelegramLink(shareUrl);
     } else {
       window.open(shareUrl, '_blank');
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    if (!isAuthenticated) {
+      hapticImpact('medium');
+      router.push('/login');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      if (isSaved) {
+        await offersApi.unsave(offer.id);
+        setIsSaved(false);
+      } else {
+        await offersApi.save(offer.id);
+        setIsSaved(true);
+      }
+      hapticNotification('success');
+    } catch (err: unknown) {
+      hapticNotification('error');
+      const error = err as Error;
+      setError(error.message || 'Ошибка при сохранении');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -154,6 +196,20 @@ export default function OfferActions({ offer }: OfferActionsProps) {
           title="Поделиться в Telegram"
         >
           <Share2 className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={handleSaveToggle}
+          disabled={saving}
+          className={`px-6 py-4 rounded-xl font-semibold cursor-pointer border transition-all flex items-center justify-center disabled:opacity-60 ${
+            isSaved
+              ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-300'
+              : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+          }`}
+          title={isSaved ? 'Удалить из сохранённых' : 'Сохранить'}
+          aria-label={isSaved ? 'Удалить из сохранённых' : 'Сохранить'}
+        >
+          <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
         </button>
       </div>
 

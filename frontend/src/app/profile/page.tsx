@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent } from 'lucide-react';
+import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { usersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation } from '@/lib/api';
+import { usersApi, offersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation, SavedOffer } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -43,8 +43,11 @@ export default function ProfilePage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState('');
-    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'promocodes' | 'settings'>('history');
+    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'saved' | 'promocodes' | 'settings'>('history');
     const [subscriptions, setSubscriptions] = useState<Transaction[]>([]);
+    const [savedOffers, setSavedOffers] = useState<SavedOffer[]>([]);
+    const [savedOffersLoading, setSavedOffersLoading] = useState(false);
+    const [savedOffersError, setSavedOffersError] = useState<string | null>(null);
     const [promocodeActivations, setPromocodeActivations] = useState<PromocodeActivation[]>([]);
     const [promocodesLoading, setPromocodesLoading] = useState(false);
     const [promocodeError, setPromocodeError] = useState<string | null>(null);
@@ -89,6 +92,14 @@ export default function ProfilePage() {
                 setTransactions(res.data);
             }).catch(() => { });
             transactionsApi.getSubscriptions().then(setSubscriptions).catch(() => { });
+            setSavedOffersLoading(true);
+            usersApi.getSavedOffers()
+                .then(setSavedOffers)
+                .catch((err) => {
+                    console.error('Failed to load saved offers', err);
+                    setSavedOffersError('Не удалось загрузить сохранённые офферы.');
+                })
+                .finally(() => setSavedOffersLoading(false));
             setPromocodesLoading(true);
             api.promocodes.listMyActivations()
                 .then(setPromocodeActivations)
@@ -106,6 +117,18 @@ export default function ProfilePage() {
             await refreshUser();
             setEditing(false);
         } catch { }
+    };
+
+    const handleRemoveSavedOffer = async (offerId: string) => {
+        try {
+            await offersApi.unsave(offerId);
+            setSavedOffers((current) => current.filter((savedOffer) => savedOffer.offerId !== offerId));
+            hapticNotification('success');
+        } catch (err) {
+            console.error('Failed to remove saved offer', err);
+            hapticNotification('error');
+            setSavedOffersError('Не удалось удалить оффер из сохранённых.');
+        }
     };
 
     const handleOpenDispute = async (txId: string) => {
@@ -486,6 +509,12 @@ export default function ProfilePage() {
                         <span className="flex items-center justify-center gap-1.5"><Key className="w-4 h-4" /> Подписки</span>
                     </button>
                     <button
+                        onClick={() => setActiveTab('saved')}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'saved' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
+                    >
+                        <span className="flex items-center justify-center gap-1.5"><Bookmark className="w-4 h-4" /> Сохранённые</span>
+                    </button>
+                    <button
                         onClick={() => setActiveTab('promocodes')}
                         className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'promocodes' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
@@ -751,6 +780,59 @@ export default function ProfilePage() {
                                     </div>
                                 );
                             })
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'saved' && (
+                    <div className="space-y-4">
+                        {savedOffersLoading ? (
+                            <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                                <div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
+                                <p className="text-white/30">Загружаем сохранённые...</p>
+                            </div>
+                        ) : savedOffersError ? (
+                            <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+                                {savedOffersError}
+                            </div>
+                        ) : savedOffers.length === 0 ? (
+                            <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                                <Bookmark className="w-12 h-12 text-white/10 mx-auto mb-3" />
+                                <p className="text-white/30 mb-3">Сохранённых офферов пока нет</p>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Перейти в каталог →</Link>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {savedOffers.map((savedOffer) => (
+                                    <div key={savedOffer.id} className="rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06]">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] text-white/30 uppercase font-semibold mb-1">{savedOffer.offer.category}</p>
+                                                <Link href={`/offer/?id=${savedOffer.offerId}`} className="text-white font-bold no-underline hover:text-purple-300 transition-colors line-clamp-2">
+                                                    {savedOffer.offer.title}
+                                                </Link>
+                                                <p className="text-sm text-white/40 mt-2 line-clamp-2">{savedOffer.offer.description}</p>
+                                                <div className="flex items-center gap-3 mt-3">
+                                                    <span className="text-lg font-extrabold text-gradient-green">
+                                                        {savedOffer.offer.price === 0 ? 'Бесплатно' : `${savedOffer.offer.price.toFixed(2)}$`}
+                                                    </span>
+                                                    <span className="text-xs text-white/30">
+                                                        {new Date(savedOffer.createdAt).toLocaleDateString('ru-RU')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleRemoveSavedOffer(savedOffer.offerId)}
+                                                className="shrink-0 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/10 cursor-pointer transition-colors"
+                                                title="Удалить из сохранённых"
+                                                aria-label="Удалить из сохранённых"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 )}

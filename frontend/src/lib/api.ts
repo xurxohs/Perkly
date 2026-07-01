@@ -37,6 +37,15 @@ export interface Offer {
     };
 }
 
+export interface SavedOffer {
+    id: string;
+    userId: string;
+    offerId: string;
+    source: string;
+    createdAt: string;
+    offer: Offer;
+}
+
 export interface Squad {
     id: string;
     name: string;
@@ -464,6 +473,16 @@ export const offersApi = {
 
     getMyOffers: () =>
         request<Offer[]>('/offers/vendor/me'),
+
+    save: (id: string) =>
+        request<SavedOffer>(`/offers/${id}/save`, {
+            method: 'POST',
+        }),
+
+    unsave: (id: string) =>
+        request<{ deleted: boolean }>(`/offers/${id}/save`, {
+            method: 'DELETE',
+        }),
 };
 
 // ===== TRANSACTIONS =====
@@ -514,6 +533,9 @@ export const usersApi = {
 
     getStats: () =>
         request<{ totalSpent: number; totalPurchases: number }>('/users/me/stats'),
+
+    getSavedOffers: () =>
+        request<SavedOffer[]>('/users/me/saved-offers'),
 
     subscribe: (tier: 'GOLD' | 'PLATINUM', months: number) =>
         request<{ subscription: unknown; tier: string; endDate: string; cost: number }>('/users/me/subscribe',

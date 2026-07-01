@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
+import { SavedOffer, SAVED_OFFER_SELECT } from '../offers/offer.selects';
 
 export const SUBSCRIPTION_PRICES: Record<string, number> = {
   GOLD: 4.99,
@@ -153,6 +154,14 @@ export class UsersService {
       totalPurchases,
       reviewsCount,
     };
+  }
+
+  listSavedOffers(userId: string): Promise<SavedOffer[]> {
+    return this.prisma.savedOffer.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: SAVED_OFFER_SELECT,
+    });
   }
 
   async subscribe(userId: string, tier: 'GOLD' | 'PLATINUM', months: number) {

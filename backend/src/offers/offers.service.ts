@@ -9,6 +9,8 @@ import { Prisma, Offer } from '@prisma/client';
 import {
   PublicOffer,
   PUBLIC_OFFER_SELECT,
+  SavedOffer,
+  SAVED_OFFER_SELECT,
   VendorOffer,
   VENDOR_OFFER_SELECT,
 } from './offer.selects';
@@ -135,6 +137,40 @@ export class OffersService {
       where: offerWhereUniqueInput,
       select: PUBLIC_OFFER_SELECT,
     });
+  }
+
+  async saveOffer(userId: string, offerId: string): Promise<SavedOffer> {
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: offerId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!offer) throw new NotFoundException('Offer not found');
+    if (!offer.isActive) {
+      throw new BadRequestException('Offer is no longer active');
+    }
+
+    return this.prisma.savedOffer.upsert({
+      where: { userId_offerId: { userId, offerId } },
+      create: {
+        user: { connect: { id: userId } },
+        offer: { connect: { id: offerId } },
+        source: 'USER',
+      },
+      update: {},
+      select: SAVED_OFFER_SELECT,
+    });
+  }
+
+  async unsaveOffer(
+    userId: string,
+    offerId: string,
+  ): Promise<{ deleted: boolean }> {
+    const result = await this.prisma.savedOffer.deleteMany({
+      where: { userId, offerId },
+    });
+
+    return { deleted: result.count > 0 };
   }
 
   async findRelatedOffers(

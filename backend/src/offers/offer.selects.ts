@@ -88,6 +88,15 @@ export const ADMIN_OFFER_SELECT = {
   seller: { select: USER_ADMIN_SELECT },
 } satisfies Prisma.OfferSelect;
 
+export const SAVED_OFFER_SELECT = {
+  id: true,
+  userId: true,
+  offerId: true,
+  source: true,
+  createdAt: true,
+  offer: { select: PUBLIC_OFFER_SELECT },
+} satisfies Prisma.SavedOfferSelect;
+
 export type PublicOffer = Prisma.OfferGetPayload<{
   select: typeof PUBLIC_OFFER_SELECT;
 }>;
@@ -102,4 +111,8 @@ export type PurchasedOffer = Prisma.OfferGetPayload<{
 
 export type AdminOffer = Prisma.OfferGetPayload<{
   select: typeof ADMIN_OFFER_SELECT;
+}>;
+
+export type SavedOffer = Prisma.SavedOfferGetPayload<{
+  select: typeof SAVED_OFFER_SELECT;
 }>;
