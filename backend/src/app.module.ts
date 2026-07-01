@@ -25,6 +25,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { HomeModule } from './home/home.module';
 import { TopkaAdminModule } from './topka-admin/topka-admin.module';
 import { CompaniesModule } from './companies/companies.module';
+import { PromocodesModule } from './promocodes/promocodes.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { CompaniesModule } from './companies/companies.module';
     HomeModule,
     TopkaAdminModule,
     CompaniesModule,
+    PromocodesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

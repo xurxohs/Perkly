@@ -154,6 +154,61 @@ export interface CompanyApplicationInput {
     phone?: string;
 }
 
+export type PromocodeStatus = 'ACTIVE' | 'PAUSED' | 'ARCHIVED';
+export type PromocodeCodeType = 'STATIC' | 'DYNAMIC';
+export type PromocodeActivationStatus = 'ISSUED' | 'COPIED' | 'USED';
+
+export interface Promocode {
+    id: string;
+    companyId: string;
+    offerId: string | null;
+    title: string;
+    description: string | null;
+    codeType: PromocodeCodeType;
+    code: string | null;
+    discountValue: number;
+    validFrom: string | null;
+    validTo: string | null;
+    status: PromocodeStatus;
+    createdAt: string;
+    updatedAt: string;
+    offer?: Pick<Offer, 'id' | 'title' | 'isActive'> | null;
+    _count?: {
+        activations: number;
+    };
+}
+
+export interface PromocodeInput {
+    companyId?: string;
+    offerId?: string | null;
+    title?: string;
+    description?: string;
+    codeType?: PromocodeCodeType;
+    code?: string;
+    discountValue?: number;
+    validFrom?: string | null;
+    validTo?: string | null;
+    status?: PromocodeStatus;
+}
+
+export interface PromocodeActivation {
+    id: string;
+    userId: string;
+    promocodeId: string;
+    offerId: string | null;
+    status: PromocodeActivationStatus;
+    codeSnapshot: string | null;
+    copiedAt: string | null;
+    usedAt: string | null;
+    expiresAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    promocode?: Promocode & {
+        company?: Pick<Company, 'id' | 'brandName'>;
+        offer?: Pick<Offer, 'id' | 'title' | 'vendorLogo' | 'category'> | null;
+    };
+}
+
 export interface AnalyticsEvent {
     id: string;
     eventType: string;
@@ -446,7 +501,45 @@ export const companiesApi = {
         }),
 };
 
+// ===== PROMOCODES =====
+export const promocodesApi = {
+    listMine: () => request<Promocode[]>('/promocodes/company/me'),
 
+    create: (data: PromocodeInput) =>
+        request<Promocode>('/promocodes', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    update: (id: string, data: PromocodeInput) =>
+        request<Promocode>(`/promocodes/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+
+    updateStatus: (id: string, status: PromocodeStatus) =>
+        request<Promocode>(`/promocodes/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
+        }),
+
+    activate: (id: string) =>
+        request<PromocodeActivation>(`/promocodes/${id}/activate`, {
+            method: 'POST',
+        }),
+
+    copyActivation: (id: string) =>
+        request<PromocodeActivation>(`/promocodes/activations/${id}/copy`, {
+            method: 'POST',
+        }),
+
+    useActivation: (id: string) =>
+        request<PromocodeActivation>(`/promocodes/activations/${id}/use`, {
+            method: 'POST',
+        }),
+
+    listMyActivations: () => request<PromocodeActivation[]>('/users/me/promocode-activations'),
+};
 
 // ===== PAYMENTS =====
 export const paymentsApi = {
