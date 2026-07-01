@@ -728,6 +728,7 @@ const api = {
     admin: adminApi,
     seller: sellerApi,
     companies: companiesApi,
+    promocodes: promocodesApi,
     analytics: analyticsApi,
     squads: squadsApi,
     events: eventsApi,

@@ -4,9 +4,24 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { DollarSign, Package, TrendingUp, Clock } from 'lucide-react';
-import api, { SellerStats, Offer } from '@/lib/api';
+import { Archive, Clock, DollarSign, Package, Pause, Percent, Play, Plus, Ticket, TrendingUp, X } from 'lucide-react';
+import api, { SellerStats, Offer, Promocode, PromocodeCodeType, PromocodeStatus } from '@/lib/api';
 import Image from 'next/image';
+
+const PROMOCODE_STATUS_META: Record<PromocodeStatus, { label: string; className: string }> = {
+    ACTIVE: {
+        label: 'Активен',
+        className: 'bg-green-500/20 text-green-400',
+    },
+    PAUSED: {
+        label: 'Пауза',
+        className: 'bg-amber-500/20 text-amber-300',
+    },
+    ARCHIVED: {
+        label: 'Архив',
+        className: 'bg-white/10 text-white/40',
+    },
+};
 
 export default function SellerDashboard() {
     const { user, isAuthenticated, loading } = useAuth();
@@ -14,9 +29,13 @@ export default function SellerDashboard() {
     const canUseSellerDashboard = user?.role === 'VENDOR' || user?.role === 'ADMIN';
     const [stats, setStats] = useState<SellerStats | null>(null);
     const [offers, setOffers] = useState<Offer[]>([]);
+    const [promocodes, setPromocodes] = useState<Promocode[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [promoError, setPromoError] = useState<string | null>(null);
+    const [promoSaving, setPromoSaving] = useState(false);
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [newOffer, setNewOffer] = useState({
         title: '',
         description: '',
@@ -28,6 +47,32 @@ export default function SellerDashboard() {
         periodDays: 30,
         isFlashDrop: false
     });
+    const [newPromo, setNewPromo] = useState({
+        title: '',
+        description: '',
+        codeType: 'STATIC' as PromocodeCodeType,
+        code: '',
+        discountValue: 10,
+        offerId: '',
+        validTo: '',
+    });
+
+    const fetchSellerData = async () => {
+        const [statsRes, offersRes] = await Promise.all([
+            api.seller.getStats(),
+            api.seller.getOffers(),
+        ]);
+        setStats(statsRes);
+        setOffers(offersRes);
+
+        try {
+            const promocodesRes = await api.promocodes.listMine();
+            setPromocodes(promocodesRes);
+        } catch (err) {
+            console.warn('Failed to fetch promocodes', err);
+            setPromocodes([]);
+        }
+    };
 
     useEffect(() => {
         if (!loading && (!isAuthenticated || !user)) {
@@ -43,12 +88,7 @@ export default function SellerDashboard() {
 
         async function fetchData() {
             try {
-                const [statsRes, offersRes] = await Promise.all([
-                    api.seller.getStats(),
-                    api.seller.getOffers()
-                ]);
-                setStats(statsRes);
-                setOffers(offersRes);
+                await fetchSellerData();
             } catch (err) {
                 console.error('Failed to fetch seller data', err);
             } finally {
@@ -67,15 +107,60 @@ export default function SellerDashboard() {
             await api.offers.createVendor(newOffer);
             setIsCreateModalOpen(false);
             setNewOffer({ title: '', description: '', price: 0, category: 'SUBSCRIPTIONS', hiddenData: '', latitude: null, longitude: null, periodDays: 30, isFlashDrop: false });
-            // Refresh data
-            const [statsRes, offersRes] = await Promise.all([
-                api.seller.getStats(),
-                api.seller.getOffers()
-            ]);
-            setStats(statsRes);
-            setOffers(offersRes);
+            await fetchSellerData();
         } catch (err) {
             alert('Failed to create offer: ' + (err instanceof Error ? err.message : String(err)));
+        }
+    };
+
+    const handleCreatePromocode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPromoError(null);
+
+        if (newPromo.codeType === 'STATIC' && !newPromo.code.trim()) {
+            setPromoError('Для STATIC промокода нужен код.');
+            return;
+        }
+
+        setPromoSaving(true);
+        try {
+            await api.promocodes.create({
+                title: newPromo.title,
+                description: newPromo.description || undefined,
+                codeType: newPromo.codeType,
+                code: newPromo.codeType === 'STATIC' ? newPromo.code : undefined,
+                discountValue: newPromo.discountValue,
+                offerId: newPromo.offerId || null,
+                validTo: newPromo.validTo || null,
+                status: 'ACTIVE',
+            });
+            setIsPromoModalOpen(false);
+            setNewPromo({
+                title: '',
+                description: '',
+                codeType: 'STATIC',
+                code: '',
+                discountValue: 10,
+                offerId: '',
+                validTo: '',
+            });
+            await fetchSellerData();
+        } catch (err) {
+            setPromoError(err instanceof Error ? err.message : 'Не удалось создать промокод.');
+        } finally {
+            setPromoSaving(false);
+        }
+    };
+
+    const handlePromocodeStatus = async (id: string, status: PromocodeStatus) => {
+        setPromoError(null);
+        try {
+            const updated = await api.promocodes.updateStatus(id, status);
+            setPromocodes((current) =>
+                current.map((item) => item.id === id ? { ...item, status: updated.status } : item),
+            );
+        } catch (err) {
+            setPromoError(err instanceof Error ? err.message : 'Не удалось обновить статус промокода.');
         }
     };
 
@@ -172,6 +257,138 @@ export default function SellerDashboard() {
                                 <input id="offer-hidden" type="text" required value={newOffer.hiddenData} onChange={e => setNewOffer({...newOffer, hiddenData: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none" placeholder="То, что увидит покупатель после оплаты" />
                             </div>
                             <button type="submit" className="w-full py-4 rounded-xl text-white font-bold cursor-pointer border-0 mt-4 bg-gradient-to-br from-purple-500 to-pink-500 hover:opacity-90 transition-opacity">Создать Оффер</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Create Promocode Modal */}
+            {isPromoModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 border-white/10">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">Новый промокод</h2>
+                                <p className="text-sm text-white/40 mt-1">Создайте скидку для оффера или всей компании.</p>
+                            </div>
+                            <button
+                                onClick={() => setIsPromoModalOpen(false)}
+                                className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/10 bg-transparent border-0 cursor-pointer"
+                                title="Закрыть"
+                                aria-label="Закрыть"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreatePromocode} className="space-y-4">
+                            <div>
+                                <label htmlFor="promo-title" className="block text-sm text-white/50 mb-1">Название</label>
+                                <input
+                                    id="promo-title"
+                                    type="text"
+                                    required
+                                    value={newPromo.title}
+                                    onChange={e => setNewPromo({ ...newPromo, title: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-purple-500"
+                                    placeholder="Напр: Летняя скидка"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label htmlFor="promo-discount" className="block text-sm text-white/50 mb-1">Скидка (%)</label>
+                                    <input
+                                        id="promo-discount"
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        required
+                                        value={newPromo.discountValue}
+                                        onChange={e => setNewPromo({ ...newPromo, discountValue: Number(e.target.value) })}
+                                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="promo-type" className="block text-sm text-white/50 mb-1">Тип кода</label>
+                                    <select
+                                        id="promo-type"
+                                        value={newPromo.codeType}
+                                        onChange={e => setNewPromo({ ...newPromo, codeType: e.target.value as PromocodeCodeType, code: e.target.value === 'DYNAMIC' ? '' : newPromo.code })}
+                                        className="w-full px-4 py-3 rounded-xl bg-[#1a1f2e] border border-white/10 text-white outline-none"
+                                    >
+                                        <option value="STATIC">STATIC</option>
+                                        <option value="DYNAMIC">DYNAMIC</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="promo-code" className="block text-sm text-white/50 mb-1">Код</label>
+                                    <input
+                                        id="promo-code"
+                                        type="text"
+                                        disabled={newPromo.codeType === 'DYNAMIC'}
+                                        required={newPromo.codeType === 'STATIC'}
+                                        value={newPromo.code}
+                                        onChange={e => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
+                                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none disabled:opacity-40"
+                                        placeholder={newPromo.codeType === 'DYNAMIC' ? 'Создаётся автоматически' : 'SALE10'}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="promo-offer" className="block text-sm text-white/50 mb-1">Оффер</label>
+                                    <select
+                                        id="promo-offer"
+                                        value={newPromo.offerId}
+                                        onChange={e => setNewPromo({ ...newPromo, offerId: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl bg-[#1a1f2e] border border-white/10 text-white outline-none"
+                                    >
+                                        <option value="">Вся компания</option>
+                                        {offers.map((offer) => (
+                                            <option key={offer.id} value={offer.id}>
+                                                {offer.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="promo-valid-to" className="block text-sm text-white/50 mb-1">Действует до</label>
+                                    <input
+                                        id="promo-valid-to"
+                                        type="date"
+                                        value={newPromo.validTo}
+                                        onChange={e => setNewPromo({ ...newPromo, validTo: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="promo-description" className="block text-sm text-white/50 mb-1">Описание</label>
+                                <textarea
+                                    id="promo-description"
+                                    value={newPromo.description}
+                                    onChange={e => setNewPromo({ ...newPromo, description: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none h-24"
+                                    placeholder="Короткое описание для команды и будущего UI."
+                                />
+                            </div>
+
+                            {promoError && (
+                                <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300">
+                                    {promoError}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={promoSaving}
+                                className="w-full py-4 rounded-xl text-white font-bold cursor-pointer border-0 mt-4 bg-gradient-to-br from-purple-500 to-pink-500 hover:opacity-90 transition-opacity disabled:opacity-50"
+                            >
+                                {promoSaving ? 'Создаём...' : 'Создать промокод'}
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -276,6 +493,117 @@ export default function SellerDashboard() {
                     )}
                 </div>
 
+                <div className="space-y-8">
+                {/* Promocodes List */}
+                <div className="glass-card p-6">
+                    <div className="flex items-center justify-between gap-4 mb-6 border-b border-white/10 pb-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-white">Промокоды</h2>
+                            <p className="text-xs text-white/35 mt-1">{promocodes.length} всего</p>
+                        </div>
+                        <button
+                            onClick={() => { setPromoError(null); setIsPromoModalOpen(true); }}
+                            className="p-2 rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 transition-colors border border-purple-500/20 cursor-pointer"
+                            title="Добавить промокод"
+                            aria-label="Добавить промокод"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {promoError && !isPromoModalOpen && (
+                        <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300">
+                            {promoError}
+                        </div>
+                    )}
+
+                    {promocodes.length === 0 ? (
+                        <div className="text-center py-8 px-4">
+                            <Ticket className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                            <p className="text-gray-400 text-sm mb-4">Промокоды еще не созданы.</p>
+                            <button
+                                onClick={() => setIsPromoModalOpen(true)}
+                                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-gray-300 font-medium transition-colors border border-white/10 cursor-pointer"
+                            >
+                                Создать первый
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {promocodes.map((promo) => {
+                                const statusMeta = PROMOCODE_STATUS_META[promo.status];
+                                return (
+                                    <div key={promo.id} className="p-4 rounded-xl bg-black/20 border border-white/5">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="font-semibold text-white truncate">{promo.title}</h4>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusMeta.className}`}>
+                                                        {statusMeta.label}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2 text-xs text-white/40">
+                                                    <span className="inline-flex items-center gap-1 text-green-400">
+                                                        <Percent className="w-3 h-3" />
+                                                        {promo.discountValue}%
+                                                    </span>
+                                                    <span>{promo.codeType}</span>
+                                                    {promo.code && <span className="text-white/65 font-mono">{promo.code}</span>}
+                                                </div>
+                                                <p className="text-xs text-white/30 mt-2 truncate">
+                                                    {promo.offer?.title ?? 'Вся компания'}
+                                                </p>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <p className="text-sm font-bold text-white">{promo._count?.activations ?? 0}</p>
+                                                <p className="text-[10px] text-white/30">активаций</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-white/5">
+                                            <p className="text-[10px] text-white/30">
+                                                {promo.validTo ? `до ${new Date(promo.validTo).toLocaleDateString('ru')}` : 'без срока'}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                {promo.status !== 'ACTIVE' && (
+                                                    <button
+                                                        onClick={() => handlePromocodeStatus(promo.id, 'ACTIVE')}
+                                                        className="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 border-0 cursor-pointer"
+                                                        title="Активировать"
+                                                        aria-label="Активировать"
+                                                    >
+                                                        <Play className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {promo.status === 'ACTIVE' && (
+                                                    <button
+                                                        onClick={() => handlePromocodeStatus(promo.id, 'PAUSED')}
+                                                        className="p-2 rounded-lg bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border-0 cursor-pointer"
+                                                        title="Пауза"
+                                                        aria-label="Пауза"
+                                                    >
+                                                        <Pause className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {promo.status !== 'ARCHIVED' && (
+                                                    <button
+                                                        onClick={() => handlePromocodeStatus(promo.id, 'ARCHIVED')}
+                                                        className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border-0 cursor-pointer"
+                                                        title="В архив"
+                                                        aria-label="В архив"
+                                                    >
+                                                        <Archive className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
                 {/* Recent Transactions List */}
                 <div className="glass-card p-6">
                     <h2 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Последние Покупки</h2>
@@ -307,6 +635,7 @@ export default function SellerDashboard() {
                             </button>
                         </div>
                     )}
+                </div>
                 </div>
             </div>
         </div>
