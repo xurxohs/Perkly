@@ -213,6 +213,34 @@ export interface PromocodeActivation {
     };
 }
 
+export interface PromocodeAnalytics {
+    summary: {
+        totalPromocodes: number;
+        activePromocodes: number;
+        totalActivations: number;
+        copiedActivations: number;
+        usedActivations: number;
+        copyRate: number;
+        useRate: number;
+    };
+    promocodes: {
+        id: string;
+        title: string;
+        status: PromocodeStatus;
+        discountValue: number;
+        maxActivations: number | null;
+        perUserLimit: number;
+        offerTitle: string | null;
+        activations: number;
+        copied: number;
+        used: number;
+        issued: number;
+        copyRate: number;
+        useRate: number;
+        quotaUsedRate: number | null;
+    }[];
+}
+
 export interface AnalyticsEvent {
     id: string;
     eventType: string;
@@ -514,6 +542,8 @@ export const companiesApi = {
 // ===== PROMOCODES =====
 export const promocodesApi = {
     listMine: () => request<Promocode[]>('/promocodes/company/me'),
+
+    analytics: () => request<PromocodeAnalytics>('/promocodes/company/me/analytics'),
 
     create: (data: PromocodeInput) =>
         request<Promocode>('/promocodes', {

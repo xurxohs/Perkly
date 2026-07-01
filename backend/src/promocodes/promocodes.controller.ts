@@ -35,6 +35,16 @@ export class PromocodesController {
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('VENDOR', 'ADMIN')
+  @Get('promocodes/company/me/analytics')
+  getCompanyAnalytics(@Req() req: AuthRequest) {
+    return this.promocodesService.getCompanyAnalytics(
+      req.user.userId,
+      req.user.role,
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
   @Post('promocodes')
   create(@Req() req: AuthRequest, @Body() body: PromocodeInput) {
     return this.promocodesService.create(req.user.userId, req.user.role, body);

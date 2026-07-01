@@ -70,6 +70,34 @@ export interface PromocodeInput {
   status?: unknown;
 }
 
+export interface CompanyPromocodeAnalytics {
+  summary: {
+    totalPromocodes: number;
+    activePromocodes: number;
+    totalActivations: number;
+    copiedActivations: number;
+    usedActivations: number;
+    copyRate: number;
+    useRate: number;
+  };
+  promocodes: {
+    id: string;
+    title: string;
+    status: string;
+    discountValue: number;
+    maxActivations: number | null;
+    perUserLimit: number;
+    offerTitle: string | null;
+    activations: number;
+    copied: number;
+    used: number;
+    issued: number;
+    copyRate: number;
+    useRate: number;
+    quotaUsedRate: number | null;
+  }[];
+}
+
 @Injectable()
 export class PromocodesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -95,6 +123,86 @@ export class PromocodesService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async getCompanyAnalytics(
+    userId: string,
+    role?: string,
+  ): Promise<CompanyPromocodeAnalytics> {
+    const company = await this.getManagedCompany(userId, role);
+    const promocodes = await this.prisma.promocode.findMany({
+      where: { companyId: company.id },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        discountValue: true,
+        maxActivations: true,
+        perUserLimit: true,
+        offer: { select: { title: true } },
+        activations: {
+          select: {
+            status: true,
+            copiedAt: true,
+            usedAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    let totalActivations = 0;
+    let copiedActivations = 0;
+    let usedActivations = 0;
+
+    const analytics = promocodes.map((promocode) => {
+      const activations = promocode.activations.length;
+      const copied = promocode.activations.filter(
+        (activation) => activation.status === 'COPIED' || activation.copiedAt,
+      ).length;
+      const used = promocode.activations.filter(
+        (activation) => activation.status === 'USED' || activation.usedAt,
+      ).length;
+      const issued = Math.max(0, activations - copied - used);
+
+      totalActivations += activations;
+      copiedActivations += copied;
+      usedActivations += used;
+
+      return {
+        id: promocode.id,
+        title: promocode.title,
+        status: promocode.status,
+        discountValue: promocode.discountValue,
+        maxActivations: promocode.maxActivations,
+        perUserLimit: promocode.perUserLimit,
+        offerTitle: promocode.offer?.title ?? null,
+        activations,
+        copied,
+        used,
+        issued,
+        copyRate: this.percent(copied, activations),
+        useRate: this.percent(used, activations),
+        quotaUsedRate: promocode.maxActivations
+          ? this.percent(activations, promocode.maxActivations)
+          : null,
+      };
+    });
+
+    return {
+      summary: {
+        totalPromocodes: promocodes.length,
+        activePromocodes: promocodes.filter(
+          (promocode) => promocode.status === 'ACTIVE',
+        ).length,
+        totalActivations,
+        copiedActivations,
+        usedActivations,
+        copyRate: this.percent(copiedActivations, totalActivations),
+        useRate: this.percent(usedActivations, totalActivations),
+      },
+      promocodes: analytics,
+    };
   }
 
   async create(
@@ -500,6 +608,11 @@ export class PromocodesService {
       throw new BadRequestException('discountValue must be between 0 and 100');
     }
     return discount;
+  }
+
+  private percent(part: number, total: number): number {
+    if (!total || total <= 0) return 0;
+    return Number(((part / total) * 100).toFixed(1));
   }
 
   private optionalPositiveInteger(value: unknown, field: string): number | null {

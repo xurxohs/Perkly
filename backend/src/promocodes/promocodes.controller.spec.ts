@@ -7,6 +7,7 @@ describe('PromocodesController', () => {
     create: jest.Mock;
     update: jest.Mock;
     updateStatus: jest.Mock;
+    getCompanyAnalytics: jest.Mock;
     activate: jest.Mock;
     copyActivation: jest.Mock;
     useActivation: jest.Mock;
@@ -20,6 +21,7 @@ describe('PromocodesController', () => {
       create: jest.fn(),
       update: jest.fn(),
       updateStatus: jest.fn(),
+      getCompanyAnalytics: jest.fn(),
       activate: jest.fn(),
       copyActivation: jest.fn(),
       useActivation: jest.fn(),
@@ -70,6 +72,19 @@ describe('PromocodesController', () => {
       'VENDOR',
       'promo-1',
       'PAUSED',
+    );
+  });
+
+  it('returns promocode analytics for the authenticated company owner', async () => {
+    service.getCompanyAnalytics.mockResolvedValue({ summary: {}, promocodes: [] });
+
+    await controller.getCompanyAnalytics({
+      user: { userId: 'seller-1', role: 'VENDOR' },
+    } as never);
+
+    expect(service.getCompanyAnalytics).toHaveBeenCalledWith(
+      'seller-1',
+      'VENDOR',
     );
   });
 

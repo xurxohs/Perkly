@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Archive, Clock, DollarSign, Package, Pause, Percent, Play, Plus, Ticket, TrendingUp, X } from 'lucide-react';
-import api, { SellerStats, Offer, Promocode, PromocodeCodeType, PromocodeStatus } from '@/lib/api';
+import api, { SellerStats, Offer, Promocode, PromocodeAnalytics, PromocodeCodeType, PromocodeStatus } from '@/lib/api';
 import Image from 'next/image';
 
 const PROMOCODE_STATUS_META: Record<PromocodeStatus, { label: string; className: string }> = {
@@ -30,6 +30,7 @@ export default function SellerDashboard() {
     const [stats, setStats] = useState<SellerStats | null>(null);
     const [offers, setOffers] = useState<Offer[]>([]);
     const [promocodes, setPromocodes] = useState<Promocode[]>([]);
+    const [promocodeAnalytics, setPromocodeAnalytics] = useState<PromocodeAnalytics | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [promoError, setPromoError] = useState<string | null>(null);
     const [promoSaving, setPromoSaving] = useState(false);
@@ -68,11 +69,16 @@ export default function SellerDashboard() {
         setOffers(offersRes);
 
         try {
-            const promocodesRes = await api.promocodes.listMine();
+            const [promocodesRes, promocodeAnalyticsRes] = await Promise.all([
+                api.promocodes.listMine(),
+                api.promocodes.analytics(),
+            ]);
             setPromocodes(promocodesRes);
+            setPromocodeAnalytics(promocodeAnalyticsRes);
         } catch (err) {
             console.warn('Failed to fetch promocodes', err);
             setPromocodes([]);
+            setPromocodeAnalytics(null);
         }
     };
 
@@ -165,6 +171,8 @@ export default function SellerDashboard() {
             setPromocodes((current) =>
                 current.map((item) => item.id === id ? { ...item, status: updated.status } : item),
             );
+            const promocodeAnalyticsRes = await api.promocodes.analytics();
+            setPromocodeAnalytics(promocodeAnalyticsRes);
         } catch (err) {
             setPromoError(err instanceof Error ? err.message : 'Не удалось обновить статус промокода.');
         }
@@ -550,6 +558,29 @@ export default function SellerDashboard() {
                         </div>
                     )}
 
+                    {promocodeAnalytics && (
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="rounded-xl bg-white/[0.03] border border-white/5 p-3">
+                                <p className="text-[10px] text-white/35 uppercase">Активные</p>
+                                <p className="text-lg font-bold text-white">
+                                    {promocodeAnalytics.summary.activePromocodes} / {promocodeAnalytics.summary.totalPromocodes}
+                                </p>
+                            </div>
+                            <div className="rounded-xl bg-white/[0.03] border border-white/5 p-3">
+                                <p className="text-[10px] text-white/35 uppercase">Активации</p>
+                                <p className="text-lg font-bold text-white">{promocodeAnalytics.summary.totalActivations}</p>
+                            </div>
+                            <div className="rounded-xl bg-white/[0.03] border border-white/5 p-3">
+                                <p className="text-[10px] text-white/35 uppercase">Copy rate</p>
+                                <p className="text-lg font-bold text-purple-300">{promocodeAnalytics.summary.copyRate}%</p>
+                            </div>
+                            <div className="rounded-xl bg-white/[0.03] border border-white/5 p-3">
+                                <p className="text-[10px] text-white/35 uppercase">Use rate</p>
+                                <p className="text-lg font-bold text-green-400">{promocodeAnalytics.summary.useRate}%</p>
+                            </div>
+                        </div>
+                    )}
+
                     {promocodes.length === 0 ? (
                         <div className="text-center py-8 px-4">
                             <Ticket className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -565,6 +596,7 @@ export default function SellerDashboard() {
                         <div className="space-y-3">
                             {promocodes.map((promo) => {
                                 const statusMeta = PROMOCODE_STATUS_META[promo.status];
+                                const analytics = promocodeAnalytics?.promocodes.find((item) => item.id === promo.id);
                                 return (
                                     <div key={promo.id} className="p-4 rounded-xl bg-black/20 border border-white/5">
                                         <div className="flex items-start justify-between gap-3">
@@ -586,6 +618,18 @@ export default function SellerDashboard() {
                                                 <p className="text-xs text-white/30 mt-2 truncate">
                                                     {promo.offer?.title ?? 'Вся компания'}
                                                 </p>
+                                                {analytics && (
+                                                    <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+                                                        <div className="rounded-lg bg-white/[0.03] px-2 py-1.5 border border-white/5">
+                                                            <span className="text-white/30">Copy</span>
+                                                            <span className="ml-1 text-purple-300 font-semibold">{analytics.copyRate}%</span>
+                                                        </div>
+                                                        <div className="rounded-lg bg-white/[0.03] px-2 py-1.5 border border-white/5">
+                                                            <span className="text-white/30">Use</span>
+                                                            <span className="ml-1 text-green-400 font-semibold">{analytics.useRate}%</span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <p className="text-sm font-bold text-white">

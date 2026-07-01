@@ -175,6 +175,84 @@ describe('PromocodesService', () => {
     );
   });
 
+  it('calculates company promocode analytics', async () => {
+    prisma.company.findUnique.mockResolvedValue(activeCompany);
+    prisma.promocode.findMany.mockResolvedValue([
+      {
+        id: 'promo-1',
+        title: 'Launch',
+        status: 'ACTIVE',
+        discountValue: 20,
+        maxActivations: 10,
+        perUserLimit: 1,
+        offer: { title: 'Coffee' },
+        activations: [
+          { status: 'ISSUED', copiedAt: null, usedAt: null },
+          { status: 'COPIED', copiedAt: new Date(), usedAt: null },
+          { status: 'USED', copiedAt: new Date(), usedAt: new Date() },
+        ],
+      },
+      {
+        id: 'promo-2',
+        title: 'Archived',
+        status: 'ARCHIVED',
+        discountValue: 10,
+        maxActivations: null,
+        perUserLimit: 1,
+        offer: null,
+        activations: [],
+      },
+    ]);
+
+    await expect(
+      service.getCompanyAnalytics('seller-1', 'VENDOR'),
+    ).resolves.toEqual({
+      summary: {
+        totalPromocodes: 2,
+        activePromocodes: 1,
+        totalActivations: 3,
+        copiedActivations: 2,
+        usedActivations: 1,
+        copyRate: 66.7,
+        useRate: 33.3,
+      },
+      promocodes: [
+        {
+          id: 'promo-1',
+          title: 'Launch',
+          status: 'ACTIVE',
+          discountValue: 20,
+          maxActivations: 10,
+          perUserLimit: 1,
+          offerTitle: 'Coffee',
+          activations: 3,
+          copied: 2,
+          used: 1,
+          issued: 0,
+          copyRate: 66.7,
+          useRate: 33.3,
+          quotaUsedRate: 30,
+        },
+        {
+          id: 'promo-2',
+          title: 'Archived',
+          status: 'ARCHIVED',
+          discountValue: 10,
+          maxActivations: null,
+          perUserLimit: 1,
+          offerTitle: null,
+          activations: 0,
+          copied: 0,
+          used: 0,
+          issued: 0,
+          copyRate: 0,
+          useRate: 0,
+          quotaUsedRate: null,
+        },
+      ],
+    });
+  });
+
   it('updates only owned promocodes', async () => {
     prisma.promocode.findUnique.mockResolvedValue({
       id: 'promo-1',
