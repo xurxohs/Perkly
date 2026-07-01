@@ -103,12 +103,21 @@ export default function ProfilePage() {
 
     const handleTopUp = async (amount: number) => {
         try {
-            const res = await paymentsApi.topUp(amount) as { deposit: { id: string } };
+            const res = await paymentsApi.topUp(amount);
             const deposit = res.deposit;
-            await paymentsApi.mockWebhook(deposit.id, true);
-            await refreshUser();
-            setTopUpModalOpen(false);
-            alert(`Баланс успешно пополнен на $${amount}!`);
+            const isLocalhost =
+                typeof window !== 'undefined' &&
+                ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+            if (isLocalhost) {
+                await paymentsApi.mockWebhook(deposit.id, true);
+                await refreshUser();
+                setTopUpModalOpen(false);
+                alert(`Баланс успешно пополнен на $${amount}!`);
+                return;
+            }
+
+            window.location.href = res.paymentUrl;
         } catch (err: unknown) {
             console.error(err);
             const error = err as Error;

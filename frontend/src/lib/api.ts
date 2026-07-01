@@ -451,7 +451,7 @@ export const companiesApi = {
 // ===== PAYMENTS =====
 export const paymentsApi = {
     topUp: (amount: number) =>
-        request<unknown>('/payments/topup', {
+        request<{ deposit: { id: string }; paymentUrl: string }>('/payments/topup', {
             method: 'POST',
             body: JSON.stringify({ amount }),
         }),

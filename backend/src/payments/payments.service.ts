@@ -1,8 +1,9 @@
 import {
   Injectable,
-  NotFoundException,
   BadRequestException,
   Logger,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -24,7 +25,8 @@ const CLICK_ERRORS = {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly clickSecretKey = process.env.CLICK_SECRET_KEY || 'sandbox_secret';
+  private readonly clickSecretKey =
+    process.env.CLICK_SECRET_KEY || 'sandbox_secret';
   private readonly clickMerchantId = process.env.CLICK_MERCHANT_ID || '12345';
   private readonly clickServiceId = process.env.CLICK_SERVICE_ID || '12345';
 
@@ -51,6 +53,51 @@ export class PaymentsService {
     return { deposit, paymentUrl };
   }
 
+  async mockCompleteTopUp(userId: string, depositId: string, success: boolean) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException('Mock payments are disabled in production');
+    }
+
+    const deposit = await this.prisma.deposit.findUnique({
+      where: { id: depositId },
+    });
+
+    if (!deposit) {
+      throw new NotFoundException('Deposit not found');
+    }
+
+    if (deposit.userId !== userId) {
+      throw new ForbiddenException('Deposit does not belong to this user');
+    }
+
+    if (deposit.status !== 'PENDING') {
+      throw new BadRequestException('Deposit is already processed');
+    }
+
+    if (!success) {
+      return this.prisma.deposit.update({
+        where: { id: deposit.id },
+        data: { status: 'FAILED' },
+      });
+    }
+
+    const [updatedDeposit] = await this.prisma.$transaction([
+      this.prisma.deposit.update({
+        where: { id: deposit.id },
+        data: {
+          status: 'SUCCESS',
+          providerId: `mock_${deposit.id}`,
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { balance: { increment: deposit.amount } },
+      }),
+    ]);
+
+    return updatedDeposit;
+  }
+
   async processClickWebhook(body: any) {
     const {
       click_trans_id,
@@ -67,16 +114,25 @@ export class PaymentsService {
 
     // 1. Check Signature
     const signString = `${click_trans_id}${service_id}${this.clickSecretKey}${merchant_trans_id}${amount}${action}${sign_time}`;
-    const generatedSign = crypto.createHash('md5').update(signString).digest('hex');
+    const generatedSign = crypto
+      .createHash('md5')
+      .update(signString)
+      .digest('hex');
 
     if (generatedSign !== sign_string) {
       this.logger.error('Click sign check failed');
-      throw { error: CLICK_ERRORS.SIGN_CHECK_FAILED, message: 'SIGN CHECK FAILED!' };
+      throw {
+        error: CLICK_ERRORS.SIGN_CHECK_FAILED,
+        message: 'SIGN CHECK FAILED!',
+      };
     }
 
     // 2. Check Action (0 = Prepare, 1 = Complete)
     if (action !== 0 && action !== 1) {
-      throw { error: CLICK_ERRORS.ACTION_NOT_FOUND, message: 'Action not found' };
+      throw {
+        error: CLICK_ERRORS.ACTION_NOT_FOUND,
+        message: 'Action not found',
+      };
     }
 
     // 3. Find Deposit
@@ -85,11 +141,17 @@ export class PaymentsService {
     });
 
     if (!deposit) {
-      throw { error: CLICK_ERRORS.USER_DOES_NOT_EXIST, message: 'Deposit not found' };
+      throw {
+        error: CLICK_ERRORS.USER_DOES_NOT_EXIST,
+        message: 'Deposit not found',
+      };
     }
 
     if (parseFloat(amount) !== deposit.amount) {
-      throw { error: CLICK_ERRORS.INCORRECT_AMOUNT, message: 'Incorrect amount' };
+      throw {
+        error: CLICK_ERRORS.INCORRECT_AMOUNT,
+        message: 'Incorrect amount',
+      };
     }
 
     if (deposit.status === 'SUCCESS') {

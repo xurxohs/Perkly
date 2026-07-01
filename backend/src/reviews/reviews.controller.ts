@@ -1,14 +1,36 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import type { CreateReviewInput } from './reviews.service';
 import { ReviewsService } from './reviews.service';
-import { Prisma, Review } from '@prisma/client';
+import { Review } from '@prisma/client';
+
+interface AuthRequest extends Request {
+  user: { userId: string };
+}
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() createReviewDto: Prisma.ReviewCreateInput): Promise<Review> {
-    return this.reviewsService.create(createReviewDto);
+  create(
+    @Req() req: AuthRequest,
+    @Body() createReviewDto: CreateReviewInput,
+  ): Promise<Review> {
+    return this.reviewsService.createForAuthor(
+      req.user.userId,
+      createReviewDto,
+    );
   }
 
   @Get('offer/:offerId')

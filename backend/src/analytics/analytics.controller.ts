@@ -9,6 +9,9 @@ import {
   Request,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { AnalyticsService } from './analytics.service';
 
 interface TrackEventBody {
@@ -19,7 +22,10 @@ interface TrackEventBody {
 
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Post('events')
   async trackEvent(
@@ -27,19 +33,7 @@ export class AnalyticsController {
     @Headers('x-session-id') sessionId?: string,
     @Headers('authorization') authorization?: string,
   ) {
-    // Try to extract userId from JWT if present
-    let userId: string | undefined;
-    if (authorization) {
-      try {
-        const token = authorization.replace('Bearer ', '');
-        const payload = JSON.parse(
-          Buffer.from(token.split('.')[1], 'base64').toString(),
-        );
-        userId = payload.sub;
-      } catch {
-        // Not a valid JWT, ignore
-      }
-    }
+    const userId = this.resolveUserId(authorization);
 
     return this.analyticsService.trackEvent({
       eventType: body.eventType,
@@ -51,24 +45,33 @@ export class AnalyticsController {
   }
 
   @Get('events')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async getEvents(
-    @Request() req: { user: { role: string } },
+    @Request() _req: { user: { role: string } },
     @Query('eventType') eventType?: string,
     @Query('userId') userId?: string,
     @Query('skip') skip?: string,
     @Query('take') take?: string,
   ) {
-    // Only admins can view analytics events
-    if (req.user.role !== 'ADMIN') {
-      return { data: [], total: 0, error: 'Unauthorized' };
-    }
-
     return this.analyticsService.getEvents({
       eventType,
       userId,
       skip: skip ? parseInt(skip) : 0,
       take: take ? parseInt(take) : 50,
     });
+  }
+
+  private resolveUserId(authorization?: string): string | undefined {
+    if (!authorization?.startsWith('Bearer ')) return undefined;
+
+    try {
+      const payload = this.jwtService.verify<{ sub?: string }>(
+        authorization.slice('Bearer '.length),
+      );
+      return payload.sub;
+    } catch {
+      return undefined;
+    }
   }
 }
