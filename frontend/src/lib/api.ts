@@ -433,10 +433,16 @@ export const offersApi = {
 
 // ===== TRANSACTIONS =====
 export const transactionsApi = {
-    purchase: (offerId: string, isGift = false) =>
+    purchase: (offerId: string, isGift = false, promocodeActivationId?: string) =>
         request<Transaction>('/transactions', {
             method: 'POST',
-            body: JSON.stringify({ offerId, isGift }),
+            body: JSON.stringify({ offerId, isGift, promocodeActivationId }),
+        }),
+
+    validatePromocode: (data: { code: string; amount: number; offerId?: string }) =>
+        request<{ activationId: string; code: string | null; label: string; percent: number; discountAmount: number; finalAmount: number }>('/transactions/promo/validate', {
+            method: 'POST',
+            body: JSON.stringify(data),
         }),
 
     list: (skip = 0, take = 20) =>

@@ -26,7 +26,7 @@ export class TransactionsController {
       offerId: string;
       isGift?: boolean;
       pointsUsed?: number;
-      promoCode?: string;
+      promocodeActivationId?: string;
     },
   ) {
     return this.transactionsService.purchase(
@@ -34,14 +34,22 @@ export class TransactionsController {
       body.offerId,
       body.isGift,
       body.pointsUsed ?? 0,
-      body.promoCode,
+      body.promocodeActivationId,
     );
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Post('promo/validate')
-  validatePromo(@Body() body: { code: string; amount: number }) {
-    return this.transactionsService.validatePromoCode(body.code, body.amount);
+  validatePromo(
+    @Request() req: { user: { userId: string } },
+    @Body() body: { code: string; amount: number; offerId?: string },
+  ) {
+    return this.transactionsService.validatePromoCode(
+      req.user.userId,
+      body.code,
+      body.amount,
+      body.offerId,
+    );
   }
 
   @UseGuards(AuthGuard('jwt'))

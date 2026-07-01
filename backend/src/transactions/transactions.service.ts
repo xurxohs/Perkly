@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { Transaction } from '@prisma/client';
+import { Promocode, PromocodeActivation, Transaction } from '@prisma/client';
 import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
 import {
@@ -17,11 +17,30 @@ import {
   USER_ADMIN_SELECT,
 } from '../offers/offer.selects';
 
-const PROMO_CODES: Record<string, { percent: number; label: string }> = {
-  WELCOME10: { percent: 10, label: 'Welcome discount' },
-  'PRKLY-GOLD': { percent: 5, label: 'Gold promo' },
-  'PRKLY-PLAT': { percent: 10, label: 'Platinum promo' },
-  'PRKLY-VIP': { percent: 15, label: 'VIP promo' },
+type PurchaseOffer = {
+  id: string;
+  price: number;
+  companyId: string | null;
+  isActive: boolean;
+  sellerId: string;
+  title: string;
+  hiddenData: string;
+  periodDays: number;
+};
+
+type AppliedPromocode = {
+  activationId: string;
+  code: string | null;
+  label: string;
+  percent: number;
+  discountAmount: number;
+  finalAmount: number;
+};
+
+type ActivationWithPromocode = PromocodeActivation & {
+  promocode: Promocode & {
+    offer?: Pick<PurchaseOffer, 'id' | 'isActive'> | null;
+  };
 };
 
 @Injectable()
@@ -40,7 +59,7 @@ export class TransactionsService {
     offerId: string,
     isGift = false,
     pointsUsed = 0,
-    promoCode?: string,
+    promocodeActivationId?: string,
   ): Promise<Transaction> {
     // Find offer
     const offer = await this.prisma.offer.findUnique({
@@ -60,8 +79,12 @@ export class TransactionsService {
     const buyer = await this.prisma.user.findUnique({ where: { id: buyerId } });
     if (!buyer) throw new NotFoundException('User not found');
 
-    const promo = promoCode
-      ? this.validatePromoCode(promoCode, offer.price)
+    const promo = promocodeActivationId
+      ? await this.validatePromocodeActivation(
+          buyerId,
+          offer,
+          promocodeActivationId,
+        )
       : null;
     const promoDiscount = promo?.discountAmount ?? 0;
     const priceAfterPromo = Math.max(0, offer.price - promoDiscount);
@@ -83,6 +106,24 @@ export class TransactionsService {
 
     // Execute transaction atomically
     const transaction = await this.prisma.$transaction(async (tx) => {
+      if (promo) {
+        const updatedActivation = await tx.promocodeActivation.updateMany({
+          where: {
+            id: promo.activationId,
+            userId: buyerId,
+            status: { in: ['ISSUED', 'COPIED'] },
+          },
+          data: {
+            status: 'USED',
+            usedAt: new Date(),
+          },
+        });
+
+        if (updatedActivation.count !== 1) {
+          throw new BadRequestException('Promocode activation is already used');
+        }
+      }
+
       // Deduct buyer balance
       await tx.user.update({
         where: { id: buyerId },
@@ -144,7 +185,11 @@ export class TransactionsService {
     };
 
     // Try to notify the buyer
-    let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${finalPrice}.\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
+    let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${finalPrice}.`;
+    if (promo) {
+      message += `\nПромокод: ${promo.label} (-$${promo.discountAmount}).`;
+    }
+    message += `\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
 
     if (isGift) {
       const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;
@@ -187,23 +232,179 @@ export class TransactionsService {
     return transaction;
   }
 
-  validatePromoCode(code: string, amount: number) {
+  async validatePromoCode(
+    userId: string,
+    code: string,
+    amount: number,
+    offerId?: string,
+  ) {
     if (!amount || amount <= 0) {
       throw new BadRequestException('Invalid amount');
     }
 
     const normalized = code.trim().toUpperCase();
-    const promo = PROMO_CODES[normalized];
-    if (!promo) {
+    if (!normalized) {
       throw new BadRequestException('Промокод не найден или истек');
     }
 
-    const discountAmount = Number(((amount * promo.percent) / 100).toFixed(2));
+    const activation = await this.prisma.promocodeActivation.findFirst({
+      where: {
+        userId,
+        status: { in: ['ISSUED', 'COPIED'] },
+        OR: [{ codeSnapshot: normalized }, { promocode: { code: normalized } }],
+      },
+      include: {
+        promocode: {
+          include: {
+            offer: { select: { id: true, isActive: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!activation) {
+      throw new BadRequestException('Промокод не найден или истек');
+    }
+
+    const offer = offerId
+      ? await this.prisma.offer.findUnique({
+          where: { id: offerId },
+          select: {
+            id: true,
+            price: true,
+            companyId: true,
+            isActive: true,
+            sellerId: true,
+            title: true,
+            hiddenData: true,
+            periodDays: true,
+          },
+        })
+      : null;
+
+    if (offer) {
+      return this.validatePromocodeActivationForOffer(
+        activation as ActivationWithPromocode,
+        offer,
+        amount,
+      );
+    }
+
+    this.ensureActivationUsableForPurchase(
+      activation as ActivationWithPromocode,
+    );
+
+    return this.buildAppliedPromocode(
+      activation as ActivationWithPromocode,
+      amount,
+    );
+  }
+
+  private async validatePromocodeActivation(
+    userId: string,
+    offer: PurchaseOffer,
+    activationId: string,
+  ): Promise<AppliedPromocode> {
+    const activation = await this.prisma.promocodeActivation.findUnique({
+      where: { id: activationId },
+      include: {
+        promocode: {
+          include: {
+            offer: { select: { id: true, isActive: true } },
+          },
+        },
+      },
+    });
+
+    if (!activation) {
+      throw new NotFoundException('Promocode activation not found');
+    }
+    if (activation.userId !== userId) {
+      throw new ForbiddenException('You cannot use this promocode activation');
+    }
+
+    return this.validatePromocodeActivationForOffer(
+      activation as ActivationWithPromocode,
+      offer,
+      offer.price,
+    );
+  }
+
+  private validatePromocodeActivationForOffer(
+    activation: ActivationWithPromocode,
+    offer: PurchaseOffer,
+    amount: number,
+  ): AppliedPromocode {
+    this.ensureActivationUsableForPurchase(activation);
+
+    if (activation.offerId && activation.offerId !== offer.id) {
+      throw new BadRequestException('Promocode is not valid for this offer');
+    }
+
+    if (
+      activation.promocode.offerId &&
+      activation.promocode.offerId !== offer.id
+    ) {
+      throw new BadRequestException('Promocode is not valid for this offer');
+    }
+
+    if (!activation.promocode.offerId) {
+      if (
+        !offer.companyId ||
+        activation.promocode.companyId !== offer.companyId
+      ) {
+        throw new BadRequestException('Promocode is not valid for this offer');
+      }
+    }
+
+    return this.buildAppliedPromocode(activation, amount);
+  }
+
+  private ensureActivationUsableForPurchase(
+    activation: ActivationWithPromocode,
+  ) {
+    if (activation.status === 'USED') {
+      throw new BadRequestException('Promocode activation is already used');
+    }
+    if (activation.expiresAt && activation.expiresAt < new Date()) {
+      throw new BadRequestException('Promocode activation is expired');
+    }
+    if (activation.promocode.status !== 'ACTIVE') {
+      throw new BadRequestException('Promocode is not active');
+    }
+    if (activation.promocode.offer && !activation.promocode.offer.isActive) {
+      throw new BadRequestException('Promocode offer is not active');
+    }
+
+    const now = new Date();
+    if (
+      activation.promocode.validFrom &&
+      activation.promocode.validFrom > now
+    ) {
+      throw new BadRequestException('Promocode is not active yet');
+    }
+    if (activation.promocode.validTo && activation.promocode.validTo < now) {
+      throw new BadRequestException('Promocode is expired');
+    }
+  }
+
+  private buildAppliedPromocode(
+    activation: ActivationWithPromocode,
+    amount: number,
+  ): AppliedPromocode {
+    const percent = Number(activation.promocode.discountValue);
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      throw new BadRequestException('Promocode discount is invalid');
+    }
+
+    const discountAmount = Number(((amount * percent) / 100).toFixed(2));
 
     return {
-      code: normalized,
-      label: promo.label,
-      percent: promo.percent,
+      activationId: activation.id,
+      code: activation.codeSnapshot ?? activation.promocode.code,
+      label: activation.promocode.title,
+      percent,
       discountAmount,
       finalAmount: Number(Math.max(0, amount - discountAmount).toFixed(2)),
     };
