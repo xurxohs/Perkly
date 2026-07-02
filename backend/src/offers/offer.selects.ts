@@ -44,6 +44,15 @@ export const PUBLIC_OFFER_SELECT = {
   createdAt: true,
   updatedAt: true,
   seller: { select: SELLER_PUBLIC_SELECT },
+  _count: {
+    select: {
+      promocodes: {
+        where: {
+          status: 'ACTIVE',
+        },
+      },
+    },
+  },
 } satisfies Prisma.OfferSelect;
 
 export const VENDOR_OFFER_SELECT = {
