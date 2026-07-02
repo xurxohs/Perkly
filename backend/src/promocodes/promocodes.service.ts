@@ -205,6 +205,63 @@ export class PromocodesService {
     };
   }
 
+  async listPublicForOffer(offerId: string) {
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: offerId },
+      select: { id: true, companyId: true, isActive: true },
+    });
+
+    if (!offer || !offer.isActive) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    const now = new Date();
+
+    return this.prisma.promocode.findMany({
+      where: {
+        status: 'ACTIVE',
+        companyId: offer.companyId ?? undefined,
+        OR: [{ offerId }, { offerId: null }],
+        AND: [
+          { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+          { OR: [{ validTo: null }, { validTo: { gte: now } }] },
+        ],
+      },
+      select: {
+        id: true,
+        companyId: true,
+        offerId: true,
+        title: true,
+        description: true,
+        codeType: true,
+        discountValue: true,
+        maxActivations: true,
+        perUserLimit: true,
+        validFrom: true,
+        validTo: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        offer: {
+          select: {
+            id: true,
+            title: true,
+            vendorLogo: true,
+            category: true,
+            isActive: true,
+          },
+        },
+        company: {
+          select: {
+            id: true,
+            brandName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async create(
     userId: string,
     role: string | undefined,
@@ -615,7 +672,10 @@ export class PromocodesService {
     return Number(((part / total) * 100).toFixed(1));
   }
 
-  private optionalPositiveInteger(value: unknown, field: string): number | null {
+  private optionalPositiveInteger(
+    value: unknown,
+    field: string,
+  ): number | null {
     if (value === null || value === '') return null;
     return this.normalizePositiveInteger(value, field);
   }

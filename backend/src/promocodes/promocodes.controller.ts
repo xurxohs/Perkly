@@ -33,6 +33,11 @@ export class PromocodesController {
     );
   }
 
+  @Get('offers/:offerId/promocodes')
+  listPublicForOffer(@Param('offerId') offerId: string) {
+    return this.promocodesService.listPublicForOffer(offerId);
+  }
+
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('VENDOR', 'ADMIN')
   @Get('promocodes/company/me/analytics')
