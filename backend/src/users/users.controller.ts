@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Put,
   Post,
   Body,
   Param,
@@ -45,6 +46,70 @@ export class UsersController {
   @Get('me/saved-offers')
   async getMySavedOffers(@Req() req: AuthRequest) {
     return this.usersService.listSavedOffers(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/profile')
+  async getMyB2CProfile(@Req() req: AuthRequest) {
+    return this.usersService.getB2CProfile(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('me/profile')
+  async updateMyB2CProfile(
+    @Req() req: AuthRequest,
+    @Body()
+    body: {
+      birthDate?: string | null;
+      birthYear?: number | null;
+      gender?: string | null;
+      city?: string | null;
+      anonymousId?: string | null;
+    },
+  ) {
+    return this.usersService.updateB2CProfile(req.user.userId, body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/interests')
+  async getMyInterests(@Req() req: AuthRequest) {
+    return this.usersService.listInterests(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/interests')
+  async replaceMyInterestsPost(
+    @Req() req: AuthRequest,
+    @Body() body: { interests?: string[] },
+  ) {
+    return this.usersService.replaceInterests(
+      req.user.userId,
+      body.interests ?? [],
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('me/interests')
+  async replaceMyInterestsPatch(
+    @Req() req: AuthRequest,
+    @Body() body: { interests?: string[] },
+  ) {
+    return this.usersService.replaceInterests(
+      req.user.userId,
+      body.interests ?? [],
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('me/interests')
+  async replaceMyInterestsPut(
+    @Req() req: AuthRequest,
+    @Body() body: { interests?: string[] },
+  ) {
+    return this.usersService.replaceInterests(
+      req.user.userId,
+      body.interests ?? [],
+    );
   }
 
   // ======= PREMIUM SUBSCRIPTION =======

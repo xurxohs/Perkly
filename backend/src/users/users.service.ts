@@ -44,6 +44,14 @@ type DailyMission = {
   claimable: boolean;
 };
 
+type B2CProfileInput = {
+  birthDate?: string | null;
+  birthYear?: number | null;
+  gender?: string | null;
+  city?: string | null;
+  anonymousId?: string | null;
+};
+
 const WHEEL_REWARDS: WheelReward[] = [
   {
     label: '25 Points',
@@ -161,6 +169,75 @@ export class UsersService {
       where: { userId },
       orderBy: { createdAt: 'desc' },
       select: SAVED_OFFER_SELECT,
+    });
+  }
+
+  async getB2CProfile(userId: string) {
+    await this.ensureUserExists(userId);
+
+    return this.prisma.b2CProfile.upsert({
+      where: { userId },
+      create: { userId },
+      update: {},
+    });
+  }
+
+  async updateB2CProfile(userId: string, input: B2CProfileInput) {
+    await this.ensureUserExists(userId);
+    const data = this.normalizeB2CProfileInput(input);
+
+    return this.prisma.b2CProfile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        ...data,
+      },
+      update: data,
+    });
+  }
+
+  listInterests(userId: string) {
+    return this.prisma.userInterest.findMany({
+      where: { userId },
+      orderBy: [{ weight: 'desc' }, { updatedAt: 'desc' }],
+    });
+  }
+
+  async replaceInterests(userId: string, interests: string[]) {
+    await this.ensureUserExists(userId);
+    const categories = this.normalizeInterests(interests);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.userInterest.deleteMany({
+        where: {
+          userId,
+          category: { notIn: categories.length ? categories : [''] },
+          source: 'ONBOARDING',
+        },
+      });
+
+      await Promise.all(
+        categories.map((category, index) =>
+          tx.userInterest.upsert({
+            where: { userId_category: { userId, category } },
+            create: {
+              userId,
+              category,
+              weight: Math.max(1, categories.length - index),
+              source: 'ONBOARDING',
+            },
+            update: {
+              weight: Math.max(1, categories.length - index),
+              source: 'ONBOARDING',
+            },
+          }),
+        ),
+      );
+
+      return tx.userInterest.findMany({
+        where: { userId },
+        orderBy: [{ weight: 'desc' }, { updatedAt: 'desc' }],
+      });
     });
   }
 
@@ -634,6 +711,101 @@ export class UsersService {
 
   private dayKey(date: Date) {
     return date.toISOString().slice(0, 10);
+  }
+
+  private normalizeB2CProfileInput(input: B2CProfileInput) {
+    const data: {
+      birthDate?: Date | null;
+      birthYear?: number | null;
+      gender?: string | null;
+      city?: string | null;
+      anonymousId?: string | null;
+    } = {};
+
+    if (input.birthDate !== undefined) {
+      data.birthDate =
+        input.birthDate === null ? null : this.normalizeDate(input.birthDate);
+    }
+
+    if (input.birthYear !== undefined) {
+      data.birthYear =
+        input.birthYear === null
+          ? null
+          : this.normalizeBirthYear(input.birthYear);
+    }
+
+    if (input.gender !== undefined) {
+      data.gender =
+        input.gender === null
+          ? null
+          : this.normalizeOptionalString(input.gender);
+    }
+
+    if (input.city !== undefined) {
+      data.city =
+        input.city === null ? null : this.normalizeOptionalString(input.city);
+    }
+
+    if (input.anonymousId !== undefined) {
+      data.anonymousId =
+        input.anonymousId === null
+          ? null
+          : this.normalizeOptionalString(input.anonymousId);
+    }
+
+    return data;
+  }
+
+  private normalizeDate(value: string) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException('birthDate must be a valid date');
+    }
+    return date;
+  }
+
+  private normalizeBirthYear(value: number) {
+    if (!Number.isInteger(value)) {
+      throw new BadRequestException('birthYear must be an integer');
+    }
+
+    const currentYear = new Date().getFullYear();
+    if (value < 1900 || value > currentYear) {
+      throw new BadRequestException(
+        `birthYear must be between 1900 and ${currentYear}`,
+      );
+    }
+
+    return value;
+  }
+
+  private normalizeOptionalString(value: string) {
+    const normalized = String(value).trim();
+    return normalized.length ? normalized : null;
+  }
+
+  private normalizeInterests(interests: string[]) {
+    if (!Array.isArray(interests)) {
+      throw new BadRequestException('interests must be an array');
+    }
+
+    const seen = new Set<string>();
+    const categories: string[] = [];
+
+    for (const interest of interests) {
+      const category = String(interest).trim();
+      if (!category || seen.has(category)) continue;
+      seen.add(category);
+      categories.push(category);
+    }
+
+    if (categories.length > 30) {
+      throw new BadRequestException(
+        'interests cannot contain more than 30 items',
+      );
+    }
+
+    return categories;
   }
 
   private async ensureUserExists(userId: string) {
