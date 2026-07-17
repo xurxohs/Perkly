@@ -41,18 +41,18 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
 
     return (
         <nav 
-            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-3 sm:px-5 py-2.5 rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
+            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-[1.65rem] sm:rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
         >
             <div className="flex items-center gap-1 shrink-0">
                 <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
                     <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
                 </Link>
                 {showThemeToggle && (
                     <button
                         type="button"
                         onClick={onToggleTheme}
-                        className="theme-toggle ml-1 flex h-9 w-9 items-center justify-center rounded-full border-0 bg-transparent transition-colors cursor-pointer"
+                        className="theme-toggle ml-0.5 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border-0 bg-transparent transition-colors cursor-pointer"
                         aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
                         title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
                     >

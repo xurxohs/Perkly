@@ -8,7 +8,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
 const marketplaceDockItems = [
-    { href: '/', icon: 'home' as PerklyGlyphName, label: 'Главная' },
+    { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
     { href: '/coupons', icon: 'coupon' as PerklyGlyphName, label: 'Купоны' },
     { href: '/catalog', icon: 'catalog' as PerklyGlyphName, label: 'Каталог' },
     { href: '/cart', icon: 'cart' as PerklyGlyphName, label: 'Корзина' },
@@ -22,7 +22,7 @@ const topkaDockItems = [
     { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
 ];
 
-const TOPKA_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
+const TOPKA_PAGES = ['/feed', '/map', '/plans', '/notifications', '/chat'];
 type DockItem = (typeof marketplaceDockItems)[number] | (typeof topkaDockItems)[number];
 
 // Spring physics simulation
@@ -211,13 +211,13 @@ export function MobileDock() {
     return (
         <>
             {/* Spacer so content isn't hidden behind dock */}
-            <div className="h-24 md:hidden" />
+            <div className="h-20 md:hidden" />
 
             {/* Dock */}
             <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-[env(safe-area-inset-bottom,8px)]">
                 {/* Outer container with blur */}
                 <div
-                    className={`mx-3 mb-3 px-2 py-2.5 rounded-[36px] flex items-center justify-around gap-1 w-full max-w-[420px] liquid-glass-dock ${isLightCommerce ? 'light-commerce-dock' : ''}`}
+                    className={`mx-4 mb-2 px-2 py-1.5 rounded-[30px] flex items-center justify-around gap-1 w-full max-w-[390px] liquid-glass-dock ${isLightCommerce ? 'light-commerce-dock' : ''}`}
                 >
                     {currentItems.map((item) => (
                         <DockIcon

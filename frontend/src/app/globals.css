@@ -87,30 +87,7 @@
 
 /* 5. Specular Highlights / Light Streaks */
 .liquid-glass-dock::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -100%;
-  width: 60%;
-  height: 200%;
-  background: linear-gradient(to right,
-      transparent 0%,
-      rgba(255, 255, 255, 0) 20%,
-      rgba(255, 255, 255, 0.03) 45%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.03) 55%,
-      rgba(255, 255, 255, 0) 80%,
-      transparent 100%);
-  transform: rotate(25deg);
-  animation: liquid-dock-glare 10s infinite linear;
-  pointer-events: none;
-  z-index: 0;
-}
-
-@keyframes liquid-dock-glare {
-  0% { left: -150%; }
-  30% { left: 250%; }
-  100% { left: 250%; }
+  display: none;
 }
 
 .glass-card {
