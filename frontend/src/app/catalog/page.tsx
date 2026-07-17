@@ -353,9 +353,9 @@ function CatalogContent() {
                     {offers.map((offer) => (
                         <div key={offer.id} className="catalog-offer-card relative rounded-[24px] overflow-hidden group bg-white/[0.03] border border-white/[0.08] transition-colors duration-200 hover:border-white/[0.14]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
-                                <div className="relative h-32 sm:h-44 overflow-hidden bg-white/5 flex items-center justify-center p-3 sm:p-6 border-b border-white/[0.04]">
+                                <div className="catalog-offer-media relative h-32 sm:h-44 overflow-hidden bg-white/5 flex items-center justify-center p-3 sm:p-6 border-b border-white/[0.04]">
                                     {(offer.imageUrl || offer.vendorLogo) ? (
-                                        <Image src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-contain p-5 drop-shadow-xl" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                        <Image src={offer.imageUrl || offer.vendorLogo || ''} fill className="catalog-offer-image object-contain p-5" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                     ) : null}
                                     <div className={`flex items-center justify-center h-full text-white/20 ${(offer.imageUrl || offer.vendorLogo) ? 'hidden' : ''}`}>
                                         {(() => {
