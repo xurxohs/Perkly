@@ -42,11 +42,10 @@ const quickApps = [
     { label: 'Yandex', image: '/brands/yandex_plus.svg', href: '/catalog?search=Yandex' },
     { label: 'Uzum', image: '/brands/uzum_market.svg', href: '/catalog?search=Uzum', badge: 'Новое' },
     { label: 'Steam', image: '/brands/steam.svg', href: '/catalog?search=Steam' },
-    { label: 'Safia', image: '/brands/safia.png', href: '/catalog?search=Safia' },
-    { label: 'Evos', image: '/brands/evos.png', href: '/catalog?search=Evos' },
-    { label: 'Oqtepa', image: '/brands/oqtepa.png', href: '/catalog?search=Oqtepa' },
+    { label: 'Dodo', image: '/brands/dodo_pizza.svg', href: '/catalog?search=Dodo' },
+    { label: 'Skillbox', image: '/brands/skillbox.svg', href: '/catalog?search=Skillbox' },
+    { label: 'Yandex Go', image: '/brands/yandex_go.svg', href: '/catalog?search=Yandex%20Go' },
     { label: 'Netflix', image: '/brands/netflix.svg', href: '/catalog?search=Netflix' },
-    { label: 'BeFit', image: '/brands/befit.png', href: '/catalog?search=BeFit' },
 ];
 
 export function CatalogShowcase() {
