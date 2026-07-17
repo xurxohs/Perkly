@@ -1161,7 +1161,7 @@ export const eventsApi = {
         Object.entries(params).forEach(([key, val]) => {
             if (val !== undefined && val !== '') urlParams.set(key, String(val));
         });
-        return request<{ data: Event[]; total: number }>(`/events?${urlParams.toString()}`);
+        return request<{ data: Event[]; total: number }>(`/events?${urlParams.toString()}`, { cache: 'no-store' });
     },
     getById: (id: string) =>
         request<Event>(`/events/${id}`),

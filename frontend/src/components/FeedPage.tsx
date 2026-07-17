@@ -13,7 +13,7 @@ import {
   ChevronDown,
   MessageCircle
 } from 'lucide-react';
-import { Event } from '@/lib/api';
+import { Event, eventsApi } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
 
@@ -355,9 +355,30 @@ function EventCard({
 export default function FeedPage({ events }: { events: FeedEvent[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [feedEvents, setFeedEvents] = useState<FeedEvent[]>(() =>
+    events.length > 0 || process.env.NODE_ENV === 'production' ? events : DEMO_EVENTS
+  );
 
-  // Use demo events if API returns empty
-  const feedEvents = events && events.length > 0 ? events : DEMO_EVENTS;
+  useEffect(() => {
+    const refreshIfVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const response = await eventsApi.list({ take: 20 });
+        setFeedEvents(response.data ?? []);
+      } catch (error) {
+        console.error('Topka refresh failed:', error);
+      }
+    };
+    const interval = window.setInterval(() => void refreshIfVisible(), 15_000);
+    const handleFocus = () => void refreshIfVisible();
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, []);
 
   // Track which card is currently in view
   const handleScroll = useCallback(() => {

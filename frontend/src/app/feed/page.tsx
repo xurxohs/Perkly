@@ -9,7 +9,7 @@ export const metadata = {
 
 async function getEvents() {
   try {
-    const { data } = await eventsApi.list({ take: 15 });
+    const { data } = await eventsApi.list({ take: 20 });
     return data || [];
   } catch (err) {
     console.error('SSR Events fetch failed:', err);

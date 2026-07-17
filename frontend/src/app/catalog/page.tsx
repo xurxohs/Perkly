@@ -80,7 +80,7 @@ function CatalogContent() {
     const [minPrice, setMinPrice] = useState<number | undefined>();
     const [maxPrice, setMaxPrice] = useState<number | undefined>();
 
-    const PAGE_SIZE = 12;
+    const PAGE_SIZE = 16;
 
     const fetchOffers = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
