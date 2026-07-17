@@ -336,7 +336,7 @@ function CatalogContent() {
 
             {/* Grid */}
             {loading ? (
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+                <div className="catalog-offers-grid grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} className="rounded-2xl h-72 animate-pulse bg-white/[0.03]" />
                     ))}
@@ -351,7 +351,7 @@ function CatalogContent() {
             ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {offers.map((offer) => (
-                        <div key={offer.id} className="catalog-offer-card relative rounded-[24px] overflow-hidden group bg-white/[0.03] border border-white/[0.08] transition-colors duration-200 hover:border-white/[0.14]">
+                        <div key={offer.id} className="catalog-offer-card relative overflow-hidden group bg-white/[0.03] border border-white/[0.08] transition-[border-color,box-shadow] duration-200 hover:border-white/[0.14]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
                                 <div className="catalog-offer-media relative h-32 sm:h-44 overflow-hidden bg-white/5 flex items-center justify-center p-3 sm:p-6 border-b border-white/[0.04]">
                                     {(offer.imageUrl || offer.vendorLogo) ? (

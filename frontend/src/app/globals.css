@@ -1113,10 +1113,20 @@
 /* Offer cards */
 .catalog-apple-light .grid > div.group {
   background: #fff !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  border: 1px solid rgba(0,0,0,.085) !important;
+  border-radius: 28px !important;
+  corner-shape: squircle;
+  box-shadow: 0 6px 22px rgba(0,0,0,.055) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+}
+.catalog-apple-light .catalog-offers-grid {
+  gap: 20px !important;
+  background: transparent !important;
+}
+.catalog-apple-light .catalog-offer-card:hover {
+  border-color: rgba(0,0,0,.13) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.075) !important;
 }
 .catalog-apple-light .grid > div.group > a > div:first-child {
   background: #fff !important;
@@ -1207,7 +1217,9 @@
 .site-dark-commerce .catalog-apple-light .grid > div.group {
   background: #111115 !important;
   border: 1px solid rgba(255,255,255,.075) !important;
-  box-shadow: none !important;
+  border-radius: 28px !important;
+  corner-shape: squircle;
+  box-shadow: 0 8px 26px rgba(0,0,0,.2) !important;
 }
 .site-dark-commerce .catalog-apple-light .grid > div.group > a > div:first-child { background: #17171b !important; }
 .site-dark-commerce .catalog-apple-light .grid > div.group > a > div:last-child { background: #0d0d10 !important; }
