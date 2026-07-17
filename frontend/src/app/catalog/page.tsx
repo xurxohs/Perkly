@@ -201,7 +201,7 @@ function CatalogContent() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="catalog-apple-light min-h-screen max-w-7xl mx-auto px-6 py-10">
             {/* Header */}
             <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                 <div>

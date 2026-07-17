@@ -11,15 +11,16 @@ const IMMERSIVE_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications',
 export function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isImmersive = IMMERSIVE_PAGES.some(p => pathname.startsWith(p));
+    const isLightCommerce = pathname.startsWith('/catalog');
 
     return (
-        <>
+        <div className={`min-h-screen flex flex-col ${isLightCommerce ? 'site-light-commerce' : ''}`}>
             {!isImmersive && <Navbar />}
             <main className={`flex-1 relative overflow-x-hidden ${isImmersive ? 'pb-24 md:pb-0' : 'mt-16 pb-28 md:pb-0'}`}>
                 {children}
             </main>
             {!isImmersive && <Footer />}
             <MobileDock />
-        </>
+        </div>
     );
 }
