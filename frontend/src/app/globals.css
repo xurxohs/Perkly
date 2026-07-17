@@ -868,6 +868,24 @@
   }
 }
 
+/* iOS-style continuous corner for catalog app icons. */
+.app-icon-squircle {
+  border-radius: 22.5%;
+  clip-path: polygon(
+    24% 0%, 76% 0%, 85% 1.5%, 92% 5%, 97% 11%, 99.4% 19%,
+    100% 28%, 100% 72%, 99.4% 81%, 97% 89%, 92% 95%, 85% 98.5%,
+    76% 100%, 24% 100%, 15% 98.5%, 8% 95%, 3% 89%, .6% 81%,
+    0% 72%, 0% 28%, .6% 19%, 3% 11%, 8% 5%, 15% 1.5%
+  );
+}
+
+@supports (corner-shape: squircle) {
+  .app-icon-squircle {
+    clip-path: none;
+    corner-shape: squircle;
+  }
+}
+
 /* ================================================================
    TOPKA — SAME CARD RHYTHM AS PERKLYAPP
    ================================================================ */

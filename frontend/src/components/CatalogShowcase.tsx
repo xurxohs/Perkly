@@ -66,7 +66,7 @@ export function CatalogShowcase() {
     return (
         <section className="mb-7" aria-label="Рекомендуем в каталоге">
             <div
-                className={`relative min-h-[230px] overflow-hidden rounded-[30px] bg-gradient-to-br ${slide.accent} p-6 sm:min-h-[280px] sm:p-9`}
+                className={`group relative min-h-[230px] overflow-hidden rounded-[30px] bg-gradient-to-br ${slide.accent} p-6 sm:min-h-[280px] sm:p-9`}
                 onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
                 onTouchEnd={(event) => {
                     if (touchStart.current === null) return;
@@ -86,8 +86,8 @@ export function CatalogShowcase() {
                     <Link href={slide.href} className="mt-6 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-black text-black no-underline transition hover:scale-[1.02]">{slide.action}</Link>
                 </div>
 
-                <button type="button" onClick={() => select(active - 1)} className="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/20 text-3xl text-white/85 backdrop-blur-xl sm:grid" aria-label="Предыдущий баннер">‹</button>
-                <button type="button" onClick={() => select(active + 1)} className="absolute right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/20 text-3xl text-white/85 backdrop-blur-xl sm:grid" aria-label="Следующий баннер">›</button>
+                <button type="button" onClick={() => select(active - 1)} className="pointer-events-none absolute left-5 top-1/2 hidden -translate-y-1/2 border-0 bg-transparent p-3 text-5xl font-light leading-none text-white/90 opacity-0 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 sm:block" aria-label="Предыдущий баннер">‹</button>
+                <button type="button" onClick={() => select(active + 1)} className="pointer-events-none absolute right-5 top-1/2 hidden -translate-y-1/2 border-0 bg-transparent p-3 text-5xl font-light leading-none text-white/90 opacity-0 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 sm:block" aria-label="Следующий баннер">›</button>
 
                 <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
                     {slides.map((item, index) => (
@@ -101,8 +101,8 @@ export function CatalogShowcase() {
                     {quickApps.map((app) => (
                         <Link key={app.label} href={app.href} className="group relative w-[72px] shrink-0 text-center no-underline sm:w-[82px]">
                             {app.badge && <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-500 px-2 py-0.5 text-[8px] font-black text-white shadow-lg">{app.badge}</span>}
-                            <span className="mx-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-[20px] border border-white/[0.09] bg-white/[0.055] p-2.5 shadow-[0_10px_28px_rgba(0,0,0,.24)] transition group-hover:-translate-y-1 group-hover:border-white/20 sm:h-[70px] sm:w-[70px]">
-                                <Image src={app.image} alt="" width={56} height={56} className="h-full w-full object-contain" />
+                            <span className="app-icon-squircle mx-auto block h-16 w-16 overflow-hidden bg-[#17171c] shadow-[0_10px_28px_rgba(0,0,0,.32)] transition duration-200 group-hover:-translate-y-1 sm:h-[70px] sm:w-[70px]">
+                                <Image src={app.image} alt="" width={70} height={70} className="h-full w-full object-cover" />
                             </span>
                             <span className="mt-2 block truncate text-[11px] font-semibold text-white/55 group-hover:text-white">{app.label}</span>
                         </Link>
