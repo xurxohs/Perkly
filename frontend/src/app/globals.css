@@ -1221,6 +1221,87 @@
 .site-dark-commerce .catalog-apple-light .grid > div.group [class*="uppercase"] { color: rgba(255,255,255,.4) !important; }
 .site-dark-commerce .catalog-apple-light .catalog-showcase > div:last-child > div > a > span:last-child { color: rgba(255,255,255,.55) !important; }
 
+/* ================================================================
+   GLOBAL LIGHT THEME — SHARED BY EVERY ROUTE
+   ================================================================ */
+.site-light-commerce main [class~="text-white"] { color: #1d1d1f !important; }
+.site-light-commerce main [class*="text-white/2"],
+.site-light-commerce main [class*="text-white/3"],
+.site-light-commerce main [class*="text-white/4"] { color: #86868b !important; }
+.site-light-commerce main [class*="text-white/5"],
+.site-light-commerce main [class*="text-white/6"],
+.site-light-commerce main [class*="text-white/7"],
+.site-light-commerce main [class*="text-white/8"],
+.site-light-commerce main [class*="text-white/9"] { color: #515154 !important; }
+.site-light-commerce main [class~="bg-black"],
+.site-light-commerce main [class*="bg-black/"] { background-color: #f5f5f7 !important; }
+.site-light-commerce main [class*="bg-white/[0.0"],
+.site-light-commerce main [class*="bg-white/5"],
+.site-light-commerce main [class*="bg-white/10"] { background-color: #fff !important; }
+.site-light-commerce main [class*="border-white"] { border-color: rgba(0,0,0,.07) !important; }
+.site-light-commerce main input,
+.site-light-commerce main textarea,
+.site-light-commerce main select {
+  color: #1d1d1f !important;
+  background-color: #fff !important;
+  border-color: rgba(0,0,0,.08) !important;
+}
+.site-light-commerce main input::placeholder,
+.site-light-commerce main textarea::placeholder { color: #86868b !important; }
+.site-light-commerce .glass,
+.site-light-commerce .glass-card {
+  color: #1d1d1f;
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(0,0,0,.06) !important;
+  box-shadow: 0 14px 50px rgba(0,0,0,.08) !important;
+}
+
+/* Preserve readable foregrounds on authored gradients and media. */
+.site-light-commerce main .catalog-showcase-banner [class*="text-white"],
+.site-light-commerce main [class*="from-orange-500"][class*="to-red-500"],
+.site-light-commerce main .bg-telegram-gradient,
+.site-light-commerce main .bg-primary-gradient { color: #fff !important; }
+.site-light-commerce main .catalog-showcase-banner [class*="text-white"] { color: #fff !important; }
+
+/* Home, offers and generic commerce cards use white surfaces, not glass outlines. */
+.site-light-commerce main a[class*="bg-white/[0.02"],
+.site-light-commerce main div[class*="bg-white/[0.02"] {
+  background: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.055);
+}
+.site-light-commerce main a.bg-white { color: #1d1d1f !important; }
+
+/* Profile has its own authored dark surfaces, so map them explicitly. */
+.site-light-commerce .profile-identity-card {
+  background: linear-gradient(145deg, rgba(124,60,255,.09), rgba(255,60,146,.04) 48%, #fff 78%), #fff !important;
+}
+.site-light-commerce .profile-balance-grid,
+.site-light-commerce .profile-balance-grid > div,
+.site-light-commerce .profile-referral-card,
+.site-light-commerce .profile-daily-card,
+.site-light-commerce .profile-tabs {
+  color: #1d1d1f;
+  background: #fff !important;
+}
+.site-light-commerce .profile-balance-grid > div:first-child {
+  background: linear-gradient(145deg, rgba(124,60,255,.10), rgba(255,60,146,.035)), #fff !important;
+}
+.site-light-commerce .profile-action-row:hover { background: rgba(0,0,0,.035) !important; }
+.site-light-commerce .profile-action-icon,
+.site-light-commerce .profile-bare-icon,
+.site-light-commerce .profile-action-chevron { color: #6e6e73 !important; }
+.site-light-commerce .profile-action-row p { color: #86868b !important; }
+.site-light-commerce .profile-day { color: #86868b; background: #f5f5f7 !important; }
+.site-light-commerce .profile-day.is-claimed { color: #515154; background: #ececf0 !important; }
+.site-light-commerce .profile-day.is-today { color: #fff; background: linear-gradient(145deg,#7c3cff,#d93fa5) !important; }
+
+/* Immersive Topka media remains intentionally dark over imagery. */
+.site-light-commerce .feed-container,
+.site-light-commerce .event-card,
+.site-light-commerce .event-content { color: #fff; }
+.site-light-commerce .event-card [class*="text-white"] { color: #fff !important; }
+
 @media (max-width: 767px) {
   .catalog-apple-light { padding-top: 24px; }
 }

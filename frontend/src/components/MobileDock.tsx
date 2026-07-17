@@ -189,7 +189,7 @@ export function MobileDock() {
 
     useEffect(() => {
         const syncTheme = () => setIsLightCommerce(
-            pathname.startsWith('/catalog') && document.documentElement.dataset.perklyTheme !== 'dark'
+            document.documentElement.dataset.perklyTheme !== 'dark'
         );
         syncTheme();
         const observer = new MutationObserver(syncTheme);
