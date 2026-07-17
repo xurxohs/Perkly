@@ -879,6 +879,94 @@
   );
 }
 
+/* ================================================================
+   PROFILE — CURRENT PERKLY APP VISUAL SYSTEM
+   ================================================================ */
+.profile-modern {
+  --perkly-brand: linear-gradient(135deg, #7c3cff 0%, #b934e8 48%, #ff3c92 100%);
+}
+
+.profile-brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--perkly-brand);
+  box-shadow: 0 8px 26px rgba(168, 54, 218, .2);
+}
+
+.profile-identity-card {
+  background:
+    linear-gradient(145deg, rgba(124,60,255,.13), rgba(255,60,146,.055) 44%, rgba(255,255,255,.025) 74%),
+    #0f0f13;
+}
+
+.profile-identity-orb {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -110px;
+  top: -145px;
+  border-radius: 50%;
+  background: var(--perkly-brand);
+  opacity: .14;
+  filter: blur(42px);
+  pointer-events: none;
+}
+
+.profile-avatar {
+  background: var(--perkly-brand);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.25), 0 12px 32px rgba(145,45,220,.18);
+}
+
+.profile-balance-grid {
+  background: rgba(255,255,255,.065);
+}
+.profile-balance-grid > div { background: #111115; }
+.profile-balance-grid > div:first-child {
+  background: linear-gradient(145deg, rgba(124,60,255,.11), rgba(255,60,146,.045)), #111115;
+}
+
+.profile-referral-card,
+.profile-daily-card,
+.profile-action-row {
+  background: rgba(255,255,255,.026) !important;
+  border-color: rgba(255,255,255,.075) !important;
+  box-shadow: none !important;
+}
+
+.profile-action-row {
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.profile-action-row:hover {
+  transform: none !important;
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+.profile-action-row [class*="shadow-"] { box-shadow: none !important; }
+.profile-action-row > div:first-of-type > div:first-child {
+  color: white !important;
+  background: linear-gradient(145deg, rgba(124,60,255,.22), rgba(255,60,146,.12)) !important;
+  border-color: rgba(189,93,255,.2) !important;
+}
+.profile-action-row p { color: rgba(255,255,255,.4) !important; }
+.profile-action-row svg { transform: none !important; }
+
+.profile-tabs {
+  border-radius: 18px;
+  background: rgba(255,255,255,.025);
+}
+.profile-tabs button {
+  min-width: max-content;
+  padding-left: 15px;
+  padding-right: 15px;
+  border-radius: 14px;
+}
+.profile-tabs button[class*="bg-purple"] {
+  background: linear-gradient(135deg, rgba(124,60,255,.25), rgba(255,60,146,.14)) !important;
+}
+
+.profile-modern [class*="hover:scale"]:hover { transform: none !important; }
+
 @supports (corner-shape: squircle) {
   .app-icon-squircle {
     clip-path: none;

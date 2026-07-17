@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Gift } from 'lucide-react';
+import { User as UserIcon, Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Gift } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TopUpModal from '@/components/TopUpModal';
+import { PerklyGlyph } from '@/components/PerklyGlyph';
 
 const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderClass: string; glowClass: string }> = {
     SILVER: { bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', borderClass: 'border-slate-400/30', glowClass: 'bg-[radial-gradient(circle,_rgba(148,163,184,0.2),_transparent_70%)]' },
@@ -348,14 +349,18 @@ export default function ProfilePage() {
 
     return (
         <>
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <div className="profile-modern max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+                <div className="mb-6 flex items-end justify-between">
+                    <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-white/30">Perkly ID</p><h1 className="mt-1 text-3xl font-black tracking-[-.045em] text-white sm:text-4xl">Профиль</h1></div>
+                    <span className="profile-brand-mark" aria-hidden="true" />
+                </div>
                 {/* Profile card */}
-                <div className="rounded-[28px] p-5 sm:p-7 mb-4 relative overflow-hidden bg-white/[0.025] border border-white/[0.07]">
-                    <div className={`absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none translate-x-[30%] -translate-y-[30%] ${tier.glowClass}`} />
+                <div className="profile-identity-card rounded-[30px] p-5 sm:p-7 mb-4 relative overflow-hidden border border-white/[0.08]">
+                    <div className="profile-identity-orb" />
 
                     <div className="flex items-start sm:items-center gap-4 sm:gap-5 relative z-10">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 bg-white/[0.07] border border-white/10">
-                            <UserIcon className="w-8 h-8 sm:w-9 sm:h-9 text-white/75" />
+                        <div className="profile-avatar w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0">
+                            <PerklyGlyph name="profile" className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
                         </div>
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
@@ -408,7 +413,7 @@ export default function ProfilePage() {
                                 {user.role === 'ADMIN' && (
                                     <Link
                                         href="/admin"
-                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 group w-fit no-underline bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_0_10px_rgba(239,68,68,0.1)]"
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/70 transition-colors group w-fit no-underline bg-white/[0.04] border border-white/[0.07]"
                                     >
                                         <span className="text-red-400 group-hover:text-white transition-colors">🛡️</span>
                                         <span className="tracking-wide">Панель Администратора</span>
@@ -420,9 +425,9 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-[1.4fr_1fr_1fr] gap-px mb-4 overflow-hidden rounded-2xl bg-white/[0.07] border border-white/[0.07]">
-                    <div className="p-4 sm:p-5 bg-[#101014]">
-                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><Coins className="w-4 h-4" /> Баланс</div>
+                <div className="profile-balance-grid grid grid-cols-2 sm:grid-cols-[1.4fr_1fr_1fr] gap-px mb-4 overflow-hidden rounded-[24px] border border-white/[0.07]">
+                    <div className="p-4 sm:p-5">
+                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><PerklyGlyph name="catalog" className="w-4 h-4" /> Баланс</div>
                         <div className="text-xl sm:text-2xl font-black text-white whitespace-nowrap">{user.balance.toLocaleString('ru-RU')} сум</div>
                         <button
                             onClick={() => setTopUpModalOpen(true)}
@@ -431,19 +436,18 @@ export default function ProfilePage() {
                             Пополнить
                         </button>
                     </div>
-                    <div className="p-4 sm:p-5 bg-[#101014] flex flex-col justify-center">
-                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><ShoppingBag className="w-4 h-4" /> Покупки</div>
+                    <div className="p-4 sm:p-5 flex flex-col justify-center">
+                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><PerklyGlyph name="catalog" className="w-4 h-4" /> Покупки</div>
                         <div className="text-2xl font-black text-white">{stats.totalPurchases}</div>
                     </div>
-                    <div className="col-span-2 sm:col-span-1 p-4 sm:p-5 bg-[#101014] flex flex-col justify-center">
-                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><Crown className="w-4 h-4" /> Perkly Points</div>
+                    <div className="col-span-2 sm:col-span-1 p-4 sm:p-5 flex flex-col justify-center">
+                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><PerklyGlyph name="coupon" className="w-4 h-4" /> Perkly Points</div>
                         <div className="text-2xl font-black text-white">{user.rewardPoints.toLocaleString('ru-RU')}</div>
                     </div>
                 </div>
 
                 {/* Referral Section */}
-                <div className="rounded-2xl p-5 mb-6 bg-white/[0.025] border border-white/[0.07] relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="profile-referral-card rounded-[24px] p-5 mb-6 border border-white/[0.07] relative overflow-hidden group">
                     <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
                         <div className="w-12 h-12 rounded-2xl bg-white/[0.05] flex items-center justify-center shrink-0 border border-white/[0.07]">
                             <QrCode className="w-6 h-6 text-white/65" />
@@ -486,8 +490,7 @@ export default function ProfilePage() {
                 </div>
                 {/* Daily Bonus Section */}
                 {dailyStatus && (
-                    <div className="w-full p-6 rounded-2xl mb-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+                    <div className="profile-daily-card w-full p-6 rounded-[24px] mb-4 border border-white/[0.07] relative overflow-hidden">
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
                             <div className="flex items-center gap-3">
@@ -545,7 +548,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Squad Rewards Button */}
-                <Link href="/profile/squad" className="w-full flex items-center justify-between p-5 rounded-2xl mb-4 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 relative overflow-hidden">
+                <Link href="/profile/squad" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-2 group no-underline border relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
                     <div className="flex items-center gap-4 relative z-10">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.3)] border border-indigo-500/30">
@@ -564,7 +567,7 @@ export default function ProfilePage() {
                 </Link>
 
                 {/* Pricing/Tariffs Button (Moved from Mobile Dock) */}
-                <Link href="/pricing" className="w-full flex items-center justify-between p-5 rounded-2xl mb-4 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+                <Link href="/pricing" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-2 group no-underline border">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)] border border-yellow-500/30">
                             <Crown className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
@@ -582,7 +585,7 @@ export default function ProfilePage() {
                 </Link>
 
                 {/* Messages Button (Moved from Navbar) */}
-                <Link href="/messages" className="w-full flex items-center justify-between p-5 rounded-2xl mb-8 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                <Link href="/messages" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-8 group no-underline border">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] border border-purple-500/30">
                             <MessageCircle className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
@@ -600,7 +603,7 @@ export default function ProfilePage() {
                 </Link>
 
                 {/* Tabs */}
-                <div className="flex gap-1 mb-6 p-1 rounded-xl bg-white/[0.02]">
+                <div className="profile-tabs -mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-1 sm:py-1">
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'history' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
