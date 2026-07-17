@@ -1067,6 +1067,12 @@
 .site-light-commerce .theme-toggle:hover { background: rgba(0,0,0,.055); }
 .site-dark-commerce .theme-toggle { color: rgba(255,255,255,.72); }
 .site-dark-commerce .theme-toggle:hover { background: rgba(255,255,255,.07); }
+.theme-toggle { outline: none !important; box-shadow: none !important; }
+.site-dark-commerce .liquid-glass-nav {
+  background: rgba(15,15,18,.82);
+  border-color: rgba(255,255,255,.09);
+  box-shadow: 0 12px 38px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+}
 
 .catalog-apple-light { color: #1d1d1f; }
 .catalog-apple-light h1,
@@ -1248,6 +1254,8 @@
 }
 .site-light-commerce main input::placeholder,
 .site-light-commerce main textarea::placeholder { color: #86868b !important; }
+.site-light-commerce main [class*="text-purple-200"],
+.site-light-commerce main [class*="text-purple-300"] { color: #7c3cff !important; }
 .site-light-commerce .glass,
 .site-light-commerce .glass-card {
   color: #1d1d1f;
