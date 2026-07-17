@@ -5,12 +5,8 @@ import Link from 'next/link';
 import {
   Eye,
   Users,
-  Calendar,
-  Clock,
-  MapPin,
   ChevronLeft,
   FileText,
-  Bookmark,
   Bell,
   Share2,
   Sparkles,
@@ -19,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Event } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
+import { PerklyGlyph } from '@/components/PerklyGlyph';
 
 export type FeedEvent = Event;
 
@@ -275,11 +272,9 @@ function EventCard({
 
         <div className="event-meta">
           <div className="meta-chunk">
-            <Calendar className="w-3.5 h-3.5" />
             <span>{formattedDate}</span>
           </div>
           <div className="meta-chunk">
-            <Clock className="w-3.5 h-3.5" />
             <span>{event.startTime}</span>
           </div>
           <div className="age-badge">{event.ageLimit}</div>
@@ -291,7 +286,7 @@ function EventCard({
             Сходить
           </button>
           <button className="cta-btn cta-dark" id={`cta-address-${event.id}`}>
-            <MapPin className="w-4 h-4" />
+            <PerklyGlyph name="location" className="w-4 h-4" />
             Адрес
           </button>
         </div>
@@ -312,7 +307,7 @@ function EventCard({
             onClick={() => setIsBookmarked(!isBookmarked)}
           >
             <div className="action-icon-circle">
-              <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
+              <PerklyGlyph name="bookmark" className="w-5 h-5" />
             </div>
             <span>Планы</span>
           </div>
@@ -391,6 +386,13 @@ export default function FeedPage({ events }: { events: FeedEvent[] }) {
 
   return (
     <div className="feed-container" ref={containerRef}>
+      <header className="feed-app-header">
+        <div>
+          <h1>Топка</h1>
+          <p>События Ташкента</p>
+        </div>
+        <Link href="/admin/topka/posts/new" className="feed-create-button" aria-label="Добавить событие">+</Link>
+      </header>
       {feedEvents.map((event, i) => (
         <EventCard
           key={event.id}
