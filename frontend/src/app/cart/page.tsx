@@ -93,13 +93,13 @@ export default function CartPage() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
             <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-white/40 hover:text-white transition mb-8 no-underline">
                 <ArrowLeft className="w-4 h-4" /> Каталог
             </Link>
 
-            <h1 className="text-3xl font-extrabold mb-8 flex items-center gap-3">
-                <ShoppingCart className="w-8 h-8 text-purple-400" />
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-8 flex items-center gap-3">
+                <ShoppingCart className="w-7 h-7 text-white/70" />
                 Корзина
                 {count > 0 && <span className="text-lg font-normal text-white/30">({count})</span>}
             </h1>
@@ -132,9 +132,10 @@ export default function CartPage() {
                     </Link>
                 </div>
             ) : items.length > 0 && (
-                <>
+                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
+                    <div>
                     {/* Items */}
-                    <div className="rounded-2xl overflow-hidden mb-6 cart-items-container">
+                    <div className="rounded-2xl overflow-hidden mb-3 cart-items-container">
                         {items.map((item, i) => {
                             const itemPromocodes = getItemPromocodes(item.offerId);
                             const selectedActivation = getSelectedActivation(item.offerId);
@@ -157,7 +158,7 @@ export default function CartPage() {
                                                 <Link href={`/offer/?id=${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-purple-400 transition block truncate">
                                                     {item.title}
                                                 </Link>
-                                                <div className="text-xs text-white/30">{item.category}</div>
+                                                <div className="text-xs text-white/30">Товар Perkly</div>
                                             </div>
                                         </div>
 
@@ -214,8 +215,17 @@ export default function CartPage() {
                         })}
                     </div>
 
+                    <button
+                        onClick={clearCart}
+                        className="text-sm text-white/30 hover:text-red-400 transition cursor-pointer bg-transparent border-0 px-1"
+                    >
+                        Очистить корзину
+                    </button>
+                    </div>
+
                     {/* Summary */}
-                    <div className="rounded-2xl p-6 mb-4 cart-summary-card">
+                    <div className="rounded-2xl p-5 sm:p-6 cart-summary-card lg:sticky lg:top-24">
+                        <h2 className="text-lg font-bold text-white mb-5">Ваш заказ</h2>
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-white/50">Итого товаров:</span>
                             <span className="text-white font-semibold">{count}</span>
@@ -228,7 +238,7 @@ export default function CartPage() {
                         )}
                         <div className="flex items-center justify-between mb-6">
                             <span className="text-white/50">Общая сумма:</span>
-                            <span className="text-2xl font-extrabold text-gradient-green">{checkoutTotal.toLocaleString('ru-RU')} сум</span>
+                            <span className="text-2xl font-black text-white">{checkoutTotal.toLocaleString('ru-RU')} сум</span>
                         </div>
 
                         <button
@@ -238,15 +248,9 @@ export default function CartPage() {
                         >
                             {purchasing ? 'Оформление...' : `Оформить покупку — ${checkoutTotal.toLocaleString('ru-RU')} сум`}
                         </button>
+                        <p className="mt-3 text-center text-xs leading-relaxed text-white/30">Оплата защищена. Доступ появится в профиле после покупки.</p>
                     </div>
-
-                    <button
-                        onClick={clearCart}
-                        className="text-sm text-white/30 hover:text-red-400 transition cursor-pointer bg-transparent border-0"
-                    >
-                        Очистить корзину
-                    </button>
-                </>
+                </div>
             )}
         </div>
     );

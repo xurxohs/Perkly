@@ -73,22 +73,22 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
             {/* Back */}
             <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-white/40 hover:text-white transition mb-8 no-underline">
                 <ArrowLeft className="w-4 h-4" /> Каталог
             </Link>
 
-            <div className="grid md:grid-cols-5 gap-8">
+            <div className="grid md:grid-cols-2 gap-7 lg:gap-12 items-start">
                 {/* Left - Image */}
-                <div className="md:col-span-2">
-                    <div className="rounded-3xl overflow-hidden aspect-square flex items-center justify-center p-8 transition-transform duration-500 hover:scale-[1.02] bg-white/5 backdrop-blur-3xl border border-white/10 shadow-2xl">
+                <div>
+                    <div className="rounded-[28px] overflow-hidden aspect-[4/3] md:aspect-square flex items-center justify-center p-8 bg-white/[0.025] border border-white/[0.07]">
                         {(offer.imageUrl || offer.vendorLogo) ? (
                             <div className="relative w-full h-full">
                                 <Image
                                   src={offer.imageUrl || offer.vendorLogo || ''}
                                   fill
-                                  className="object-contain drop-shadow-2xl"
+                                  className="object-contain"
                                   alt={offer.title}
                                 />
                             </div>
@@ -99,8 +99,8 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
 
                     {/* Seller info */}
                     {offer.seller && (
-                        <div className="mt-4 flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700">
+                        <div className="mt-3 flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06]">
                                 <User className="w-5 h-5 text-white" />
                             </div>
                             <div>
@@ -112,9 +112,9 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                 </div>
 
                 {/* Right - Info */}
-                <div className="md:col-span-3">
+                <div className="md:sticky md:top-24">
                     {/* Badges */}
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
                         <span className="px-3 py-1 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
                             {CATEGORY_LABELS[offer.category] || offer.category}
                         </span>
@@ -130,28 +130,28 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         )}
                     </div>
 
-                    <h1 className="text-2xl md:text-3xl font-extrabold text-white mb-4 leading-tight">{offer.title}</h1>
+                    <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white mb-3 leading-[1.08]">{offer.title}</h1>
 
                     {/* Price */}
-                    <div className="flex items-baseline gap-3 mb-6">
-                        <span className="text-4xl font-black text-gradient-green">
+                    <div className="flex items-baseline gap-3 mb-7">
+                        <span className="text-3xl font-black text-white">
                             {offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}
                         </span>
                     </div>
 
                     {/* Description */}
                     <div className="mb-8">
-                        <h3 className="text-sm font-semibold text-white/30 uppercase mb-2 tracking-wider text-glow-sm">Описание</h3>
-                        <p className="text-white/60 leading-relaxed">{offer.description}</p>
+                        <h2 className="text-sm font-semibold text-white/45 mb-2">Что вы получите</h2>
+                        <p className="text-white/65 leading-relaxed">{offer.description}</p>
                     </div>
 
                     {/* Guarantee badges */}
-                    <div className="flex flex-wrap gap-4 mb-8">
-                        <div className="flex items-center gap-2 text-xs text-white/40">
+                    <div className="grid grid-cols-2 gap-2 mb-7">
+                        <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50">
                             <Shield className="w-4 h-4 text-green-400" />
                             Эскроу защита
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-white/40">
+                        <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50">
                             <Clock className="w-4 h-4 text-blue-400" />
                             Мгновенная доставка
                         </div>

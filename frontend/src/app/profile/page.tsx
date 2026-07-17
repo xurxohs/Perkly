@@ -348,14 +348,14 @@ export default function ProfilePage() {
 
     return (
         <>
-            <div className="max-w-4xl mx-auto px-6 py-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
                 {/* Profile card */}
-                <div className="rounded-2xl p-8 mb-8 relative overflow-hidden bg-white/[0.02] border border-white/[0.06]">
+                <div className="rounded-[28px] p-5 sm:p-7 mb-4 relative overflow-hidden bg-white/[0.025] border border-white/[0.07]">
                     <div className={`absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none translate-x-[30%] -translate-y-[30%] ${tier.glowClass}`} />
 
-                    <div className="flex items-center gap-6 relative z-10">
-                        <div className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
-                            <UserIcon className="w-10 h-10 text-white" />
+                    <div className="flex items-start sm:items-center gap-4 sm:gap-5 relative z-10">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 bg-white/[0.07] border border-white/10">
+                            <UserIcon className="w-8 h-8 sm:w-9 sm:h-9 text-white/75" />
                         </div>
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
@@ -389,7 +389,7 @@ export default function ProfilePage() {
                                 {canUseVendorHub ? (
                                     <Link
                                         href="/vendor"
-                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 group w-fit no-underline bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_0_10px_rgba(168,85,247,0.1)]"
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/70 transition-colors hover:text-white group w-fit no-underline bg-white/[0.04] border border-white/[0.07]"
                                     >
                                         <Store className="w-3.5 h-3.5 text-purple-400 group-hover:text-white transition-colors" />
                                         <span className="tracking-wide">Кабинет Продавца</span>
@@ -397,7 +397,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <Link
                                         href="/sell"
-                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 group w-fit no-underline bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_0_10px_rgba(16,185,129,0.1)]"
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/70 transition-colors hover:text-white group w-fit no-underline bg-white/[0.04] border border-white/[0.07]"
                                     >
                                         <Store className="w-3.5 h-3.5 text-emerald-400 group-hover:text-white transition-colors" />
                                         <span className="tracking-wide">Стать партнером</span>
@@ -420,36 +420,33 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="rounded-xl p-5 text-center flex flex-col items-center justify-center relative group bg-white/[0.02] border border-white/[0.06]">
-                        <Coins className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                        <div className="text-2xl font-extrabold text-white">{user.balance.toLocaleString('ru-RU')} сум</div>
-                        <div className="text-xs text-white/30 mt-1 mb-3">Баланс</div>
+                <div className="grid grid-cols-2 sm:grid-cols-[1.4fr_1fr_1fr] gap-px mb-4 overflow-hidden rounded-2xl bg-white/[0.07] border border-white/[0.07]">
+                    <div className="p-4 sm:p-5 bg-[#101014]">
+                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><Coins className="w-4 h-4" /> Баланс</div>
+                        <div className="text-xl sm:text-2xl font-black text-white whitespace-nowrap">{user.balance.toLocaleString('ru-RU')} сум</div>
                         <button
                             onClick={() => setTopUpModalOpen(true)}
-                            className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all w-full py-2 rounded-lg text-sm font-bold cursor-pointer border border-blue-500/30"
+                            className="mt-3 bg-white text-black hover:bg-white/90 transition-colors px-4 py-2 rounded-full text-xs font-bold cursor-pointer border-0"
                         >
                             Пополнить
                         </button>
                     </div>
-                    <div className="rounded-xl p-5 text-center flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.06]">
-                        <ShoppingBag className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-                        <div className="text-2xl font-extrabold text-white">{stats.totalPurchases}</div>
-                        <div className="text-xs text-white/30 mt-1">Покупок</div>
+                    <div className="p-4 sm:p-5 bg-[#101014] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><ShoppingBag className="w-4 h-4" /> Покупки</div>
+                        <div className="text-2xl font-black text-white">{stats.totalPurchases}</div>
                     </div>
-                    <div className="rounded-xl p-5 text-center bg-white/[0.02] border border-white/[0.06]">
-                        <Crown className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                        <div className="text-2xl font-extrabold text-white">{user.rewardPoints}</div>
-                        <div className="text-xs text-white/30 mt-1">Perkly Points</div>
+                    <div className="col-span-2 sm:col-span-1 p-4 sm:p-5 bg-[#101014] flex flex-col justify-center">
+                        <div className="flex items-center gap-2 text-xs text-white/35 mb-2"><Crown className="w-4 h-4" /> Perkly Points</div>
+                        <div className="text-2xl font-black text-white">{user.rewardPoints.toLocaleString('ru-RU')}</div>
                     </div>
                 </div>
 
                 {/* Referral Section */}
-                <div className="rounded-2xl p-6 mb-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 relative overflow-hidden group">
+                <div className="rounded-2xl p-5 mb-6 bg-white/[0.025] border border-white/[0.07] relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                        <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center shrink-0 border border-blue-400/30">
-                            <QrCode className="w-8 h-8 text-blue-400" />
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.05] flex items-center justify-center shrink-0 border border-white/[0.07]">
+                            <QrCode className="w-6 h-6 text-white/65" />
                         </div>
                         <div className="flex-1 text-center md:text-left">
                             <h3 className="text-lg font-bold text-white mb-1 flex items-center justify-center md:justify-start gap-2">
