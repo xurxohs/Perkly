@@ -64,9 +64,9 @@ export function CatalogShowcase() {
     const slide = slides[active];
 
     return (
-        <section className="mb-7" aria-label="Рекомендуем в каталоге">
+        <section className="catalog-showcase mb-7" aria-label="Рекомендуем в каталоге">
             <div
-                className={`group relative min-h-[230px] overflow-hidden rounded-[30px] bg-gradient-to-br ${slide.accent} p-6 sm:min-h-[280px] sm:p-9`}
+                className={`catalog-showcase-banner group relative min-h-[230px] overflow-hidden rounded-[30px] bg-gradient-to-br ${slide.accent} p-6 sm:min-h-[280px] sm:p-9`}
                 onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
                 onTouchEnd={(event) => {
                     if (touchStart.current === null) return;

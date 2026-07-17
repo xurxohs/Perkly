@@ -73,10 +73,11 @@ function useSpring(target: number, { stiffness = 400, damping = 28, mass = 1 } =
     return value;
 }
 
-function DockIcon({ item, isActive, onTap }: {
+function DockIcon({ item, isActive, onTap, light = false }: {
     item: DockItem;
     isActive: boolean;
     onTap: () => void;
+    light?: boolean;
 }) {
     const [pressed, setPressed] = useState(false);
     const [tapped, setTapped] = useState(false);
@@ -134,8 +135,8 @@ function DockIcon({ item, isActive, onTap }: {
                     name={item.icon}
                     className="w-[22px] h-[22px]"
                     style={{
-                        color: isActive ? '#d4b0ff' : 'rgba(255,255,255,0.45)',
-                        filter: isActive ? 'drop-shadow(0 0 8px rgba(168,85,247,0.75)) brightness(1.2)' : 'none',
+                        color: isActive ? '#8f32d9' : light ? 'rgba(29,29,31,0.48)' : 'rgba(255,255,255,0.45)',
+                        filter: isActive ? 'none' : 'none',
                         transition: 'color 0.4s ease-out, filter 0.4s ease-out'
                     }}
                 />
@@ -157,7 +158,7 @@ function DockIcon({ item, isActive, onTap }: {
             <span
                 className="text-[10px] font-medium leading-none"
                 style={{
-                    color: isActive ? '#c084fc' : 'rgba(255,255,255,0.3)',
+                    color: isActive ? '#8f32d9' : light ? 'rgba(29,29,31,0.42)' : 'rgba(255,255,255,0.3)',
                 }}
             >
                 {item.label}
@@ -184,6 +185,7 @@ export function MobileDock() {
     const { hapticImpact } = useTelegram();
 
     const isTopka = TOPKA_PAGES.some(p => pathname.startsWith(p));
+    const isLightCommerce = pathname.startsWith('/catalog');
     const currentItems = isTopka ? topkaDockItems : marketplaceDockItems;
 
     const getActiveHref = () => {
@@ -205,13 +207,14 @@ export function MobileDock() {
             <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-[env(safe-area-inset-bottom,8px)]">
                 {/* Outer container with blur */}
                 <div
-                    className="mx-3 mb-3 px-2 py-2.5 rounded-[36px] flex items-center justify-around gap-1 w-full max-w-[420px] liquid-glass-dock"
+                    className={`mx-3 mb-3 px-2 py-2.5 rounded-[36px] flex items-center justify-around gap-1 w-full max-w-[420px] liquid-glass-dock ${isLightCommerce ? 'light-commerce-dock' : ''}`}
                 >
                     {currentItems.map((item) => (
                         <DockIcon
                             key={item.href}
                             item={item}
                             isActive={activeHref === item.href}
+                            light={isLightCommerce}
                             onTap={() => hapticImpact('light')}
                         />
                     ))}
