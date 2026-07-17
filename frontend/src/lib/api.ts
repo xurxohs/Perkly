@@ -77,6 +77,7 @@ export interface Transaction {
     promocodeActivationId?: string | null;
     promocodeDiscount?: number | null;
     promocodeCodeSnapshot?: string | null;
+    buyerComment?: string | null;
     createdAt: string;
     offer?: Offer;
     buyer?: User;
@@ -690,10 +691,10 @@ export const offersApi = {
 
 // ===== TRANSACTIONS =====
 export const transactionsApi = {
-    purchase: (offerId: string, isGift = false, promocodeActivationId?: string, idempotencyKey = crypto.randomUUID()) =>
+    purchase: (offerId: string, isGift = false, promocodeActivationId?: string, idempotencyKey = crypto.randomUUID(), buyerComment?: string) =>
         request<Transaction>('/transactions', {
             method: 'POST',
-            body: JSON.stringify({ offerId, isGift, promocodeActivationId, idempotencyKey }),
+            body: JSON.stringify({ offerId, isGift, promocodeActivationId, idempotencyKey, buyerComment }),
         }),
 
     validatePromocode: (data: { code: string; amount: number; offerId?: string }) =>

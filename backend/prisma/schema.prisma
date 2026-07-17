@@ -388,6 +388,7 @@ model Transaction {
   promocodeDiscount     Int?
   idempotencyKey        String?          @unique
   promocodeCodeSnapshot String?
+  buyerComment          String?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   chatRooms             ChatRoom[]

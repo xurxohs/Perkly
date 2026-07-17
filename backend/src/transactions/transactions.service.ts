@@ -68,7 +68,9 @@ export class TransactionsService {
     pointsUsed = 0,
     promocodeActivationId?: string,
     idempotencyKey?: string,
+    buyerComment?: string,
   ): Promise<Transaction> {
+    const normalizedBuyerComment = buyerComment?.trim().slice(0, 1000) || null;
     const normalizedIdempotencyKey = idempotencyKey?.trim()
       ? `purchase:${buyerId}:${idempotencyKey.trim().slice(0, 120)}`
       : undefined;
@@ -196,6 +198,7 @@ export class TransactionsService {
             promocodeDiscount: promo?.discountAmount,
             promocodeCodeSnapshot: promo?.code,
             idempotencyKey: normalizedIdempotencyKey,
+            buyerComment: normalizedBuyerComment,
           },
           include: {
             offer: { select: PURCHASED_OFFER_SELECT },

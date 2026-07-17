@@ -28,6 +28,7 @@ export class TransactionsController {
       pointsUsed?: number;
       promocodeActivationId?: string;
       idempotencyKey?: string;
+      buyerComment?: string;
     },
   ) {
     return this.transactionsService.purchase(
@@ -37,6 +38,7 @@ export class TransactionsController {
       body.pointsUsed ?? 0,
       body.promocodeActivationId,
       body.idempotencyKey,
+      body.buyerComment,
     );
   }
 

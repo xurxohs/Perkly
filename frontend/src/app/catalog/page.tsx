@@ -1,25 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { Search, Flame, Pizza, Tv, Gamepad2, GraduationCap, Store, Plane, Dumbbell, Package, Bookmark, CheckCircle2, ChevronDown, Link2, MapPin, SlidersHorizontal, Sparkles, Ticket, X } from 'lucide-react';
+import { Search, Flame, Store, Package, ChevronDown, Link2, MapPin, SlidersHorizontal, Sparkles, Ticket, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { offersApi, usersApi, OfferFilters, Offer } from '@/lib/api';
-import { useCart } from '@/lib/CartContext';
-import { useAuth } from '@/lib/AuthContext';
+import { useSearchParams } from 'next/navigation';
+import { offersApi, OfferFilters, Offer } from '@/lib/api';
 import { CatalogShowcase } from '@/components/CatalogShowcase';
+import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
 const CATEGORIES = [
-    { value: '', label: 'Все категории' },
-    { value: 'RESTAURANTS', label: 'Рестораны и Кафе', icon: Pizza },
-    { value: 'SUBSCRIPTIONS', label: 'Подписки', icon: Tv },
-    { value: 'GAMES', label: 'Игры', icon: Gamepad2 },
-    { value: 'COURSES', label: 'Курсы', icon: GraduationCap },
-    { value: 'MARKETPLACES', label: 'Маркетплейсы', icon: Store },
-    { value: 'TOURISM', label: 'Туризм', icon: Plane },
-    { value: 'FITNESS', label: 'Фитнес', icon: Dumbbell },
-    { value: 'OTHER', label: 'Другое', icon: Package },
+    { value: '', label: 'Все категории', glyph: 'coupon' as PerklyGlyphName },
+    { value: 'RESTAURANTS', label: 'Рестораны и Кафе', glyph: 'coffee' as PerklyGlyphName },
+    { value: 'SUBSCRIPTIONS', label: 'Подписки', glyph: 'key' as PerklyGlyphName },
+    { value: 'GAMES', label: 'Игры', glyph: 'game' as PerklyGlyphName },
+    { value: 'COURSES', label: 'Курсы', glyph: 'catalog' as PerklyGlyphName },
+    { value: 'MARKETPLACES', label: 'Маркетплейсы', glyph: 'store' as PerklyGlyphName },
+    { value: 'TOURISM', label: 'Туризм', glyph: 'location' as PerklyGlyphName },
+    { value: 'FITNESS', label: 'Фитнес', glyph: 'profile' as PerklyGlyphName },
+    { value: 'OTHER', label: 'Другое', glyph: 'catalog' as PerklyGlyphName },
 ];
 
 const SORT_OPTIONS = [
@@ -47,11 +46,7 @@ const productTypeLabel = (value: Offer['fulfillmentType']) => PRODUCT_TYPES.find
 const isUrgentOffer = (offer: Offer) => Boolean(
     offer.isFlashDrop && offer.expiresAt && new Date(offer.expiresAt).getTime() > Date.now(),
 );
-const cartActionLabel = (offer: Offer) => offer.price === 0 ? 'Получить' : 'В корзину';
-
-
 function CatalogContent() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || '';
     const initialFlash = searchParams.get('isFlashDrop') === 'true';
@@ -84,10 +79,6 @@ function CatalogContent() {
     const [priceToInput, setPriceToInput] = useState('');
     const [minPrice, setMinPrice] = useState<number | undefined>();
     const [maxPrice, setMaxPrice] = useState<number | undefined>();
-    const [savedOfferIds, setSavedOfferIds] = useState<Set<string>>(new Set());
-    const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
-    const { addItem, isInCart } = useCart();
-    const { isAuthenticated } = useAuth();
 
     const PAGE_SIZE = 12;
 
@@ -138,24 +129,6 @@ function CatalogContent() {
         setPage(0);
     }, [initialCategory, initialFlash, initialFulfillment, initialSearch]);
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            setSavedOfferIds(new Set());
-            return;
-        }
-
-        let cancelled = false;
-        usersApi.getSavedOffers()
-            .then((saved) => {
-                if (!cancelled) setSavedOfferIds(new Set(saved.map((item) => item.offerId)));
-            })
-            .catch(() => {
-                if (!cancelled) setSavedOfferIds(new Set());
-            });
-
-        return () => { cancelled = true; };
-    }, [isAuthenticated]);
-
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
     const handleSearch = (e: React.FormEvent) => {
@@ -186,39 +159,6 @@ function CatalogContent() {
         setMinPrice(undefined);
         setMaxPrice(undefined);
         setPage(0);
-    };
-
-    const toggleSaved = async (offerId: string) => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-        if (savingOfferIds.has(offerId)) return;
-
-        const wasSaved = savedOfferIds.has(offerId);
-        setSavingOfferIds((current) => new Set(current).add(offerId));
-        setSavedOfferIds((current) => {
-            const next = new Set(current);
-            if (wasSaved) next.delete(offerId); else next.add(offerId);
-            return next;
-        });
-
-        try {
-            if (wasSaved) await offersApi.unsave(offerId);
-            else await offersApi.save(offerId);
-        } catch {
-            setSavedOfferIds((current) => {
-                const next = new Set(current);
-                if (wasSaved) next.add(offerId); else next.delete(offerId);
-                return next;
-            });
-        } finally {
-            setSavingOfferIds((current) => {
-                const next = new Set(current);
-                next.delete(offerId);
-                return next;
-            });
-        }
     };
 
     const activeFilterCount = [
@@ -275,12 +215,7 @@ function CatalogContent() {
                         productTypeLabel(fulfillmentType)
                     ) : category ? (
                         <span className="flex items-center gap-2">
-                            {CATEGORIES.find(c => c.value === category)?.icon && (
-                                (() => {
-                                    const IconNode = CATEGORIES.find(c => c.value === category)?.icon as React.ElementType;
-                                    return IconNode ? <IconNode className="w-8 h-8 text-purple-400" /> : null;
-                                })()
-                            )}
+                            <PerklyGlyph name={CATEGORIES.find(c => c.value === category)?.glyph || 'catalog'} className="w-8 h-8 text-purple-400" />
                             {CATEGORIES.find(c => c.value === category)?.label || 'Каталог'}
                         </span>
                     ) : (
@@ -303,7 +238,6 @@ function CatalogContent() {
             <div className="-mx-6 mb-5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max gap-2 pb-1">
                     {CATEGORIES.map((item) => {
-                        const Icon = item.icon || Sparkles;
                         const selected = category === item.value;
                         return (
                             <button
@@ -311,7 +245,7 @@ function CatalogContent() {
                                 onClick={() => { setCategory(item.value); setPage(0); }}
                                 className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-purple-400/35 bg-purple-500/15 text-white shadow-[0_8px_30px_rgba(168,85,247,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
                             >
-                                <Icon className="h-4 w-4" /> {item.label}
+                                <PerklyGlyph name={item.glyph} className="h-4 w-4" /> {item.label}
                             </button>
                         );
                     })}
@@ -417,28 +351,16 @@ function CatalogContent() {
             ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {offers.map((offer) => (
-                        <div key={offer.id} className="relative rounded-[24px] overflow-hidden transition-all duration-300 hover:-translate-y-1 group bg-white/[0.03] backdrop-blur-[20px] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
-                            <button
-                                onClick={() => void toggleSaved(offer.id)}
-                                disabled={savingOfferIds.has(offer.id)}
-                                aria-label={savedOfferIds.has(offer.id) ? 'Удалить из избранного' : 'Добавить в избранное'}
-                                className={`absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-2xl transition ${savedOfferIds.has(offer.id) ? 'border-pink-400/30 bg-pink-500/20 text-pink-300' : 'border-white/10 bg-black/35 text-white/70 hover:bg-black/55 hover:text-white'} disabled:opacity-50`}
-                            >
-                                <Bookmark className={`h-4.5 w-4.5 ${savedOfferIds.has(offer.id) ? 'fill-current' : ''}`} />
-                            </button>
+                        <div key={offer.id} className="relative rounded-[24px] overflow-hidden group bg-white/[0.03] backdrop-blur-[20px] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.2)] transition-colors duration-200 hover:border-white/[0.14]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
                                 <div className="relative h-32 sm:h-44 overflow-hidden bg-white/5 flex items-center justify-center p-3 sm:p-6 border-b border-white/[0.04]">
                                     {(offer.imageUrl || offer.vendorLogo) ? (
-                                        <Image src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-contain p-5 drop-shadow-xl transition-transform duration-500 group-hover:scale-105" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                        <Image src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-contain p-5 drop-shadow-xl" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                     ) : null}
                                     <div className={`flex items-center justify-center h-full text-white/20 ${(offer.imageUrl || offer.vendorLogo) ? 'hidden' : ''}`}>
                                         {(() => {
                                             const cat = CATEGORIES.find(c => c.value === offer.category);
-                                            if (cat && cat.icon) {
-                                                const IconNode = cat.icon;
-                                                return <IconNode className="w-16 h-16" />;
-                                            }
-                                            return <Package className="w-16 h-16" />;
+                                            return <PerklyGlyph name={cat?.glyph || 'catalog'} className="w-16 h-16" />;
                                         })()}
                                     </div>
 
@@ -466,24 +388,6 @@ function CatalogContent() {
                                 </div>
                             </Link>
 
-                            <div className="px-3 pb-3 sm:px-4 sm:pb-4">
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        addItem({ offerId: offer.id, title: offer.title, price: offer.price, category: offer.category });
-                                    }}
-                                    disabled={isInCart(offer.id)}
-                                    className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                                        isInCart(offer.id)
-                                            ? 'bg-green-500/10 border-green-500/20 text-green-500 cursor-default'
-                                            : 'bg-purple-500/10 border-purple-500/20 text-purple-400 hover:bg-purple-500/20 cursor-pointer'
-                                    }`}
-                                >
-                                    <span className="inline-flex items-center justify-center gap-2">
-                                        {isInCart(offer.id) ? <><CheckCircle2 className="h-4 w-4" /> В корзине</> : <><Package className="h-4 w-4" /> {cartActionLabel(offer)}</>}
-                                    </span>
-                                </button>
-                            </div>
                         </div>
                     ))}
                 </div>
