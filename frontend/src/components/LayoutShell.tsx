@@ -1,28 +1,40 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { MobileDock } from '@/components/MobileDock';
 import { Footer } from '@/components/Footer';
 
 // Pages where we hide the desktop navbar and footer (app-style fullscreen pages)
 const IMMERSIVE_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
+const THEME_EVENT = 'perkly-theme-change';
+
+const subscribeToTheme = (callback: () => void) => {
+    window.addEventListener('storage', callback);
+    window.addEventListener(THEME_EVENT, callback);
+    return () => {
+        window.removeEventListener('storage', callback);
+        window.removeEventListener(THEME_EVENT, callback);
+    };
+};
+const getThemeSnapshot = (): 'light' | 'dark' => window.localStorage.getItem('perkly-theme') === 'dark' ? 'dark' : 'light';
+const getServerThemeSnapshot = (): 'light' | 'dark' => 'light';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isImmersive = IMMERSIVE_PAGES.some(p => pathname.startsWith(p));
-    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-        if (typeof window === 'undefined') return 'light';
-        return window.localStorage.getItem('perkly-theme') === 'dark' ? 'dark' : 'light';
-    });
+    const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
 
     useEffect(() => {
         document.documentElement.dataset.perklyTheme = theme;
-        window.localStorage.setItem('perkly-theme', theme);
     }, [theme]);
 
-    const toggleTheme = () => setTheme((current) => current === 'light' ? 'dark' : 'light');
+    const toggleTheme = () => {
+        const nextTheme = theme === 'light' ? 'dark' : 'light';
+        window.localStorage.setItem('perkly-theme', nextTheme);
+        window.dispatchEvent(new Event(THEME_EVENT));
+    };
     const isLightCommerce = theme === 'light';
 
     return (
