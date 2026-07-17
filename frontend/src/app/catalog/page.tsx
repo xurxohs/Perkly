@@ -82,8 +82,8 @@ function CatalogContent() {
 
     const PAGE_SIZE = 12;
 
-    const fetchOffers = useCallback(async () => {
-        setLoading(true);
+    const fetchOffers = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
         setError(null);
         try {
             const filters: OfferFilters = {
@@ -112,12 +112,26 @@ function CatalogContent() {
             setTotal(0);
             setError(err instanceof Error ? err.message : 'Не удалось загрузить каталог');
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }, [page, category, fulfillmentType, sort, search, isFlashDrop, isNearMe, coords, minPrice, maxPrice]);
 
     useEffect(() => {
         fetchOffers();
+    }, [fetchOffers]);
+
+    useEffect(() => {
+        const refreshIfVisible = () => {
+            if (document.visibilityState === 'visible') void fetchOffers(true);
+        };
+        const interval = window.setInterval(refreshIfVisible, 15_000);
+        window.addEventListener('focus', refreshIfVisible);
+        document.addEventListener('visibilitychange', refreshIfVisible);
+        return () => {
+            window.clearInterval(interval);
+            window.removeEventListener('focus', refreshIfVisible);
+            document.removeEventListener('visibilitychange', refreshIfVisible);
+        };
     }, [fetchOffers]);
 
     useEffect(() => {

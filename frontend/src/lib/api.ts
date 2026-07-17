@@ -640,7 +640,7 @@ export const offersApi = {
         Object.entries(filters).forEach(([key, val]) => {
             if (val !== undefined && val !== '') params.set(key, String(val));
         });
-        return request<{ data: Offer[]; total: number }>(`/offers?${params.toString()}`);
+        return request<{ data: Offer[]; total: number }>(`/offers?${params.toString()}`, { cache: 'no-store' });
     },
 
     getById: (id: string) =>
