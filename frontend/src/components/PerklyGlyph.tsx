@@ -15,7 +15,9 @@ export type PerklyGlyphName =
     | 'store'
     | 'coffee'
     | 'shield'
-    | 'bookmark';
+    | 'bookmark'
+    | 'chat'
+    | 'crown';
 
 type Props = SVGProps<SVGSVGElement> & { name: PerklyGlyphName };
 
@@ -67,6 +69,12 @@ export function PerklyGlyph({ name, ...props }: Props) {
             )}
             {name === 'bookmark' && (
                 <path fill="currentColor" d="M6.35 2.5h11.3a1.85 1.85 0 0 1 1.85 1.85v16.1a1.05 1.05 0 0 1-1.65.86L12 17.2l-5.85 4.11a1.05 1.05 0 0 1-1.65-.86V4.35A1.85 1.85 0 0 1 6.35 2.5Z" />
+            )}
+            {name === 'chat' && (
+                <path fill="currentColor" d="M12 2.5c-5.25 0-9.5 3.78-9.5 8.45 0 2.6 1.32 4.92 3.4 6.47l-.78 3.01a.9.9 0 0 0 1.1 1.09l3.5-1.02c.74.17 1.5.25 2.28.25 5.25 0 9.5-3.78 9.5-8.45S17.25 2.5 12 2.5Zm-4.2 9.8a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4.2 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4.2 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z" />
+            )}
+            {name === 'crown' && (
+                <path fill="currentColor" d="M3.1 6.2a1.35 1.35 0 1 1 1.42 1.34l2.15 3.2 4.25-5.56a1.35 1.35 0 1 1 2.16 0l4.25 5.56 2.15-3.2A1.35 1.35 0 1 1 20.9 6.2l-1.45 10.35H4.55L3.1 6.2Zm1.72 12.1h14.36a1.1 1.1 0 0 1 0 2.2H4.82a1.1 1.1 0 0 1 0-2.2Z" />
             )}
         </svg>
     );

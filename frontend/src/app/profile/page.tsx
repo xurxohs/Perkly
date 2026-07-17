@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User as UserIcon, Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Gift } from 'lucide-react';
+import { Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -450,11 +450,11 @@ export default function ProfilePage() {
                 <div className="profile-referral-card rounded-[24px] p-5 mb-6 border border-white/[0.07] relative overflow-hidden group">
                     <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
                         <div className="w-12 h-12 rounded-2xl bg-white/[0.05] flex items-center justify-center shrink-0 border border-white/[0.07]">
-                            <QrCode className="w-6 h-6 text-white/65" />
+                            <PerklyGlyph name="coupon" className="w-6 h-6 text-white/65" />
                         </div>
                         <div className="flex-1 text-center md:text-left">
                             <h3 className="text-lg font-bold text-white mb-1 flex items-center justify-center md:justify-start gap-2">
-                                🎁 Пригласи друга — получи 500 баллов!
+                                Пригласи друга — получи 500 баллов
                             </h3>
                             <p className="text-white/50 text-sm">
                                 Начислим по 500 Perkly Points вам и вашему другу после его регистрации.
@@ -466,9 +466,8 @@ export default function ProfilePage() {
                                     hapticImpact('medium');
                                     setRedeemModalOpen(true);
                                 }}
-                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 text-white hover:scale-105"
+                                className="profile-secondary-button flex-1 md:flex-none flex items-center justify-center px-6 py-3 rounded-xl font-bold border text-white"
                             >
-                                <Key className="w-4 h-4 text-purple-400" />
                                 Активировать код
                             </button>
                             <button
@@ -494,8 +493,8 @@ export default function ProfilePage() {
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.3)] border border-amber-500/30">
-                                    <Gift className="w-5 h-5 text-amber-400" />
+                                <div className="profile-icon-well w-10 h-10 rounded-xl flex items-center justify-center">
+                                    <PerklyGlyph name="coupon" className="w-5 h-5 text-white/70" />
                                 </div>
                                 <div>
                                     <h3 className="text-base font-bold text-white leading-tight">Ежедневный бонус</h3>
@@ -503,8 +502,8 @@ export default function ProfilePage() {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-sm font-bold text-amber-400">Серия: {dailyStatus.currentStreak} {getStreakWord(dailyStatus.currentStreak)}</div>
-                                <div className="text-[10px] text-white/30 uppercase tracking-wider">Рекорд: {dailyStatus.longestStreak}</div>
+                                <div className="text-sm font-bold text-white/70">{dailyStatus.currentStreak} {getStreakWord(dailyStatus.currentStreak)} подряд</div>
+                                <div className="text-[10px] text-white/30 uppercase tracking-wider">Рекорд {dailyStatus.longestStreak}</div>
                             </div>
                         </div>
 
@@ -513,16 +512,16 @@ export default function ProfilePage() {
                             {dailyStatus.weekProgress.map((day, idx) => (
                                 <div
                                     key={day.day || idx}
-                                    className={`flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all ${
+                                    className={`profile-day flex flex-col items-center justify-between p-2 rounded-xl border text-center ${
                                         day.claimed
-                                            ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                                            ? 'is-claimed'
                                             : !day.claimed && dailyStatus.canClaimToday && idx === 6
-                                                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-extrabold animate-pulse'
-                                                : 'bg-white/5 border-white/10 text-white/35'
+                                                ? 'is-today'
+                                                : ''
                                     }`}
                                 >
                                     <span className="text-[9px] font-bold uppercase tracking-wider mb-1">{day.label}</span>
-                                    <div className="text-xs my-0.5">{day.claimed ? '✅' : '🪙'}</div>
+                                    <div className="profile-day-status text-xs my-0.5">{day.claimed ? '✓' : '•'}</div>
                                     <span className="text-[9px] font-black">{day.reward.points > 0 ? `+${day.reward.points}` : '0'}</span>
                                 </div>
                             ))}
@@ -534,9 +533,9 @@ export default function ProfilePage() {
                                 <button
                                     onClick={handleClaimDailyBonus}
                                     disabled={claimingDaily}
-                                    className="w-full py-3 rounded-xl font-extrabold text-sm transition-all transform active:scale-[0.98] bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white shadow-lg shadow-orange-500/10 border-0 cursor-pointer flex items-center justify-center gap-1.5"
+                                    className="w-full py-3 rounded-xl font-extrabold text-sm transition-colors bg-white hover:bg-white/90 text-black border-0 cursor-pointer flex items-center justify-center"
                                 >
-                                    {claimingDaily ? 'Получение...' : `🎁 Забрать бонус (+${dailyStatus.todayReward.points} Points)`}
+                                    {claimingDaily ? 'Получение...' : `Забрать ${dailyStatus.todayReward.points} Points`}
                                 </button>
                             ) : (
                                 <div className="w-full py-3 rounded-xl font-bold text-xs bg-white/5 border border-white/10 text-white/30 flex items-center justify-center text-center cursor-default">
@@ -552,10 +551,10 @@ export default function ProfilePage() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
                     <div className="flex items-center gap-4 relative z-10">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.3)] border border-indigo-500/30">
-                            <UserIcon className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform" />
+                            <PerklyGlyph name="profile" className="w-6 h-6 text-white/70" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-0.5">Сквад Награды 👥</h3>
+                            <h3 className="text-lg font-bold text-white mb-0.5">Сквад и награды</h3>
                             <p className="text-sm text-indigo-200/60">Цели с друзьями и Mega Perk (15% кешбэк)</p>
                         </div>
                     </div>
@@ -570,10 +569,10 @@ export default function ProfilePage() {
                 <Link href="/pricing" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-2 group no-underline border">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)] border border-yellow-500/30">
-                            <Crown className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
+                            <PerklyGlyph name="crown" className="w-6 h-6 text-white/70" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-0.5">Тарифы и Привилегии ✨</h3>
+                            <h3 className="text-lg font-bold text-white mb-0.5">Тарифы и привилегии</h3>
                             <p className="text-sm text-yellow-200/60">Улучшите свой аккаунт и получайте больше выгоды</p>
                         </div>
                     </div>
@@ -588,7 +587,7 @@ export default function ProfilePage() {
                 <Link href="/messages" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-8 group no-underline border">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] border border-purple-500/30">
-                            <MessageCircle className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
+                            <PerklyGlyph name="chat" className="w-6 h-6 text-white/70" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white mb-0.5">Личные сообщения</h3>

@@ -944,9 +944,9 @@
 }
 .profile-action-row [class*="shadow-"] { box-shadow: none !important; }
 .profile-action-row > div:first-of-type > div:first-child {
-  color: white !important;
-  background: linear-gradient(145deg, rgba(124,60,255,.22), rgba(255,60,146,.12)) !important;
-  border-color: rgba(189,93,255,.2) !important;
+  color: rgba(255,255,255,.72) !important;
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.075) !important;
 }
 .profile-action-row p { color: rgba(255,255,255,.4) !important; }
 .profile-action-row svg { transform: none !important; }
@@ -966,6 +966,36 @@
 }
 
 .profile-modern [class*="hover:scale"]:hover { transform: none !important; }
+
+.profile-icon-well {
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.075);
+  box-shadow: none;
+}
+
+.profile-secondary-button {
+  background: rgba(255,255,255,.055);
+  border-color: rgba(255,255,255,.09);
+  transition: background-color .18s ease;
+}
+.profile-secondary-button:hover { background: rgba(255,255,255,.085); }
+
+.profile-day {
+  color: rgba(255,255,255,.32);
+  background: rgba(255,255,255,.025);
+  border-color: rgba(255,255,255,.065);
+}
+.profile-day.is-claimed {
+  color: rgba(255,255,255,.72);
+  background: rgba(255,255,255,.055);
+  border-color: rgba(255,255,255,.09);
+}
+.profile-day.is-today {
+  color: white;
+  background: linear-gradient(145deg, rgba(124,60,255,.16), rgba(255,60,146,.08));
+  border-color: rgba(180,82,239,.2);
+}
+.profile-day-status { color: inherit; }
 
 @supports (corner-shape: squircle) {
   .app-icon-squircle {
