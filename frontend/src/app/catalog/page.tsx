@@ -351,7 +351,7 @@ function CatalogContent() {
             ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {offers.map((offer) => (
-                        <div key={offer.id} className="relative rounded-[24px] overflow-hidden group bg-white/[0.03] backdrop-blur-[20px] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.2)] transition-colors duration-200 hover:border-white/[0.14]">
+                        <div key={offer.id} className="catalog-offer-card relative rounded-[24px] overflow-hidden group bg-white/[0.03] border border-white/[0.08] transition-colors duration-200 hover:border-white/[0.14]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
                                 <div className="relative h-32 sm:h-44 overflow-hidden bg-white/5 flex items-center justify-center p-3 sm:p-6 border-b border-white/[0.04]">
                                     {(offer.imageUrl || offer.vendorLogo) ? (
