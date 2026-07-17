@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
 
-import { ArrowRight, Coffee, Flame, Gamepad2, KeyRound, MapPin, ShieldCheck, ShoppingBag, Sparkles, Store, Tag } from 'lucide-react';
+import { ArrowRight, Flame, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Offer } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
+import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
@@ -13,12 +14,12 @@ const CATEGORY_NAMES: Record<string, string> = {
 };
 
 const categories = [
-  { title: 'Рядом', detail: 'Кафе и услуги', icon: MapPin, href: '/catalog?category=RESTAURANTS&near=true' },
-  { title: 'Подписки', detail: 'Сервисы и приложения', icon: KeyRound, href: '/catalog?category=SUBSCRIPTIONS' },
-  { title: 'Игры', detail: 'Ключи и аккаунты', icon: Gamepad2, href: '/catalog?category=GAMES' },
-  { title: 'Промокоды', detail: 'Скидки и QR-коды', icon: Tag, href: '/catalog?fulfillmentType=PROMOCODE' },
-  { title: 'Маркетплейсы', detail: 'Выгода на покупки', icon: Store, href: '/catalog?category=MARKETPLACES' },
-  { title: 'Еда', detail: 'Предложения заведений', icon: Coffee, href: '/catalog?category=RESTAURANTS' },
+  { title: 'Рядом', detail: 'Кафе и услуги', icon: 'location' as PerklyGlyphName, href: '/catalog?category=RESTAURANTS&near=true' },
+  { title: 'Подписки', detail: 'Сервисы и приложения', icon: 'key' as PerklyGlyphName, href: '/catalog?category=SUBSCRIPTIONS' },
+  { title: 'Игры', detail: 'Ключи и аккаунты', icon: 'game' as PerklyGlyphName, href: '/catalog?category=GAMES' },
+  { title: 'Промокоды', detail: 'Скидки и QR-коды', icon: 'coupon' as PerklyGlyphName, href: '/catalog?fulfillmentType=PROMOCODE' },
+  { title: 'Маркетплейсы', detail: 'Выгода на покупки', icon: 'store' as PerklyGlyphName, href: '/catalog?category=MARKETPLACES' },
+  { title: 'Еда', detail: 'Предложения заведений', icon: 'coffee' as PerklyGlyphName, href: '/catalog?category=RESTAURANTS' },
 ];
 
 async function getOffers() {
@@ -53,13 +54,13 @@ export default async function Home() {
         <h1 className="text-balance text-4xl font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">Покупайте выгоднее.<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Получайте сразу.</span></h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Промокоды, подписки и локальные предложения Узбекистана. Деньги защищены до получения покупки.</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/catalog" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-bold text-black no-underline transition hover:scale-[1.02]">Смотреть предложения <ArrowRight className="h-4 w-4" /></Link><Link href="/sell" className="inline-flex h-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-7 font-semibold text-white/75 no-underline hover:bg-white/[0.07]">Стать продавцом</Link></div>
-        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-400" /> Безопасная сделка</span><span className="inline-flex items-center gap-1.5"><ShoppingBag className="h-4 w-4 text-purple-300" /> Моментальная выдача</span><span>Цены только в UZS</span></div>
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> Безопасная сделка</span><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="catalog" className="h-4 w-4 text-purple-300" /> Моментальная выдача</span><span>Цены только в UZS</span></div>
       </div>
     </section>
 
     <section className="mb-14">
       <div className="mb-5 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-purple-300/60">Быстрый выбор</p><h2 className="mt-2 text-2xl font-black text-white">Что ищете?</h2></div><Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline hover:text-white">Весь каталог →</Link></div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{categories.map((category) => <Link key={category.title} href={category.href} className="group rounded-3xl border border-white/[0.07] bg-white/[0.025] p-4 no-underline transition hover:-translate-y-0.5 hover:border-purple-400/25 hover:bg-purple-500/[0.06]"><div className="mb-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/55 transition group-hover:bg-purple-500/15 group-hover:text-purple-200"><category.icon className="h-5 w-5" /></div><h3 className="text-sm font-bold text-white">{category.title}</h3><p className="mt-1 text-xs leading-4 text-white/30">{category.detail}</p></Link>)}</div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{categories.map((category) => <Link key={category.title} href={category.href} className="group rounded-3xl border border-white/[0.07] bg-white/[0.025] p-4 no-underline transition hover:-translate-y-0.5 hover:border-purple-400/25 hover:bg-purple-500/[0.06]"><div className="mb-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/55 transition group-hover:bg-purple-500/15 group-hover:text-purple-200"><PerklyGlyph name={category.icon} className="h-5 w-5" /></div><h3 className="text-sm font-bold text-white">{category.title}</h3><p className="mt-1 text-xs leading-4 text-white/30">{category.detail}</p></Link>)}</div>
     </section>
 
     <section className="mb-14"><Link href="/feed" className="group relative block overflow-hidden rounded-[2rem] border border-orange-400/10 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.025] to-purple-500/[0.06] p-6 no-underline sm:p-8"><div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div><span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-300"><Flame className="h-3.5 w-3.5" /> Topka</span><h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Что происходит сегодня</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/40">События, места и предложения города в вертикальной ленте.</p></div><span className="inline-flex h-12 w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 text-sm font-bold text-white/70 transition group-hover:bg-white/10 group-hover:text-white">Открыть Topka <ArrowRight className="h-4 w-4" /></span></div></Link></section>

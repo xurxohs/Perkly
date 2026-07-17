@@ -8,7 +8,13 @@ export type PerklyGlyphName =
     | 'profile'
     | 'cart'
     | 'coupon'
-    | 'search';
+    | 'search'
+    | 'location'
+    | 'key'
+    | 'game'
+    | 'store'
+    | 'coffee'
+    | 'shield';
 
 type Props = SVGProps<SVGSVGElement> & { name: PerklyGlyphName };
 
@@ -39,6 +45,24 @@ export function PerklyGlyph({ name, ...props }: Props) {
             )}
             {name === 'search' && (
                 <path fill="currentColor" fillRule="evenodd" d="M10.7 3a7.7 7.7 0 1 0 4.72 13.79l3.9 3.9a.97.97 0 0 0 1.37-1.38l-3.9-3.89A7.7 7.7 0 0 0 10.7 3Zm-5.75 7.7a5.75 5.75 0 1 1 11.5 0 5.75 5.75 0 0 1-11.5 0Z" clipRule="evenodd" />
+            )}
+            {name === 'location' && (
+                <path fill="currentColor" fillRule="evenodd" d="M12 2.25a8 8 0 0 0-8 8c0 5.43 6.55 11.06 7.3 11.68a1.1 1.1 0 0 0 1.4 0c.75-.62 7.3-6.25 7.3-11.68a8 8 0 0 0-8-8Zm0 4.45a3.55 3.55 0 1 0 0 7.1 3.55 3.55 0 0 0 0-7.1Zm0 1.9a1.65 1.65 0 1 1 0 3.3 1.65 1.65 0 0 1 0-3.3Z" clipRule="evenodd" />
+            )}
+            {name === 'key' && (
+                <path fill="currentColor" fillRule="evenodd" d="M14.2 2.4a7.4 7.4 0 0 0-6.95 9.92l-4.6 4.6a1.5 1.5 0 0 0-.44 1.06v2.12a1.5 1.5 0 0 0 1.5 1.5h2.12c.4 0 .78-.16 1.06-.44l.76-.76v-1.9h1.9l1.86-1.86a7.4 7.4 0 1 0 2.79-14.24Zm2.7 4.7a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5Z" clipRule="evenodd" />
+            )}
+            {name === 'game' && (
+                <path fill="currentColor" d="M8.1 5.25h7.8c3.57 0 6.15 3.25 5.38 6.74l-1.15 5.18a2.72 2.72 0 0 1-4.68 1.2l-1.23-1.42H9.78l-1.23 1.42a2.72 2.72 0 0 1-4.68-1.2l-1.15-5.18C1.95 8.5 4.53 5.25 8.1 5.25Zm-.85 3.5v1.5h-1.5v1.5h1.5v1.5h1.5v-1.5h1.5v-1.5h-1.5v-1.5h-1.5Zm8.75 1a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Zm2.55 2.55a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z" />
+            )}
+            {name === 'store' && (
+                <path fill="currentColor" fillRule="evenodd" d="M4.45 3h15.1l1.7 5.05a3.35 3.35 0 0 1-1.6 3.98V19a2 2 0 0 1-2 2H6.35a2 2 0 0 1-2-2v-6.97a3.35 3.35 0 0 1-1.6-3.98L4.45 3Zm3.1 10.3V19h3.2v-5.7h-3.2Zm5.7 0V19h3.2v-5.7h-3.2Z" clipRule="evenodd" />
+            )}
+            {name === 'coffee' && (
+                <path fill="currentColor" fillRule="evenodd" d="M3 6.2h14.3v1.2h1.25a3.45 3.45 0 0 1 0 6.9h-1.76A6.9 6.9 0 0 1 10.3 19H9.9A6.9 6.9 0 0 1 3 12.1V6.2Zm14.3 3v3.3h1.25a1.65 1.65 0 0 0 0-3.3H17.3ZM2 20h16.2a1 1 0 1 1 0 2H2a1 1 0 1 1 0-2Z" clipRule="evenodd" />
+            )}
+            {name === 'shield' && (
+                <path fill="currentColor" fillRule="evenodd" d="M11.4 2.35a1.5 1.5 0 0 1 1.2 0l6.1 2.65a1.5 1.5 0 0 1 .9 1.38v4.54c0 5.04-3.06 8.96-7.05 10.7a1.4 1.4 0 0 1-1.1 0C7.46 19.88 4.4 15.96 4.4 10.92V6.38A1.5 1.5 0 0 1 5.3 5l6.1-2.65Zm4.95 6.5a1 1 0 0 0-1.5-1.32l-4.08 4.64-1.72-1.66a1 1 0 1 0-1.39 1.44l2.48 2.4a1 1 0 0 0 1.45-.06l4.76-5.44Z" clipRule="evenodd" />
             )}
         </svg>
     );
