@@ -1,254 +1,75 @@
 export const dynamic = 'force-dynamic';
-import { Clock, Gamepad2, Coffee, KeyRound, Tag, Sparkles, ArrowRight, Flame } from 'lucide-react';
+
+import { ArrowRight, Coffee, Flame, Gamepad2, KeyRound, MapPin, ShieldCheck, ShoppingBag, Sparkles, Store, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { Offer } from '@/lib/api';
-import Countdown from '@/components/Countdown';
 import SafeImage from '@/components/SafeImage';
-
-export type OfferWithHours = Offer & { hours?: number };
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
+const CATEGORY_NAMES: Record<string, string> = {
+  RESTAURANTS: 'Рестораны и кафе', MARKETPLACES: 'Маркетплейсы', SUBSCRIPTIONS: 'Подписки',
+  GAMES: 'Игры', COURSES: 'Обучение', TOURISM: 'Туризм', FITNESS: 'Фитнес', OTHER: 'Другое',
+};
+
+const categories = [
+  { title: 'Рядом', detail: 'Кафе и услуги', icon: MapPin, href: '/catalog?category=RESTAURANTS&near=true' },
+  { title: 'Подписки', detail: 'Сервисы и приложения', icon: KeyRound, href: '/catalog?category=SUBSCRIPTIONS' },
+  { title: 'Игры', detail: 'Ключи и аккаунты', icon: Gamepad2, href: '/catalog?category=GAMES' },
+  { title: 'Промокоды', detail: 'Скидки и QR-коды', icon: Tag, href: '/catalog?fulfillmentType=PROMOCODE' },
+  { title: 'Маркетплейсы', detail: 'Выгода на покупки', icon: Store, href: '/catalog?category=MARKETPLACES' },
+  { title: 'Еда', detail: 'Предложения заведений', icon: Coffee, href: '/catalog?category=RESTAURANTS' },
+];
+
 async function getOffers() {
   try {
-    // We can't use the relative 'request' helper from api.ts on the server-side as easily without full URL
-    const [trendingRes, flashRes] = await Promise.all([
-      fetch(`${API_BASE}/offers?take=4&sort=newest`, { cache: 'no-store' }),
-      fetch(`${API_BASE}/offers?isFlashDrop=true&take=6`, { cache: 'no-store' }),
+    const [popularResponse, flashResponse] = await Promise.all([
+      fetch(`${API_BASE}/offers?take=8&sort=newest`, { cache: 'no-store' }),
+      fetch(`${API_BASE}/offers?isFlashDrop=true&take=4`, { cache: 'no-store' }),
     ]);
-    if (!trendingRes.ok || !flashRes.ok) {
-      throw new Error(`Offers API failed: ${trendingRes.status}/${flashRes.status}`);
-    }
-
-    const trendingData = await trendingRes.json();
-    const flashData = await flashRes.json();
-
-    const trendingOffers = trendingData.data || [];
-    const rawFlashDrops = flashData.data || [];
-
-    const flashDrops = rawFlashDrops.map((drop: Offer) => {
-      let hours = 0;
-      if (drop.expiresAt) {
-        const diff = new Date(drop.expiresAt).getTime() - new Date().getTime();
-        hours = Math.max(0, diff / (1000 * 60 * 60));
-      }
-      return { ...drop, hours } as OfferWithHours;
-    }).filter((d: OfferWithHours) => d.hours !== undefined && d.hours > 0);
-
-    return { trendingOffers, flashDrops };
-  } catch (err) {
-    console.error('SSR Fetch failed:', err);
-    return { trendingOffers: [], flashDrops: [] };
+    if (!popularResponse.ok || !flashResponse.ok) throw new Error('Offers API unavailable');
+    const popular = await popularResponse.json();
+    const flash = await flashResponse.json();
+    const now = Date.now();
+    return {
+      popularOffers: (popular.data || []) as Offer[],
+      flashOffers: ((flash.data || []) as Offer[]).filter((offer) => offer.expiresAt && new Date(offer.expiresAt).getTime() > now),
+    };
+  } catch {
+    return { popularOffers: [] as Offer[], flashOffers: [] as Offer[] };
   }
 }
 
+const actionLabel = (offer: Offer) => offer.price === 0 ? 'Получить' : offer.fulfillmentType === 'LINK' ? 'Открыть' : 'Купить';
+
 export default async function Home() {
-  const categories = [
-    { title: 'Игры и Аккаунты', icon: Gamepad2, detail: 'Ключи и игровые сервисы', className: 'cat-bg-games', href: '/catalog?category=GAMES' },
-    { title: 'Подписки', icon: KeyRound, detail: 'Сервисы и приложения', className: 'cat-bg-subscriptions', href: '/catalog?category=SUBSCRIPTIONS' },
-    { title: 'Рестораны и Кафе', icon: Coffee, detail: 'Предложения рядом', className: 'cat-bg-restaurants', href: '/catalog?category=RESTAURANTS' },
-    { title: 'Маркетплейс', icon: Tag, detail: 'Выгода на покупки', className: 'cat-bg-marketplaces', href: '/catalog?category=MARKETPLACES' },
-    { title: 'Купоны', icon: Tag, detail: 'Ваши активные коды', className: 'cat-bg-coupons', href: '/coupons' },
-    { title: 'Тарифы ✨', icon: Sparkles, detail: 'Возможности Perkly', className: 'cat-bg-pricing', href: '/pricing' },
-  ];
+  const { popularOffers, flashOffers } = await getOffers();
 
-  const { trendingOffers, flashDrops } = await getOffers();
-  const loading = false; // Data is already here
+  return <div className="mx-auto flex w-full max-w-[1200px] flex-col px-4 pb-16 sm:px-6">
+    <section className="relative flex min-h-[520px] items-center overflow-hidden py-16 text-center sm:min-h-[600px] sm:py-20">
+      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[720px] max-w-[95vw] -translate-x-1/2 rounded-full bg-purple-600/[0.12] blur-[110px]" />
+      <div className="relative mx-auto max-w-4xl">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/[0.08] px-4 py-2 text-xs font-bold text-purple-200"><Sparkles className="h-3.5 w-3.5" /> Выгода рядом — оплата в сумах</div>
+        <h1 className="text-balance text-4xl font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">Покупайте выгоднее.<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Получайте сразу.</span></h1>
+        <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Промокоды, подписки и локальные предложения Узбекистана. Деньги защищены до получения покупки.</p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/catalog" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-bold text-black no-underline transition hover:scale-[1.02]">Смотреть предложения <ArrowRight className="h-4 w-4" /></Link><Link href="/sell" className="inline-flex h-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-7 font-semibold text-white/75 no-underline hover:bg-white/[0.07]">Стать продавцом</Link></div>
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-400" /> Безопасная сделка</span><span className="inline-flex items-center gap-1.5"><ShoppingBag className="h-4 w-4 text-purple-300" /> Моментальная выдача</span><span>Цены только в UZS</span></div>
+      </div>
+    </section>
 
-  return (
-    <div className="flex flex-col items-center px-6 pb-24 max-w-[1200px] mx-auto w-full">
+    <section className="mb-14">
+      <div className="mb-5 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-purple-300/60">Быстрый выбор</p><h2 className="mt-2 text-2xl font-black text-white">Что ищете?</h2></div><Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline hover:text-white">Весь каталог →</Link></div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{categories.map((category) => <Link key={category.title} href={category.href} className="group rounded-3xl border border-white/[0.07] bg-white/[0.025] p-4 no-underline transition hover:-translate-y-0.5 hover:border-purple-400/25 hover:bg-purple-500/[0.06]"><div className="mb-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/55 transition group-hover:bg-purple-500/15 group-hover:text-purple-200"><category.icon className="h-5 w-5" /></div><h3 className="text-sm font-bold text-white">{category.title}</h3><p className="mt-1 text-xs leading-4 text-white/30">{category.detail}</p></Link>)}</div>
+    </section>
 
-      {/* ======== HERO ======== */}
-      <section className="pt-24 pb-20 text-center w-full relative">
-        {/* Neon glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-w-full h-[500px] rounded-full pointer-events-none hero-neon-bg" />
+    <section className="mb-14"><Link href="/feed" className="group relative block overflow-hidden rounded-[2rem] border border-orange-400/10 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.025] to-purple-500/[0.06] p-6 no-underline sm:p-8"><div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div><span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-300"><Flame className="h-3.5 w-3.5" /> Topka</span><h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Что происходит сегодня</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/40">События, места и предложения города в вертикальной ленте.</p></div><span className="inline-flex h-12 w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 text-sm font-bold text-white/70 transition group-hover:bg-white/10 group-hover:text-white">Открыть Topka <ArrowRight className="h-4 w-4" /></span></div></Link></section>
 
-        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8 hero-subtitle-badge">
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span className="text-sm font-medium text-purple-300">Добро пожаловать в будущее цифровой торговли</span>
-        </div>
+    {flashOffers.length > 0 && <section className="mb-14"><div className="mb-5 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-orange-300/70">Ограничено по времени</p><h2 className="mt-2 text-2xl font-black text-white">Успейте забрать</h2></div><Link href="/catalog?isFlashDrop=true" className="text-sm font-semibold text-white/45 no-underline">Все акции →</Link></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{flashOffers.map((offer) => <OfferCard key={offer.id} offer={offer} urgent />)}</div></section>}
 
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter mb-6 leading-[1.05]">
-          Безопасный и Быстрый<br />
-          <span className="text-gradient text-glow">Цифровой Маркетплейс</span>
-        </h1>
+    <section><div className="mb-5 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-purple-300/60">Новые предложения</p><h2 className="mt-2 text-2xl font-black text-white">Стоит посмотреть</h2></div><Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline">Смотреть все →</Link></div>{popularOffers.length ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{popularOffers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div> : <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-sm text-white/30">Предложения скоро появятся</div>}</section>
+  </div>;
+}
 
-        <p className="text-lg text-white/40 max-w-xl mx-auto mb-10 leading-relaxed">
-          Находите невероятные скидки на подписки, игры, кафе и многое другое. Покупайте безопасно через Эскроу.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
-          <Link href="/catalog" className="px-8 py-4 rounded-full bg-white text-black font-semibold text-base flex justify-center items-center gap-2 cursor-pointer no-underline w-full sm:w-auto hero-btn-white">
-            Начать Покупки <ArrowRight className="w-5 h-5" />
-          </Link>
-          <Link href="/sell" className="px-8 py-4 rounded-full text-white font-medium text-base cursor-pointer no-underline flex justify-center items-center w-full sm:w-auto hero-btn-glass">
-            Продать Товар
-          </Link>
-        </div>
-      </section>
-
-      {/* ======== TOPKA BANNER ======== */}
-      <section className="w-full mb-20">
-        <Link href="/feed" className="block no-underline group">
-          <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 topka-banner">
-            <div className="absolute inset-0 topka-banner-bg" />
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full topka-banner-glow" />
-            <div className="relative z-10 flex items-center justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3 topka-badge">
-                  <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Новое</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">🔥 Топка</h2>
-                <p className="text-white/50 text-sm max-w-sm">Листай горячие предложения как в TikTok — свайпай и хватай скидки!</p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 text-white/60 group-hover:text-white transition-colors">
-                <span className="text-sm font-medium">Открыть</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </div>
-        </Link>
-      </section>
-
-      {/* ======== FLASH DROPS ======== */}
-      <section className="w-full mb-20 relative">
-        {/* Warm ambient glow behind section */}
-        <div className="absolute -inset-16 rounded-3xl pointer-events-none max-w-full overflow-hidden flash-drops-ambient" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] max-w-full h-[500px] rounded-full pointer-events-none flash-drops-glow" />
-
-        <div className="flex justify-between items-center mb-7 relative z-10">
-          <h2 className="text-2xl font-bold text-gradient-fire flex items-center gap-2">Временные Акции <Flame className="w-6 h-6 text-orange-500" /></h2>
-          <span className="text-sm text-white/30">Исчезнут совсем скоро</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
-          {flashDrops.length > 0 ? flashDrops.map((d: OfferWithHours, i: number) => (
-            <Link href={`/offer/?id=${d.id}`} key={d.id || i} className="flex flex-col sm:flex-row items-start sm:items-center p-4 cursor-pointer rounded-2xl transition-all duration-300 no-underline group hover:-translate-y-1 hover:shadow-xl gap-4 sm:gap-0 offer-card">
-              <div className="flex gap-3 sm:gap-4 w-full sm:flex-1">
-                <div className="w-20 h-20 rounded-xl overflow-hidden relative shrink-0 bg-white/5 flex items-center justify-center p-2 offer-card-image">
-                  <SafeImage
-                    src={d.imageUrl || d.vendorLogo || ''}
-                    fill
-                    className="object-contain drop-shadow-lg p-1 transition-transform group-hover:scale-105"
-                    alt={d.title}
-                    fallbackIcon={<Flame className="w-8 h-8 text-orange-500/80 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]" />}
-                  />
-                </div>
-                <div className="flex-1 relative z-10 flex flex-col justify-center">
-                  <h3 className="text-base font-bold text-white mb-1 line-clamp-1">{d.title}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-extrabold text-white">{d.price.toLocaleString('ru-RU')} сум</span>
-                    {d.discountPercent !== null && d.discountPercent > 0 && <span className="text-xs text-white/25 line-through">{Math.round(d.price / (1 - d.discountPercent / 100)).toLocaleString('ru-RU')} сум</span>}
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 text-xs text-red-400 font-mono px-2.5 py-1 rounded-full cursor-default w-fit offer-card-timer">
-                    <Clock className="w-3.5 h-3.5" />
-                    Осталось: <Countdown hours={d.hours || 0} />
-                  </div>
-                </div>
-              </div>
-              <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-center text-white font-bold text-sm sm:ml-2 whitespace-nowrap relative z-10 flash-drop-btn">
-                Забрать
-              </span>
-            </Link>
-          )) : (
-            <div className="col-span-1 md:col-span-2 text-center text-white/50 py-10">Временных акций пока нет, заходите позже!</div>
-          )}
-        </div>
-      </section>
-
-      {/* ======== WHEEL OF FORTUNE ======== */}
-      <section className="w-full mb-20">
-        <div className="glass-card flex items-center justify-between gap-12 flex-wrap p-12 wheel-card">
-          <div className="absolute -right-12 -top-12 w-72 h-72 rounded-full pointer-events-none wheel-glow" />
-
-          <div className="z-10 max-w-md">
-            <div className="inline-flex items-center gap-2 text-purple-300 font-semibold text-sm mb-4 px-3 py-1.5 rounded-full wheel-badge">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M9.375 3a1.875 1.875 0 0 0 0 3.75h1.875v4.5H3.375A1.875 1.875 0 0 1 1.5 9.375v-.75c0-1.036.84-1.875 1.875-1.875h3.193A3.375 3.375 0 0 1 12 2.753a3.375 3.375 0 0 1 5.432 3.997h3.193c1.035 0 1.875.84 1.875 1.875v.75c0 1.036-.84 1.875-1.875 1.875H12.75v-4.5h1.875a1.875 1.875 0 1 0-1.875-1.875V6.75h-1.5V4.875C11.25 3.839 10.41 3 9.375 3ZM11.25 12.75H3v6.75a2.25 2.25 0 0 0 2.25 2.25h6v-9ZM12.75 12.75v9h6.75a2.25 2.25 0 0 0 2.25-2.25v-6.75h-9Z" />
-              </svg> Испытайте Удачу
-            </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-4 leading-tight">
-              Колесо Фортуны<br /><span className="text-purple-400">Perkly Points</span>
-            </h2>
-            <p className="text-white/40 text-base leading-relaxed mb-6">
-              Крутите рулетку и выигрывайте бесплатные промокоды от Яндекс, Safia, Dodo Pizza!
-            </p>
-            <Link href="/wheel" className="inline-block px-6 py-3 rounded-xl text-white font-semibold no-underline wheel-btn">
-              🎰 Крутить Барабан Бесплатно
-            </Link>
-          </div>
-
-          <div className="z-10 relative w-60 h-60 shrink-0">
-            <div className="absolute inset-0 rounded-full wheel-spinner-blur" />
-            <div className="w-48 h-48 m-6 rounded-full flex items-center justify-center wheel-spinner-outer">
-              <div className="w-[70%] h-[70%] rounded-full flex items-center justify-center wheel-spinner-inner">
-                <span className="text-5xl font-black wheel-spinner-text">P</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ======== CATEGORIES ======== */}
-      <section className="w-full mb-20">
-        <h2 className="text-2xl font-bold mb-7 text-white">Категории Товаров</h2>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-          {categories.map((c, i: number) => (
-            <Link href={c.href} key={i} className="glass-card p-5 cursor-pointer shrink-0 w-[160px] no-underline">
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 relative z-10 ${c.className}`}>
-                <c.icon className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-sm font-bold text-white mb-1 relative z-10">{c.title}</h3>
-              <p className="text-xs text-white/30 relative z-10">{c.detail}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ======== HOT OFFERS ======== */}
-      <section className="w-full">
-        <div className="flex justify-between items-center mb-7">
-          <h2 className="text-2xl font-bold text-white">Популярные Сделки</h2>
-          <Link href="/catalog" className="text-sm text-purple-400 flex items-center gap-1 cursor-pointer bg-transparent border-0 no-underline">
-            Смотреть все <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {loading ? (
-            <div className="col-span-1 md:col-span-4 text-center py-10 text-white/50">Загрузка скидок...</div>
-          ) : trendingOffers.length > 0 ? (
-            trendingOffers.map((o: Offer, i: number) => (
-              <Link href={`/offer/?id=${o.id}`} key={o.id || i} className="rounded-2xl overflow-hidden cursor-pointer block no-underline group hover:-translate-y-1 transition-all duration-300 offer-card">
-                <div className="w-full h-44 relative bg-white/5 flex items-center justify-center p-6 offer-card-image-bg">
-                  <SafeImage
-                    src={o.imageUrl || o.vendorLogo || ''}
-                    fill
-                    className="object-contain p-6 drop-shadow-xl transition-transform duration-500 group-hover:scale-110"
-                    alt={o.title}
-                  />
-                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold text-white/80 z-10 offer-card-category-badge">
-                    {o.category}
-                  </div>
-                </div>
-                <div className="p-5 relative z-10 bg-gradient-to-b from-transparent to-black/20">
-                  <h3 className="text-base font-bold text-white mb-3 leading-snug line-clamp-2" title={o.title}>{o.title}</h3>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      {o.discountPercent !== null && o.discountPercent > 0 && <div className="text-xs text-white/25 line-through">{Math.round(o.price / (1 - o.discountPercent / 100)).toLocaleString('ru-RU')} сум</div>}
-                      <div className="text-lg font-extrabold text-gradient-green">{o.price.toLocaleString('ru-RU')} сум</div>
-                    </div>
-                    <span className="px-4 py-2 rounded-xl text-white font-semibold text-sm cursor-pointer border-0 offer-card-buy-btn">
-                      Купить
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-10 text-white/50">Новых предложений пока нет</div>
-          )}
-        </div>
-      </section>
-    </div>
-  );
+function OfferCard({ offer, urgent = false }: { offer: Offer; urgent?: boolean }) {
+  return <Link href={`/offer?id=${offer.id}`} className="group overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.025] no-underline transition hover:-translate-y-0.5 hover:border-white/[0.13]"><div className="relative aspect-[4/3] bg-white/[0.035]"><SafeImage src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-contain p-5 transition duration-500 group-hover:scale-105" alt={offer.title} />{urgent && <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-orange-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white"><Flame className="h-3 w-3" /> Скоро закончится</span>}</div><div className="p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{CATEGORY_NAMES[offer.category] || 'Предложение'}</p><h3 className="mt-2 line-clamp-2 min-h-10 text-sm font-bold leading-5 text-white">{offer.title}</h3><div className="mt-4 flex items-end justify-between gap-2"><span className={`text-base font-black ${offer.price === 0 ? 'text-emerald-300' : 'text-white'}`}>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</span><span className="text-xs font-bold text-purple-300">{actionLabel(offer)} →</span></div></div></Link>;
 }

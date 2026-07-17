@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { User, LogOut, Search, X, Tag, Gem, Medal } from 'lucide-react';
+import { User, LogOut, Search, X, Gem, Medal } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
@@ -36,11 +36,11 @@ export function Navbar() {
 
     return (
         <nav 
-            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-6 py-3 rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
+            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-3 sm:px-5 py-2.5 rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
         >
             <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
                 <div className="w-8 h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
-                <span className="text-xl font-bold tracking-tight text-white">Perkly</span>
+                <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
             </Link>
 
             {/* Search Bar — центральный */}
@@ -59,21 +59,13 @@ export function Navbar() {
             </div>
 
             {/* Nav Links */}
-            <div className="hidden lg:flex items-center gap-5 text-sm font-medium text-white/50 shrink-0">
+            <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-white/50 shrink-0">
                 <Link href="/catalog" className="hover:text-white transition-colors no-underline text-inherit">Каталог</Link>
                 <Link href="/feed" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5">🔥 Топка</Link>
-                <Link href="/coupons" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5"><Tag className="w-4 h-4" /> Купоны</Link>
-                <Link href="/pricing" className="hover:text-white transition-colors no-underline text-inherit">Тарифы ✨</Link>
                 <Link href="/sell" className="hover:text-white transition-colors no-underline text-inherit">Продавать</Link>
-                <Link href="/wheel" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]">
-                        <path d="M9.375 3a1.875 1.875 0 0 0 0 3.75h1.875v4.5H3.375A1.875 1.875 0 0 1 1.5 9.375v-.75c0-1.036.84-1.875 1.875-1.875h3.193A3.375 3.375 0 0 1 12 2.753a3.375 3.375 0 0 1 5.432 3.997h3.193c1.035 0 1.875.84 1.875 1.875v.75c0 1.036-.84 1.875-1.875 1.875H12.75v-4.5h1.875a1.875 1.875 0 1 0-1.875-1.875V6.75h-1.5V4.875C11.25 3.839 10.41 3 9.375 3ZM11.25 12.75H3v6.75a2.25 2.25 0 0 0 2.25 2.25h6v-9ZM12.75 12.75v9h6.75a2.25 2.25 0 0 0 2.25-2.25v-6.75h-9Z" />
-                    </svg>
-                    Фортуна
-                </Link>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 ml-4">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2 sm:ml-4">
                 {/* Mobile search toggle */}
                 <button 
                     onClick={() => {
@@ -118,7 +110,7 @@ export function Navbar() {
                     </>
                 ) : (
                     <>
-                        <Link href="/login" className="px-4 py-2 text-sm font-medium rounded-full border border-white/10 hover:bg-white/5 transition flex items-center text-white no-underline">
+                        <Link href="/login" className="hidden sm:flex px-4 py-2 text-sm font-medium rounded-full border border-white/10 hover:bg-white/5 transition items-center text-white no-underline">
                             Войти
                         </Link>
                         <Link href="/register" className="px-4 py-2 text-sm font-medium rounded-full bg-white text-black hover:bg-white/90 transition flex items-center no-underline shadow-white-glow">

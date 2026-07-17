@@ -43,6 +43,10 @@ const PRODUCT_TYPES: Array<{
 
 const categoryLabel = (value: string) => CATEGORIES.find((category) => category.value === value)?.label || value;
 const productTypeLabel = (value: Offer['fulfillmentType']) => PRODUCT_TYPES.find((type) => type.value === value)?.label || value;
+const isUrgentOffer = (offer: Offer) => Boolean(
+    offer.isFlashDrop && offer.expiresAt && new Date(offer.expiresAt).getTime() > Date.now(),
+);
+const cartActionLabel = (offer: Offer) => offer.price === 0 ? 'Получить' : 'В корзину';
 
 
 function CatalogContent() {
@@ -395,7 +399,7 @@ function CatalogContent() {
 
             {/* Grid */}
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} className="rounded-2xl h-72 animate-pulse bg-white/[0.03]" />
                     ))}
@@ -408,7 +412,7 @@ function CatalogContent() {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {offers.map((offer) => (
                         <div key={offer.id} className="relative rounded-[24px] overflow-hidden transition-all duration-300 hover:-translate-y-1 group bg-white/[0.03] backdrop-blur-[20px] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
                             <button
@@ -420,7 +424,7 @@ function CatalogContent() {
                                 <Bookmark className={`h-4.5 w-4.5 ${savedOfferIds.has(offer.id) ? 'fill-current' : ''}`} />
                             </button>
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
-                                <div className="relative h-44 overflow-hidden bg-white/5 flex items-center justify-center p-6 border-b border-white/[0.04]">
+                                <div className="relative h-32 sm:h-44 overflow-hidden bg-white/5 flex items-center justify-center p-3 sm:p-6 border-b border-white/[0.04]">
                                     {(offer.imageUrl || offer.vendorLogo) ? (
                                         <Image src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-contain p-5 drop-shadow-xl transition-transform duration-500 group-hover:scale-105" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                     ) : null}
@@ -435,7 +439,7 @@ function CatalogContent() {
                                         })()}
                                     </div>
 
-                                    {offer.isFlashDrop && (
+                                    {isUrgentOffer(offer) && (
                                         <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] uppercase font-extrabold text-white tracking-wider bg-gradient-to-br from-orange-500 to-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.4)]">
                                             <Flame className="w-3 h-3 inline-block mr-1" /> Flash
                                         </div>
@@ -447,19 +451,19 @@ function CatalogContent() {
                                     )}
                                 </div>
 
-                                <div className="p-5 bg-gradient-to-b from-transparent to-black/20">
-                                    <div className="mb-1.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">
-                                        <span>{categoryLabel(offer.category)}</span><span className="h-1 w-1 rounded-full bg-white/20" /><span>{productTypeLabel(offer.fulfillmentType)}</span>
+                                <div className="p-3 sm:p-5 bg-gradient-to-b from-transparent to-black/20">
+                                    <div className="mb-1.5 flex items-center gap-1.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider sm:tracking-widest text-white/40">
+                                        <span className="truncate">{categoryLabel(offer.category)}</span><span className="hidden sm:block h-1 w-1 shrink-0 rounded-full bg-white/20" /><span className="hidden sm:inline truncate">{productTypeLabel(offer.fulfillmentType)}</span>
                                     </div>
-                                    <h3 className="text-base font-bold text-white mb-2 line-clamp-2 leading-snug">{offer.title}</h3>
-                                    <p className="text-xs text-white/30 line-clamp-2 mb-3">{offer.description}</p>
+                                    <h3 className="text-sm sm:text-base font-bold text-white mb-2 line-clamp-2 leading-snug min-h-10">{offer.title}</h3>
+                                    <p className="hidden sm:block text-xs text-white/30 line-clamp-2 mb-3">{offer.description}</p>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-lg font-extrabold text-gradient-green">{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</span>
+                                        <span className={`text-sm sm:text-lg font-extrabold ${offer.price === 0 ? 'text-emerald-300' : 'text-white'}`}>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</span>
                                     </div>
                                 </div>
                             </Link>
 
-                            <div className="px-4 pb-4">
+                            <div className="px-3 pb-3 sm:px-4 sm:pb-4">
                                 <button
                                     onClick={(e) => {
                                         e.preventDefault();
@@ -473,7 +477,7 @@ function CatalogContent() {
                                     }`}
                                 >
                                     <span className="inline-flex items-center justify-center gap-2">
-                                        {isInCart(offer.id) ? <><CheckCircle2 className="h-4 w-4" /> В корзине</> : <><Package className="h-4 w-4" /> В корзину</>}
+                                        {isInCart(offer.id) ? <><CheckCircle2 className="h-4 w-4" /> В корзине</> : <><Package className="h-4 w-4" /> {cartActionLabel(offer)}</>}
                                     </span>
                                 </button>
                             </div>
