@@ -898,6 +898,8 @@
   background:
     linear-gradient(145deg, rgba(124,60,255,.13), rgba(255,60,146,.055) 44%, rgba(255,255,255,.025) 74%),
     #0f0f13;
+  border: 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
 }
 
 .profile-identity-orb {
@@ -919,7 +921,10 @@
 }
 
 .profile-balance-grid {
-  background: rgba(255,255,255,.065);
+  gap: 0 !important;
+  border: 0 !important;
+  background: #111115;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
 }
 .profile-balance-grid > div { background: #111115; }
 .profile-balance-grid > div:first-child {
@@ -927,10 +932,15 @@
 }
 
 .profile-referral-card,
-.profile-daily-card,
+.profile-daily-card {
+  background: #111115 !important;
+  border: 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+
 .profile-action-row {
-  background: rgba(255,255,255,.026) !important;
-  border-color: rgba(255,255,255,.075) !important;
+  background: transparent !important;
+  border: 0 !important;
   box-shadow: none !important;
 }
 
@@ -939,8 +949,7 @@
 }
 .profile-action-row:hover {
   transform: none !important;
-  background: rgba(255,255,255,.05) !important;
-  border-color: rgba(255,255,255,.12) !important;
+  background: rgba(255,255,255,.045) !important;
 }
 .profile-action-row [class*="shadow-"] { box-shadow: none !important; }
 .profile-action-icon,
@@ -964,7 +973,8 @@
 
 .profile-tabs {
   border-radius: 18px;
-  background: rgba(255,255,255,.025);
+  background: #111115;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
 }
 .profile-tabs button {
   min-width: max-content;
@@ -979,28 +989,48 @@
 .profile-modern [class*="hover:scale"]:hover { transform: none !important; }
 
 .profile-secondary-button {
-  background: rgba(255,255,255,.055);
-  border-color: rgba(255,255,255,.09);
+  background: rgba(255,255,255,.085);
+  border: 0 !important;
   transition: background-color .18s ease;
 }
-.profile-secondary-button:hover { background: rgba(255,255,255,.085); }
+.profile-secondary-button:hover { background: rgba(255,255,255,.13); }
+
+.profile-referral-card button {
+  border: 0 !important;
+  background: rgba(255,255,255,.085) !important;
+}
+.profile-referral-card button:hover { background: rgba(255,255,255,.13) !important; }
 
 .profile-day {
   color: rgba(255,255,255,.32);
-  background: rgba(255,255,255,.025);
-  border-color: rgba(255,255,255,.065);
+  background: rgba(255,255,255,.04);
+  border: 0 !important;
 }
 .profile-day.is-claimed {
   color: rgba(255,255,255,.72);
-  background: rgba(255,255,255,.055);
-  border-color: rgba(255,255,255,.09);
+  background: rgba(255,255,255,.085);
 }
 .profile-day.is-today {
   color: white;
-  background: linear-gradient(145deg, rgba(124,60,255,.16), rgba(255,60,146,.08));
-  border-color: rgba(180,82,239,.2);
+  background: linear-gradient(145deg, rgba(124,60,255,.34), rgba(255,60,146,.18));
 }
 .profile-day-status { color: inherit; }
+
+/* Profile hierarchy comes from fills and spacing, never nested outlines. */
+.profile-modern [class*="border-white"] {
+  border-color: transparent !important;
+}
+.profile-modern input,
+.profile-modern select,
+.profile-modern textarea {
+  border: 0 !important;
+  background: rgba(255,255,255,.07) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+.profile-modern button[class*="bg-white/5"],
+.profile-modern a[class*="bg-white/5"] {
+  border: 0 !important;
+}
 
 @supports (corner-shape: squircle) {
   .app-icon-squircle {
