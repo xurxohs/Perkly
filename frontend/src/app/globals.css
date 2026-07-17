@@ -1122,12 +1122,11 @@
 }
 .catalog-apple-light .catalog-offers-grid {
   gap: 20px !important;
-  padding: 20px !important;
-  background: #fff !important;
-  border-radius: 40px !important;
-  corner-shape: squircle;
-  box-shadow: 0 12px 38px rgba(0,0,0,.045);
-  overflow: hidden;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
 }
 .catalog-apple-light .catalog-offer-card:hover {
   border-color: rgba(0,0,0,.13) !important;
@@ -1227,15 +1226,15 @@
   box-shadow: 0 8px 26px rgba(0,0,0,.2) !important;
 }
 .site-dark-commerce .catalog-apple-light .catalog-offers-grid {
-  background: #09090b !important;
-  box-shadow: 0 14px 42px rgba(0,0,0,.28);
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 @media (max-width: 639px) {
   .catalog-apple-light .catalog-offers-grid {
     gap: 10px !important;
-    padding: 10px !important;
-    border-radius: 28px !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
   }
   .catalog-apple-light .grid > div.group {
     border-radius: 19px !important;
