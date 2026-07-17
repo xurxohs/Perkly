@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTelegram } from '@/hooks/useTelegram';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
@@ -24,54 +24,6 @@ const topkaDockItems = [
 const TOPKA_PAGES = ['/feed', '/map', '/plans', '/notifications'];
 type DockItem = (typeof marketplaceDockItems)[number] | (typeof topkaDockItems)[number];
 
-// Spring physics simulation
-function useSpring(target: number, { stiffness = 400, damping = 28, mass = 1 } = {}) {
-    const [value, setValue] = useState(target);
-    const velocity = useRef(0);
-    const currentValue = useRef(target);
-    const targetRef = useRef(target);
-    const frameRef = useRef<number>(0);
-    const lastTime = useRef(0);
-
-    useEffect(() => {
-        lastTime.current = performance.now();
-    }, []);
-
-    useEffect(() => {
-        targetRef.current = target;
-
-        const animate = () => {
-            const now = performance.now();
-            const dt = Math.min((now - lastTime.current) / 1000, 0.064); // cap dt
-            lastTime.current = now;
-
-            const displacement = currentValue.current - targetRef.current;
-            const springForce = -stiffness * displacement;
-            const dampingForce = -damping * velocity.current;
-            const acceleration = (springForce + dampingForce) / mass;
-
-            velocity.current += acceleration * dt;
-            currentValue.current += velocity.current * dt;
-
-            // Check if settled
-            if (Math.abs(velocity.current) < 0.01 && Math.abs(displacement) < 0.001) {
-                currentValue.current = targetRef.current;
-                velocity.current = 0;
-                setValue(targetRef.current);
-                return;
-            }
-
-            setValue(currentValue.current);
-            frameRef.current = requestAnimationFrame(animate);
-        };
-
-        frameRef.current = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(frameRef.current);
-    }, [target, stiffness, damping, mass]);
-
-    return value;
-}
-
 function DockIcon({ item, isActive, onTap, light = false }: {
     item: DockItem;
     isActive: boolean;
@@ -79,15 +31,6 @@ function DockIcon({ item, isActive, onTap, light = false }: {
     light?: boolean;
 }) {
     const [pressed, setPressed] = useState(false);
-    const [tapped, setTapped] = useState(false);
-
-    // Spring scale: resting = 1, pressed = 0.8, tap bounce = 1.15 → 1
-    const targetScale = pressed ? 0.82 : tapped ? 1.18 : 1;
-    const scale = useSpring(targetScale, { stiffness: 500, damping: 22, mass: 0.8 });
-
-    // Spring Y translation for active indicator
-    const targetY = isActive ? -2 : 0;
-    const y = useSpring(targetY, { stiffness: 300, damping: 24, mass: 1 });
 
     const handlePointerDown = useCallback(() => {
         setPressed(true);
@@ -95,11 +38,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
 
     const handlePointerUp = useCallback(() => {
         setPressed(false);
-        setTapped(true);
         onTap();
-
-        // Reset tap bounce
-        setTimeout(() => setTapped(false), 200);
     }, [onTap]);
 
     const handlePointerLeave = useCallback(() => {
@@ -111,8 +50,6 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             href={item.href}
             className="flex min-w-12 flex-col items-center gap-0 no-underline relative select-none"
             style={{
-                transform: `translateY(${y}px)`,
-                willChange: 'transform',
                 WebkitTapHighlightColor: 'transparent',
             }}
             onPointerDown={handlePointerDown}
@@ -121,10 +58,9 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             onPointerCancel={handlePointerLeave}
         >
             <div
-                className="w-9 h-7 flex items-center justify-center relative transition-all duration-[400ms] ease-out z-10"
+                className="w-9 h-7 flex items-center justify-center relative transition-transform duration-100 ease-out z-10"
                 style={{
-                    transform: `scale(${scale})`,
-                    willChange: 'transform',
+                    transform: pressed ? 'scale(.94)' : 'scale(1)',
                 }}
             >
                 <PerklyGlyph
