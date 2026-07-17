@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useCart } from '@/lib/CartContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
@@ -11,7 +10,7 @@ const marketplaceDockItems = [
     { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
     { href: '/coupons', icon: 'coupon' as PerklyGlyphName, label: 'Купоны' },
     { href: '/catalog', icon: 'catalog' as PerklyGlyphName, label: 'Каталог' },
-    { href: '/cart', icon: 'cart' as PerklyGlyphName, label: 'Корзина' },
+    { href: '/chat', icon: 'chat' as PerklyGlyphName, label: 'Чаты' },
     { href: '/profile', icon: 'profile' as PerklyGlyphName, label: 'Профиль' },
 ];
 
@@ -22,7 +21,7 @@ const topkaDockItems = [
     { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
 ];
 
-const TOPKA_PAGES = ['/feed', '/map', '/plans', '/notifications', '/chat'];
+const TOPKA_PAGES = ['/feed', '/map', '/plans', '/notifications'];
 type DockItem = (typeof marketplaceDockItems)[number] | (typeof topkaDockItems)[number];
 
 // Spring physics simulation
@@ -107,9 +106,6 @@ function DockIcon({ item, isActive, onTap, light = false }: {
         setPressed(false);
     }, []);
 
-    const { count } = useCart();
-    const isCart = item.href === '/cart';
-
     return (
         <Link
             href={item.href}
@@ -125,7 +121,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             onPointerCancel={handlePointerLeave}
         >
             <div
-                className="w-9 h-8 flex items-center justify-center relative transition-all duration-[400ms] ease-out z-10"
+                className="w-9 h-7 flex items-center justify-center relative transition-all duration-[400ms] ease-out z-10"
                 style={{
                     transform: `scale(${scale})`,
                     willChange: 'transform',
@@ -135,47 +131,23 @@ function DockIcon({ item, isActive, onTap, light = false }: {
                     name={item.icon}
                     className="w-[22px] h-[22px]"
                     style={{
-                        color: isActive ? '#8f32d9' : light ? 'rgba(29,29,31,0.48)' : 'rgba(255,255,255,0.45)',
+                        color: isActive ? '#b43be2' : light ? 'rgba(29,29,31,0.48)' : 'rgba(255,255,255,0.45)',
                         filter: isActive ? 'none' : 'none',
                         transition: 'color 0.4s ease-out, filter 0.4s ease-out'
                     }}
                 />
 
-                {/* Cart badge */}
-                {isCart && count > 0 && (
-                    <span
-                        className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center text-white px-1"
-                        style={{
-                            background: 'linear-gradient(135deg, #ef4444, #ec4899)',
-                            boxShadow: '0 0 8px rgba(239,68,68,0.5)',
-                        }}
-                    >
-                        {count}
-                    </span>
-                )}
             </div>
 
             <span
-                className="mt-0.5 text-[10px] font-medium leading-[12px]"
+                className="-mt-px text-[10px] font-medium leading-[11px]"
                 style={{
-                    color: isActive ? '#8f32d9' : light ? 'rgba(29,29,31,0.42)' : 'rgba(255,255,255,0.3)',
+                    color: isActive ? '#b43be2' : light ? 'rgba(29,29,31,0.42)' : 'rgba(255,255,255,0.3)',
                 }}
             >
                 {item.label}
             </span>
 
-            {/* Active indicator dot */}
-            {
-                isActive && (
-                    <div
-                        className="absolute -bottom-1 w-1 h-1 rounded-full"
-                        style={{
-                            background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-                            boxShadow: '0 0 6px rgba(168,85,247,0.6)',
-                        }}
-                    />
-                )
-            }
         </Link >
     );
 }

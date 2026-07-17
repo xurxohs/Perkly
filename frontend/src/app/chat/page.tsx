@@ -2,15 +2,14 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ChevronLeft,
     Check,
     CheckCheck,
     Flame,
     Loader2,
     MessageSquare,
-    MoreVertical,
     Send,
     User as UserIcon,
+    X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api, { ChatMessage, ChatRealtimeEvent, ChatRoom, User } from '@/lib/api';
@@ -280,21 +279,21 @@ export default function ChatPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-black text-white">
-            <div className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/10 pt-safe">
-                <div className="px-3 py-2.5 flex items-center justify-between">
+        <div className="chat-shell flex flex-col min-h-screen bg-black text-white">
+            <div className="chat-header sticky top-0 z-40 bg-[#0a0a0a]/90 backdrop-blur-xl pt-safe">
+                <div className="px-3 py-2 flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                         <button
                             type="button"
                             onClick={() => router.back()}
-                            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition text-white/70"
+                            className="chat-close p-2 -ml-2 rounded-full hover:bg-white/10 transition text-white/70 border-0 bg-transparent"
                             aria-label="Назад"
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <X className="w-5 h-5" />
                         </button>
 
                         <div className="flex items-center gap-3 min-w-0">
-                            <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)] flex-shrink-0">
+                            <div className="chat-avatar relative w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
                                 {activeRoom?.type === 'DIRECT' ? (
                                     <UserIcon className="w-5 h-5 text-white" />
                                 ) : activeRoom?.type === 'DISPUTE' ? (
@@ -302,7 +301,7 @@ export default function ChatPage() {
                                 ) : (
                                     <Flame className="w-5 h-5 text-white" />
                                 )}
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-black rounded-full" />
+                                {activeRoom?.type === 'DIRECT' && <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-black rounded-full" />}
                             </div>
                             <div className="flex flex-col min-w-0">
                                 <h2 className="text-[16px] font-bold leading-tight pb-0.5 truncate">{roomTitle}</h2>
@@ -311,9 +310,7 @@ export default function ChatPage() {
                         </div>
                     </div>
 
-                    <button type="button" className="p-2 rounded-full hover:bg-white/10 transition text-white/70" aria-label="Меню">
-                        <MoreVertical className="w-5 h-5" />
-                    </button>
+                    <span className="text-[10px] font-bold uppercase tracking-[.14em] text-white/25">Perkly Chat</span>
                 </div>
 
                 {rooms.length > 1 && (
@@ -334,8 +331,8 @@ export default function ChatPage() {
                                     onClick={() => setActiveRoomId(room.id)}
                                     className={`h-9 max-w-44 px-3 rounded-full border text-xs font-semibold whitespace-nowrap truncate transition ${
                                         active
-                                            ? 'bg-white text-black border-white'
-                                            : 'bg-white/5 text-white/60 border-white/10'
+                                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent'
+                                            : 'bg-white/5 text-white/60 border-transparent'
                                     }`}
                                 >
                                     {room.unreadCount ? `${title} · ${room.unreadCount}` : title}
@@ -346,7 +343,7 @@ export default function ChatPage() {
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-5 pb-32">
+            <div className="chat-messages flex-1 overflow-y-auto px-3 sm:px-4 py-5 flex flex-col gap-3 pb-48 md:pb-28">
                 {error && (
                     <div className="self-center text-xs font-semibold px-3 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/20">
                         {error}
@@ -393,15 +390,15 @@ export default function ChatPage() {
                                 </div>
                             )}
 
-                            <div className={`flex flex-col max-w-[75%] ${isMine ? 'items-end' : 'items-start'}`}>
+                            <div className={`flex flex-col max-w-[82%] sm:max-w-[70%] ${isMine ? 'items-end' : 'items-start'}`}>
                                 {showAuthor && (
                                     <span className="text-[11px] font-semibold text-white/60 mb-1 ml-1">{authorName}</span>
                                 )}
 
-                                <div className={`relative px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
+                                <div className={`chat-bubble relative px-4 py-2.5 rounded-[20px] text-[15px] leading-relaxed ${
                                     isMine
-                                        ? 'bg-purple-600 text-white rounded-br-sm'
-                                        : 'bg-[#1c1c1e] text-white/90 rounded-bl-sm border border-white/5'
+                                        ? 'is-mine bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-br-md'
+                                        : 'is-other bg-[#1c1c1e] text-white/90 rounded-bl-md'
                                 }`}
                                 >
                                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -417,15 +414,15 @@ export default function ChatPage() {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 pb-safe z-50">
-                <form onSubmit={handleSend} className="px-2 py-3 flex items-end gap-2">
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl flex items-end pr-2 overflow-hidden shadow-inner">
+            <div className="chat-composer fixed bottom-[70px] md:bottom-0 left-0 right-0 bg-[#0a0a0a]/88 backdrop-blur-2xl pb-safe z-40">
+                <form onSubmit={handleSend} className="mx-auto max-w-3xl px-3 py-2.5 flex items-end gap-2">
+                    <div className="chat-input flex-1 bg-white/7 rounded-[22px] flex items-end pr-2 overflow-hidden">
                         <textarea
                             value={input}
                             onChange={(event) => handleInputChange(event.target.value)}
                             placeholder={activeRoom?.type === 'SYSTEM' ? 'Системный чат только для чтения' : 'Сообщение...'}
                             disabled={!activeRoomId || activeRoom?.type === 'SYSTEM'}
-                            className="w-full bg-transparent text-white text-[15px] py-3.5 px-3 outline-none resize-none max-h-[120px] min-h-[50px] disabled:opacity-50"
+                            className="w-full bg-transparent border-0 text-white text-[15px] py-3 px-4 outline-none resize-none max-h-[120px] min-h-[48px] disabled:opacity-50"
                             rows={1}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter' && !event.shiftKey) {
@@ -439,9 +436,9 @@ export default function ChatPage() {
                     <button
                         type="submit"
                         disabled={!input.trim() || !activeRoomId || isSending || activeRoom?.type === 'SYSTEM'}
-                        className={`p-3 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                        className={`h-12 w-12 rounded-full border-0 flex items-center justify-center transition-all ${
                             input.trim() && activeRoomId && activeRoom?.type !== 'SYSTEM'
-                                ? 'bg-purple-600 text-white hover:bg-purple-500 scale-100 shadow-[0_4px_15px_rgba(147,51,234,0.4)]'
+                                ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white scale-100'
                                 : 'bg-white/5 text-white/20 scale-95'
                         }`}
                         aria-label="Отправить"
