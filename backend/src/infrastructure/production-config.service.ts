@@ -19,9 +19,6 @@ export class ProductionConfigService implements OnModuleInit {
       'FRONTEND_URL',
       'PUBLIC_API_URL',
       'CORS_ORIGINS',
-      'CLICK_SECRET_KEY',
-      'CLICK_MERCHANT_ID',
-      'CLICK_SERVICE_ID',
     ] as const;
 
     for (const key of required) {
@@ -46,6 +43,20 @@ export class ProductionConfigService implements OnModuleInit {
       /localhost|127\.0\.0\.1/i.test(env.CORS_ORIGINS)
     ) {
       errors.push('CORS_ORIGINS must not include localhost in production');
+    }
+
+    const clickKeys = [
+      'CLICK_SECRET_KEY',
+      'CLICK_MERCHANT_ID',
+      'CLICK_SERVICE_ID',
+    ] as const;
+    const configuredClickKeys = clickKeys.filter((key) => env[key]?.trim());
+    if (configuredClickKeys.length > 0 && configuredClickKeys.length < clickKeys.length) {
+      errors.push('Click merchant configuration must be complete');
+    } else if (configuredClickKeys.length === 0) {
+      this.logger.warn(
+        'Click merchant is not configured; production top-ups will be disabled',
+      );
     }
 
     const storageDriver = (env.STORAGE_DRIVER || 'local').toLowerCase();

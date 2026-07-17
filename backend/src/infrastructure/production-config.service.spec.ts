@@ -27,7 +27,7 @@ describe('ProductionConfigService', () => {
     expect(() => service.validate(validEnvironment)).not.toThrow();
   });
 
-  it('rejects unsafe production defaults and missing payment configuration', () => {
+  it('rejects unsafe production defaults', () => {
     expect(() =>
       service.validate({
         ...validEnvironment,
@@ -36,5 +36,25 @@ describe('ProductionConfigService', () => {
         CORS_ORIGINS: 'https://perkly.uz,http://localhost:3000',
       }),
     ).toThrow(/JWT_SECRET must contain at least 32 characters/);
+  });
+
+  it('allows Click to be disabled but rejects partial credentials', () => {
+    expect(() =>
+      service.validate({
+        ...validEnvironment,
+        CLICK_SECRET_KEY: '',
+        CLICK_MERCHANT_ID: '',
+        CLICK_SERVICE_ID: '',
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      service.validate({
+        ...validEnvironment,
+        CLICK_SECRET_KEY: 'secret',
+        CLICK_MERCHANT_ID: '',
+        CLICK_SERVICE_ID: '',
+      }),
+    ).toThrow(/Click merchant configuration must be complete/);
   });
 });
