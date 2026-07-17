@@ -943,11 +943,22 @@
   border-color: rgba(255,255,255,.12) !important;
 }
 .profile-action-row [class*="shadow-"] { box-shadow: none !important; }
-.profile-action-row > div:first-of-type > div:first-child {
-  color: rgba(255,255,255,.72) !important;
-  background: rgba(255,255,255,.055) !important;
-  border-color: rgba(255,255,255,.075) !important;
+.profile-action-icon,
+.profile-bare-icon {
+  color: rgba(255,255,255,.62) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
+.profile-action-chevron {
+  color: rgba(255,255,255,.32) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.profile-action-row:hover .profile-action-chevron { color: rgba(255,255,255,.62) !important; }
 .profile-action-row p { color: rgba(255,255,255,.4) !important; }
 .profile-action-row svg { transform: none !important; }
 
@@ -966,12 +977,6 @@
 }
 
 .profile-modern [class*="hover:scale"]:hover { transform: none !important; }
-
-.profile-icon-well {
-  background: rgba(255,255,255,.055);
-  border: 1px solid rgba(255,255,255,.075);
-  box-shadow: none;
-}
 
 .profile-secondary-button {
   background: rgba(255,255,255,.055);

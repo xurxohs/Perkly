@@ -449,7 +449,7 @@ export default function ProfilePage() {
                 {/* Referral Section */}
                 <div className="profile-referral-card rounded-[24px] p-5 mb-6 border border-white/[0.07] relative overflow-hidden group">
                     <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                        <div className="w-12 h-12 rounded-2xl bg-white/[0.05] flex items-center justify-center shrink-0 border border-white/[0.07]">
+                        <div className="profile-bare-icon w-9 h-9 flex items-center justify-center shrink-0">
                             <PerklyGlyph name="coupon" className="w-6 h-6 text-white/65" />
                         </div>
                         <div className="flex-1 text-center md:text-left">
@@ -493,7 +493,7 @@ export default function ProfilePage() {
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="profile-icon-well w-10 h-10 rounded-xl flex items-center justify-center">
+                                <div className="profile-bare-icon w-9 h-9 flex items-center justify-center">
                                     <PerklyGlyph name="coupon" className="w-5 h-5 text-white/70" />
                                 </div>
                                 <div>
@@ -550,7 +550,7 @@ export default function ProfilePage() {
                 <Link href="/profile/squad" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-2 group no-underline border relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
                     <div className="flex items-center gap-4 relative z-10">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.3)] border border-indigo-500/30">
+                        <div className="profile-action-icon w-9 h-9 flex items-center justify-center">
                             <PerklyGlyph name="profile" className="w-6 h-6 text-white/70" />
                         </div>
                         <div>
@@ -558,7 +558,7 @@ export default function ProfilePage() {
                             <p className="text-sm text-indigo-200/60">Цели с друзьями и Mega Perk (15% кешбэк)</p>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors relative z-10">
+                    <div className="profile-action-chevron w-8 h-8 flex items-center justify-center relative z-10">
                         <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
@@ -568,7 +568,7 @@ export default function ProfilePage() {
                 {/* Pricing/Tariffs Button (Moved from Mobile Dock) */}
                 <Link href="/pricing" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-2 group no-underline border">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)] border border-yellow-500/30">
+                        <div className="profile-action-icon w-9 h-9 flex items-center justify-center">
                             <PerklyGlyph name="crown" className="w-6 h-6 text-white/70" />
                         </div>
                         <div>
@@ -576,7 +576,7 @@ export default function ProfilePage() {
                             <p className="text-sm text-yellow-200/60">Улучшите свой аккаунт и получайте больше выгоды</p>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-yellow-500/20 transition-colors">
+                    <div className="profile-action-chevron w-8 h-8 flex items-center justify-center">
                         <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
@@ -586,7 +586,7 @@ export default function ProfilePage() {
                 {/* Messages Button (Moved from Navbar) */}
                 <Link href="/messages" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-8 group no-underline border">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] border border-purple-500/30">
+                        <div className="profile-action-icon w-9 h-9 flex items-center justify-center">
                             <PerklyGlyph name="chat" className="w-6 h-6 text-white/70" />
                         </div>
                         <div>
@@ -594,7 +594,7 @@ export default function ProfilePage() {
                             <p className="text-sm text-purple-200/60">Чаты с продавцами и системные уведомления</p>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                    <div className="profile-action-chevron w-8 h-8 flex items-center justify-center">
                         <svg className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
