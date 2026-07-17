@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { offersApi, usersApi, OfferFilters, Offer } from '@/lib/api';
 import { useCart } from '@/lib/CartContext';
 import { useAuth } from '@/lib/AuthContext';
+import { CatalogShowcase } from '@/components/CatalogShowcase';
 
 const CATEGORIES = [
     { value: '', label: 'Все категории' },
@@ -296,6 +297,8 @@ function CatalogContent() {
                     </button>
                 )}
             </div>
+
+            <CatalogShowcase />
 
             <div className="-mx-6 mb-5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max gap-2 pb-1">
