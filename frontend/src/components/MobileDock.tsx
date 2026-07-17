@@ -113,7 +113,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
     return (
         <Link
             href={item.href}
-            className="flex flex-col items-center gap-0.5 no-underline relative select-none"
+            className="flex min-w-12 flex-col items-center gap-0 no-underline relative select-none"
             style={{
                 transform: `translateY(${y}px)`,
                 willChange: 'transform',
@@ -125,7 +125,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             onPointerCancel={handlePointerLeave}
         >
             <div
-                className="w-11 h-11 flex items-center justify-center relative transition-all duration-[400ms] ease-out z-10"
+                className="w-9 h-8 flex items-center justify-center relative transition-all duration-[400ms] ease-out z-10"
                 style={{
                     transform: `scale(${scale})`,
                     willChange: 'transform',
@@ -156,7 +156,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             </div>
 
             <span
-                className="text-[10px] font-medium leading-none"
+                className="mt-0.5 text-[10px] font-medium leading-[12px]"
                 style={{
                     color: isActive ? '#8f32d9' : light ? 'rgba(29,29,31,0.42)' : 'rgba(255,255,255,0.3)',
                 }}
@@ -217,7 +217,7 @@ export function MobileDock() {
             <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-[env(safe-area-inset-bottom,8px)]">
                 {/* Outer container with blur */}
                 <div
-                    className={`mx-4 mb-2 px-2 py-1.5 rounded-[30px] flex items-center justify-around gap-1 w-full max-w-[390px] liquid-glass-dock ${isLightCommerce ? 'light-commerce-dock' : ''}`}
+                    className={`mx-4 mb-2 px-2 py-2 rounded-[30px] flex items-center justify-around gap-1 w-full max-w-[390px] liquid-glass-dock ${isLightCommerce ? 'light-commerce-dock' : ''}`}
                 >
                     {currentItems.map((item) => (
                         <DockIcon
