@@ -1,25 +1,25 @@
 'use client';
 
-import { Home, Tag, ShoppingBag, ShoppingCart, User, Flame, Map, Ticket, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCart } from '@/lib/CartContext';
 import { useTelegram } from '@/hooks/useTelegram';
+import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
 const marketplaceDockItems = [
-    { href: '/', icon: Home, label: 'Главная' },
-    { href: '/coupons', icon: Tag, label: 'Купоны' },
-    { href: '/catalog', icon: ShoppingBag, label: 'Каталог' },
-    { href: '/cart', icon: ShoppingCart, label: 'Корзина' },
-    { href: '/profile', icon: User, label: 'Профиль' },
+    { href: '/', icon: 'home' as PerklyGlyphName, label: 'Главная' },
+    { href: '/coupons', icon: 'coupon' as PerklyGlyphName, label: 'Купоны' },
+    { href: '/catalog', icon: 'catalog' as PerklyGlyphName, label: 'Каталог' },
+    { href: '/cart', icon: 'cart' as PerklyGlyphName, label: 'Корзина' },
+    { href: '/profile', icon: 'profile' as PerklyGlyphName, label: 'Профиль' },
 ];
 
 const topkaDockItems = [
-    { href: '/map', icon: Map, label: 'Карта' },
-    { href: '/feed', icon: Flame, label: 'Топка' },
-    { href: '/plans', icon: Ticket, label: 'Планы' },
-    { href: '/search', icon: Search, label: 'Поиск' },
+    { href: '/map', icon: 'map' as PerklyGlyphName, label: 'Карта' },
+    { href: '/feed', icon: 'topka' as PerklyGlyphName, label: 'Топка' },
+    { href: '/plans', icon: 'coupon' as PerklyGlyphName, label: 'Планы' },
+    { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
 ];
 
 const TOPKA_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
@@ -130,11 +130,11 @@ function DockIcon({ item, isActive, onTap }: {
                     willChange: 'transform',
                 }}
             >
-                <item.icon
+                <PerklyGlyph
+                    name={item.icon}
                     className="w-[22px] h-[22px]"
                     style={{
                         color: isActive ? '#d4b0ff' : 'rgba(255,255,255,0.45)',
-                        strokeWidth: isActive ? 2.5 : 1.8,
                         filter: isActive ? 'drop-shadow(0 0 8px rgba(168,85,247,0.75)) brightness(1.2)' : 'none',
                         transition: 'color 0.4s ease-out, filter 0.4s ease-out'
                     }}

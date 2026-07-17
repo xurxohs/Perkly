@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { User, LogOut, Search, X, Gem, Medal } from 'lucide-react';
+import { LogOut, X, Gem, Medal } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { PerklyGlyph } from '@/components/PerklyGlyph';
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
@@ -46,7 +47,7 @@ export function Navbar() {
             {/* Search Bar — центральный */}
             <div className="hidden md:flex flex-1 max-w-md mx-6">
                 <form onSubmit={handleSearch} className="w-full relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                    <PerklyGlyph name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                     <input
                         ref={searchRef}
                         type="text"
@@ -75,7 +76,7 @@ export function Navbar() {
                     className="md:hidden p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
                     title={searchOpen ? "Закрыть поиск" : "Открыть поиск"}
                 >
-                    {searchOpen ? <X className="w-5 h-5 text-white/70" /> : <Search className="w-5 h-5 text-white/70" />}
+                    {searchOpen ? <X className="w-5 h-5 text-white/70" /> : <PerklyGlyph name="search" className="w-5 h-5 text-white/70" />}
                 </button>
 
 
@@ -85,7 +86,7 @@ export function Navbar() {
                 {isAuthenticated ? (
                     <>
                         <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-full hover:bg-white/5 transition no-underline text-white/70">
-                            <User className="w-4 h-4" />
+                            <PerklyGlyph name="profile" className="w-4 h-4" />
                             <span className="hidden sm:inline">{user?.displayName || 'Профиль'}</span>
                             {tierBadge && (
                                 <tierBadge.icon
@@ -124,7 +125,7 @@ export function Navbar() {
             {searchOpen && (
                 <div className="absolute top-full left-0 w-full p-4 md:hidden bg-black/95 border-b border-white/[0.06]">
                     <form onSubmit={handleSearch} className="relative">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                        <PerklyGlyph name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                         <input
                             type="text"
                             value={query}
