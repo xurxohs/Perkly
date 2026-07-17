@@ -1137,11 +1137,13 @@
   border: 0 !important;
 }
 .catalog-apple-light .catalog-offer-media {
-  background: #fff !important;
+  background: #f5f5f7 !important;
   box-shadow: none !important;
 }
 .catalog-apple-light .catalog-offer-image {
   filter: none !important;
+  object-fit: cover !important;
+  padding: 0 !important;
 }
 .catalog-apple-light .grid > div.group > a > div:last-child {
   background: #fff !important;
