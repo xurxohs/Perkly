@@ -1063,6 +1063,10 @@
   border-color: transparent !important;
 }
 .site-light-commerce .liquid-glass-nav input::placeholder { color: #86868b !important; }
+.site-light-commerce .theme-toggle { color: #1d1d1f; }
+.site-light-commerce .theme-toggle:hover { background: rgba(0,0,0,.055); }
+.site-dark-commerce .theme-toggle { color: rgba(255,255,255,.72); }
+.site-dark-commerce .theme-toggle:hover { background: rgba(255,255,255,.07); }
 
 .catalog-apple-light { color: #1d1d1f; }
 .catalog-apple-light h1,
@@ -1167,6 +1171,55 @@
   backdrop-filter: blur(28px) saturate(180%) !important;
 }
 .light-commerce-dock::before { display: none; }
+
+/* The catalog keeps a first-class dark appearance when the user switches back. */
+.site-dark-commerce,
+.site-dark-commerce main { background: #000; color: #f5f5f7; }
+.site-dark-commerce .catalog-apple-light { color: #f5f5f7; }
+.site-dark-commerce .catalog-apple-light h1,
+.site-dark-commerce .catalog-apple-light h2,
+.site-dark-commerce .catalog-apple-light h3,
+.site-dark-commerce .catalog-apple-light [class*="text-white"] { color: #f5f5f7 !important; }
+.site-dark-commerce .catalog-apple-light [class*="text-white/3"],
+.site-dark-commerce .catalog-apple-light [class*="text-white/4"],
+.site-dark-commerce .catalog-apple-light [class*="text-white/5"],
+.site-dark-commerce .catalog-apple-light [class*="text-white/6"],
+.site-dark-commerce .catalog-apple-light [class*="text-white/7"] { color: rgba(255,255,255,.48) !important; }
+.site-dark-commerce .catalog-apple-light > div:first-child p { color: rgba(255,255,255,.42) !important; }
+.site-dark-commerce .catalog-apple-light > div:nth-of-type(3) button {
+  color: rgba(255,255,255,.52) !important;
+  background: rgba(255,255,255,.045) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+}
+.site-dark-commerce .catalog-apple-light > div:nth-of-type(3) button[class*="bg-purple"] {
+  color: #fff !important;
+  background: rgba(168,85,247,.18) !important;
+  border-color: rgba(192,132,252,.3) !important;
+}
+.site-dark-commerce .catalog-apple-light > div:nth-of-type(4) {
+  background: rgba(255,255,255,.028) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  box-shadow: none;
+}
+.site-dark-commerce .catalog-apple-light input,
+.site-dark-commerce .catalog-apple-light select,
+.site-dark-commerce .catalog-apple-light label {
+  color: #f5f5f7 !important;
+  background: rgba(255,255,255,.045) !important;
+  border-color: rgba(255,255,255,.07) !important;
+}
+.site-dark-commerce .catalog-apple-light input::placeholder { color: rgba(255,255,255,.3) !important; }
+.site-dark-commerce .catalog-apple-light select option { color: #fff; background: #111 !important; }
+.site-dark-commerce .catalog-apple-light .grid > div.group {
+  background: #111115 !important;
+  border: 1px solid rgba(255,255,255,.075) !important;
+  box-shadow: none !important;
+}
+.site-dark-commerce .catalog-apple-light .grid > div.group > a > div:first-child { background: #17171b !important; }
+.site-dark-commerce .catalog-apple-light .grid > div.group > a > div:last-child { background: #0d0d10 !important; }
+.site-dark-commerce .catalog-apple-light .grid > div.group p,
+.site-dark-commerce .catalog-apple-light .grid > div.group [class*="uppercase"] { color: rgba(255,255,255,.4) !important; }
+.site-dark-commerce .catalog-apple-light .catalog-showcase > div:last-child > div > a > span:last-child { color: rgba(255,255,255,.55) !important; }
 
 @media (max-width: 767px) {
   .catalog-apple-light { padding-top: 24px; }

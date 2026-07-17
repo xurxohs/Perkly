@@ -1,14 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, X, Gem, Medal } from 'lucide-react';
+import { LogOut, X, Gem, Medal, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
 
-export function Navbar() {
+export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false }: {
+    theme?: 'light' | 'dark';
+    onToggleTheme?: () => void;
+    showThemeToggle?: boolean;
+}) {
     const { user, isAuthenticated, logout } = useAuth();
     const { hapticImpact } = useTelegram();
     const [searchOpen, setSearchOpen] = useState(false);
@@ -39,10 +43,23 @@ export function Navbar() {
         <nav 
             className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-3 sm:px-5 py-2.5 rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
         >
-            <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-                <div className="w-8 h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
-                <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
-            </Link>
+            <div className="flex items-center gap-1 shrink-0">
+                <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
+                    <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
+                </Link>
+                {showThemeToggle && (
+                    <button
+                        type="button"
+                        onClick={onToggleTheme}
+                        className="theme-toggle ml-1 flex h-9 w-9 items-center justify-center rounded-full border-0 bg-transparent transition-colors cursor-pointer"
+                        aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+                        title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+                    >
+                        {theme === 'light' ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
+                    </button>
+                )}
+            </div>
 
             {/* Search Bar — центральный */}
             <div className="hidden md:flex flex-1 max-w-md mx-6">

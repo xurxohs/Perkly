@@ -185,7 +185,17 @@ export function MobileDock() {
     const { hapticImpact } = useTelegram();
 
     const isTopka = TOPKA_PAGES.some(p => pathname.startsWith(p));
-    const isLightCommerce = pathname.startsWith('/catalog');
+    const [isLightCommerce, setIsLightCommerce] = useState(false);
+
+    useEffect(() => {
+        const syncTheme = () => setIsLightCommerce(
+            pathname.startsWith('/catalog') && document.documentElement.dataset.perklyTheme !== 'dark'
+        );
+        syncTheme();
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-perkly-theme'] });
+        return () => observer.disconnect();
+    }, [pathname]);
     const currentItems = isTopka ? topkaDockItems : marketplaceDockItems;
 
     const getActiveHref = () => {
