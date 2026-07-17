@@ -236,7 +236,7 @@ export default function MessagesPage() {
                                         <h3 className="text-base font-bold text-white leading-tight">{getRoomName(activeRoom!)}</h3>
                                         <div className="text-xs text-white/40 flex items-center gap-1 mt-0.5">
                                             {activeRoom?.type === 'DISPUTE' && activeRoom.transaction && (
-                                                <span className="text-red-400">Транзакция ${activeRoom.transaction.price}</span>
+                                                <span className="text-red-400">Транзакция {activeRoom.transaction.price.toLocaleString('ru-RU')} сум</span>
                                             )}
                                             {activeRoom?.type === 'DIRECT' && 'Онлайн'}
                                             {activeRoom?.type === 'SYSTEM' && 'Официальные рассылки'}

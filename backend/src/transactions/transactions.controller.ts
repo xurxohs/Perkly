@@ -27,6 +27,7 @@ export class TransactionsController {
       isGift?: boolean;
       pointsUsed?: number;
       promocodeActivationId?: string;
+      idempotencyKey?: string;
     },
   ) {
     return this.transactionsService.purchase(
@@ -35,6 +36,7 @@ export class TransactionsController {
       body.isGift,
       body.pointsUsed ?? 0,
       body.promocodeActivationId,
+      body.idempotencyKey,
     );
   }
 

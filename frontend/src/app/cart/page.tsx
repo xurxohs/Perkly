@@ -17,34 +17,28 @@ export default function CartPage() {
     const [results, setResults] = useState<{ offerId: string; title: string; success: boolean; error?: string }[]>([]);
     const [done, setDone] = useState(false);
     const [promocodeActivations, setPromocodeActivations] = useState<PromocodeActivation[]>([]);
-    const [promocodesLoading, setPromocodesLoading] = useState(false);
     const [selectedPromocodes, setSelectedPromocodes] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (!isAuthenticated) {
-            setPromocodeActivations([]);
             return;
         }
 
-        setPromocodesLoading(true);
         promocodesApi.listMyActivations()
             .then(setPromocodeActivations)
             .catch((err) => {
                 console.warn('Failed to load promocode activations', err);
                 setPromocodeActivations([]);
-            })
-            .finally(() => setPromocodesLoading(false));
+            });
     }, [isAuthenticated]);
 
-    const usablePromocodeActivations = useMemo(() => {
-        const now = Date.now();
-        return promocodeActivations.filter((activation) => {
+    const usablePromocodeActivations = useMemo(() =>
+        (isAuthenticated ? promocodeActivations : []).filter((activation) => {
             if (activation.status === 'USED') return false;
-            if (activation.expiresAt && new Date(activation.expiresAt).getTime() < now) return false;
+            if (activation.expiresAt && new Date(activation.expiresAt) < new Date()) return false;
             if (activation.promocode?.status !== 'ACTIVE') return false;
             return true;
-        });
-    }, [promocodeActivations]);
+        }), [isAuthenticated, promocodeActivations]);
 
     const getItemPromocodes = (offerId: string) =>
         usablePromocodeActivations.filter((activation) => !activation.offerId || activation.offerId === offerId);
@@ -56,13 +50,13 @@ export default function CartPage() {
 
     const getDiscountAmount = (price: number, activation: PromocodeActivation | null) => {
         const discountValue = activation?.promocode?.discountValue ?? 0;
-        return Number(((price * discountValue) / 100).toFixed(2));
+        return Math.round((price * discountValue) / 100);
     };
 
     const promocodeDiscountTotal = items.reduce((sum, item) => {
         return sum + getDiscountAmount(item.price, getSelectedActivation(item.offerId));
     }, 0);
-    const checkoutTotal = Number(Math.max(0, total - promocodeDiscountTotal).toFixed(2));
+    const checkoutTotal = Math.round(Math.max(0, total - promocodeDiscountTotal));
 
     const isActivationSelectedElsewhere = (activationId: string, offerId: string) =>
         Object.entries(selectedPromocodes).some(([selectedOfferId, selectedActivationId]) => (
@@ -145,7 +139,7 @@ export default function CartPage() {
                             const itemPromocodes = getItemPromocodes(item.offerId);
                             const selectedActivation = getSelectedActivation(item.offerId);
                             const discountAmount = getDiscountAmount(item.price, selectedActivation);
-                            const itemFinalPrice = Number(Math.max(0, item.price - discountAmount).toFixed(2));
+                            const itemFinalPrice = Math.round(Math.max(0, item.price - discountAmount));
 
                             return (
                                 <div
@@ -160,7 +154,7 @@ export default function CartPage() {
                                                         item.category === 'GAMES' ? <Gamepad2 className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                                             </div>
                                             <div className="min-w-0 pr-2">
-                                                <Link href={`/offer/${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-purple-400 transition block truncate">
+                                                <Link href={`/offer/?id=${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-purple-400 transition block truncate">
                                                     {item.title}
                                                 </Link>
                                                 <div className="text-xs text-white/30">{item.category}</div>
@@ -170,9 +164,9 @@ export default function CartPage() {
                                         <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
                                             <div className="text-right">
                                                 {discountAmount > 0 && (
-                                                    <div className="text-xs text-white/25 line-through">{item.price.toFixed(2)}$</div>
+                                                    <div className="text-xs text-white/25 line-through">{item.price.toLocaleString('ru-RU')} сум</div>
                                                 )}
-                                                <span className="text-base font-bold text-white">{itemFinalPrice.toFixed(2)}$</span>
+                                                <span className="text-base font-bold text-white">{itemFinalPrice.toLocaleString('ru-RU')} сум</span>
                                             </div>
                                             <button
                                                 onClick={() => removeItem(item.offerId)}
@@ -197,12 +191,12 @@ export default function CartPage() {
                                                     ...prev,
                                                     [item.offerId]: event.target.value,
                                                 }))}
-                                                disabled={promocodesLoading || itemPromocodes.length === 0}
+                                                disabled={itemPromocodes.length === 0}
                                                 className="w-full min-h-10 rounded-lg bg-black/30 border border-white/10 text-white text-sm px-3 outline-none disabled:opacity-50"
                                                 aria-label="Выбрать промокод"
                                             >
                                                 <option value="">
-                                                    {promocodesLoading ? 'Загрузка промокодов...' : 'Без промокода'}
+                                                    Без промокода
                                                 </option>
                                                 {itemPromocodes.map((activation) => {
                                                     const disabled = isActivationSelectedElsewhere(activation.id, item.offerId);
@@ -229,12 +223,12 @@ export default function CartPage() {
                         {promocodeDiscountTotal > 0 && (
                             <div className="flex items-center justify-between mb-4">
                                 <span className="text-white/50">Скидка по промокодам:</span>
-                                <span className="text-green-400 font-semibold">-{promocodeDiscountTotal.toFixed(2)}$</span>
+                                <span className="text-green-400 font-semibold">-{promocodeDiscountTotal.toLocaleString('ru-RU')} сум</span>
                             </div>
                         )}
                         <div className="flex items-center justify-between mb-6">
                             <span className="text-white/50">Общая сумма:</span>
-                            <span className="text-2xl font-extrabold text-gradient-green">{checkoutTotal.toFixed(2)}$</span>
+                            <span className="text-2xl font-extrabold text-gradient-green">{checkoutTotal.toLocaleString('ru-RU')} сум</span>
                         </div>
 
                         <button
@@ -242,7 +236,7 @@ export default function CartPage() {
                             disabled={purchasing}
                             className={`w-full py-4 rounded-xl text-white font-bold text-base cursor-pointer border-0 transition-all cart-checkout-btn ${purchasing ? 'opacity-60 scale-[0.98]' : 'opacity-100 scale-100'}`}
                         >
-                            {purchasing ? 'Оформление...' : `Оформить покупку — ${checkoutTotal.toFixed(2)}$`}
+                            {purchasing ? 'Оформление...' : `Оформить покупку — ${checkoutTotal.toLocaleString('ru-RU')} сум`}
                         </button>
                     </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Flame, Ticket, MessageCircle, ChevronRight, Sparkles } from 'lucide-react';
 import { useTelegram } from '@/hooks/useTelegram';
 
@@ -32,13 +32,17 @@ const SLIDES = [
 ];
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-    const [showOnboarding, setShowOnboarding] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return localStorage.getItem('perkly_onboarded_v2') !== 'true';
-    });
+    const [showOnboarding, setShowOnboarding] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [animating, setAnimating] = useState(false);
     const { hapticImpact } = useTelegram();
+
+    useEffect(() => {
+        const frame = window.requestAnimationFrame(() => {
+            setShowOnboarding(localStorage.getItem('perkly_onboarded_v2') !== 'true');
+        });
+        return () => window.cancelAnimationFrame(frame);
+    }, []);
 
     const handleNext = () => {
         hapticImpact('light');

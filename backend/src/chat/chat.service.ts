@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Prisma } from '@prisma/client';
 import { normalizePagination } from '../common/pagination';
+import { assertAcceptableUserContent } from '../common/content-moderation';
 
 const CHAT_PARTICIPANT_SELECT = {
   id: true,
@@ -75,13 +76,21 @@ export class ChatService {
       defaultTake: 20,
       maxTake: 100,
     });
+    const blockedIds =
+      role === 'ADMIN' ? [] : await this.blockedUserIds(userId);
     const whereClause: Prisma.ChatRoomWhereInput =
       role === 'ADMIN'
         ? {}
         : {
-            participants: {
-              some: { id: userId },
-            },
+            AND: [
+              { participants: { some: { id: userId } } },
+              {
+                OR: [
+                  { type: { not: 'DIRECT' } },
+                  { participants: { none: { id: { in: blockedIds } } } },
+                ],
+              },
+            ],
           };
 
     const [rooms, total] = await Promise.all([
@@ -208,6 +217,7 @@ export class ChatService {
     if (userId1 === userId2) {
       throw new BadRequestException('Cannot create a chat room with yourself');
     }
+    await this.ensureUsersCanInteract(userId1, userId2);
 
     // Try to find existing DIRECT room with these EXACT two participants
     const rooms = await this.prisma.chatRoom.findMany({
@@ -291,6 +301,7 @@ export class ChatService {
     if (trimmedContent.length > 4000) {
       throw new BadRequestException('Message content is too long');
     }
+    assertAcceptableUserContent(trimmedContent, 'Message');
 
     const access = await this.getAccessibleRoom(roomId, senderId);
 
@@ -435,8 +446,41 @@ export class ChatService {
     if (!isAdmin && !participantIds.includes(userId)) {
       throw new ForbiddenException('Access denied to this chat room');
     }
+    if (!isAdmin && room.type === 'DIRECT') {
+      const otherUserId = participantIds.find((id) => id !== userId);
+      if (otherUserId) {
+        await this.ensureUsersCanInteract(userId, otherUserId);
+      }
+    }
 
     return { room, isAdmin, participantIds };
+  }
+
+  private async blockedUserIds(userId: string) {
+    const rows = await this.prisma.userBlock.findMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+    return rows.map((row) =>
+      row.blockerId === userId ? row.blockedId : row.blockerId,
+    );
+  }
+
+  private async ensureUsersCanInteract(userId1: string, userId2: string) {
+    const block = await this.prisma.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId1, blockedId: userId2 },
+          { blockerId: userId2, blockedId: userId1 },
+        ],
+      },
+      select: { id: true },
+    });
+    if (block) {
+      throw new ForbiddenException('Direct interaction is blocked');
+    }
   }
 
   private buildTransactionSummary(

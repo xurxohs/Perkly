@@ -7,49 +7,63 @@ import api, { Dispute } from '@/lib/api';
 export default function AdminDisputes() {
     const [disputes, setDisputes] = useState<Dispute[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState('');
 
     const fetchDisputes = async () => {
         setLoading(true);
+        setError(null);
         try {
-            const res = await api.admin.getDisputes();
+            const res = await api.admin.getDisputes(status);
             setDisputes(res.disputes);
         } catch (error) {
-            console.error('Failed to fetch disputes:', error);
+            setError(error instanceof Error ? error.message : 'Не удалось загрузить споры');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchDisputes();
-    }, []);
+        void fetchDisputes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [status]);
 
     const resolveDispute = async (id: string, resolution: 'BUYER' | 'SELLER') => {
         const text = resolution === 'BUYER'
             ? 'Решить в пользу ПОКУПАТЕЛЯ? Деньги вернутся на его баланс.'
             : 'Решить в пользу ПРОДАВЦА? Товар будет считаться выполненным, деньги перейдут продавцу.';
         if (!window.confirm(text)) return;
+        const adminNote = window.prompt('Комментарий к решению (будет сохранён в истории)', '');
+        if (adminNote === null) return;
 
         try {
-            await api.patch(`/admin/disputes/${id}/resolve`, { resolution });
-            fetchDisputes();
+            await api.admin.resolveDispute(id, resolution, adminNote);
+            await fetchDisputes();
         } catch (error) {
-            console.error('Failed to resolve dispute', error);
-            alert('Ошибка при разрешении спора');
+            setError(error instanceof Error ? error.message : 'Ошибка при разрешении спора');
         }
     };
 
     return (
         <div className="space-y-6 animate-fade-in fade-in-up">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2">Споры (Арбитраж)</h1>
                     <p className="text-white/40">Решение конфликтов между покупателем и продавцом</p>
                 </div>
-                <button onClick={fetchDisputes} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
-                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+                <div className="flex gap-2">
+                    <select value={status} onChange={(event) => setStatus(event.target.value)} className="bg-[#101524] border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                        <option value="">Все</option>
+                        <option value="OPEN">Открытые</option>
+                        <option value="RESOLVED">Решённые</option>
+                    </select>
+                    <button onClick={fetchDisputes} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
+                        <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
             </div>
+
+            {error && <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300">{error}</div>}
 
             <div className="bg-[#101524]/60 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -77,14 +91,15 @@ export default function AdminDisputes() {
                                         </div>
                                     </td>
                                     <td className="py-4 px-6">
-                                        <div className="text-sm font-bold text-white mb-1">${dispute.transaction?.price?.toFixed(2)}</div>
+                                        <div className="text-sm font-bold text-white mb-1">{(dispute.transaction?.price ?? 0).toLocaleString('ru-RU')} сум</div>
                                         <div className="text-xs text-white/40 line-clamp-1">{dispute.transaction?.offer?.title}</div>
                                     </td>
                                     <td className="py-4 px-6">
                                         <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${dispute.status === 'OPEN' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'
                                             }`}>
-                                            {dispute.status === 'OPEN' ? 'Открыт' : `Закрыт (${dispute.resolution})`}
+                                            {dispute.status === 'OPEN' ? 'Открыт' : `Решён (${dispute.resolution || '—'})`}
                                         </span>
+                                        {dispute.adminNote && <div className="text-xs text-white/40 mt-2 max-w-xs">{dispute.adminNote}</div>}
                                     </td>
                                     <td className="py-4 px-6 text-right">
                                         {dispute.status === 'OPEN' ? (

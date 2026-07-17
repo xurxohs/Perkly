@@ -32,8 +32,8 @@ const tiers = [
     {
         name: 'Gold',
         icon: Crown,
-        price: '$4.99',
-        priceNum: 4.99,
+        price: '59 880 сум',
+        priceNum: 59_880,
         period: '/мес',
         description: 'Для активных покупателей — больше скидок',
         badge: 'Популярный',
@@ -55,8 +55,8 @@ const tiers = [
     {
         name: 'Platinum',
         icon: Gem,
-        price: '$9.99',
-        priceNum: 9.99,
+        price: '119 880 сум',
+        priceNum: 119_880,
         period: '/мес',
         description: 'Максимальные привилегии — лучшие цены',
         badge: 'Макс. выгода',
@@ -157,7 +157,7 @@ export default function PricingPage() {
                     const displayPrice = tier.priceNum === 0
                         ? 'Бесплатно'
                         : annual
-                            ? `$${(monthlyPrice * 0.8 * 12).toFixed(0)}`
+                            ? `${Math.round(monthlyPrice * 0.8 * 12).toLocaleString('ru-RU')} сум`
                             : tier.price;
                     const currentTier = user?.tier || 'SILVER';
                     const isCurrent = currentTier === tier.name.toUpperCase();
@@ -214,7 +214,7 @@ export default function PricingPage() {
                                     </div>
                                     {annual && tier.priceNum > 0 && (
                                         <span className="text-xs text-green-400 mt-1 block">
-                                            Экономия ${(monthlyPrice * 12 * 0.2).toFixed(0)} в год
+                                            Экономия {Math.round(monthlyPrice * 12 * 0.2).toLocaleString('ru-RU')} сум в год
                                         </span>
                                     )}
                                 </div>

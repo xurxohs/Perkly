@@ -1,8 +1,9 @@
 'use client';
 
 import { useAuth } from '@/lib/AuthContext';
-import { offersApi } from '@/lib/api';
-import { TrendingUp, Package, Users, Activity, ArrowUpRight, Zap, Star, Clock, X, CheckCircle } from 'lucide-react';
+import { offersApi, sellerApi, SellerStats } from '@/lib/api';
+import { TrendingUp, Package, ShoppingBag, CalendarDays, ArrowUpRight, Zap, Star, Clock, X, CheckCircle, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
 interface Offer {
@@ -15,15 +16,23 @@ interface Offer {
 }
 
 const FEATURE_PLANS = [
-    { days: 1, label: '1 день', price: 1 },
-    { days: 3, label: '3 дня', price: 3 },
-    { days: 7, label: '7 дней', price: 7, popular: true },
-    { days: 30, label: '30 дней', price: 30 },
+    { days: 1, label: '1 день', price: 12_000 },
+    { days: 3, label: '3 дня', price: 36_000 },
+    { days: 7, label: '7 дней', price: 84_000, popular: true },
+    { days: 30, label: '30 дней', price: 360_000 },
 ];
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+    PENDING: 'Ожидает оплаты', PAID: 'Оплачено', ESCROW: 'В работе', ACTIVATED: 'Активировано',
+    DISPUTED: 'Спор', COMPLETED: 'Завершено', CANCELLED: 'Отменено', REFUNDED: 'Возврат',
+};
 
 export default function VendorDashboardPage() {
     const { user, refreshUser } = useAuth();
     const [offers, setOffers] = useState<Offer[]>([]);
+    const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
+    const [loadingDashboard, setLoadingDashboard] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
     const [selectedDays, setSelectedDays] = useState(7);
     const [promoting, setPromoting] = useState(false);
@@ -33,11 +42,19 @@ export default function VendorDashboardPage() {
 
     useEffect(() => {
         const load = async () => {
+            setLoadingDashboard(true);
+            setLoadError(null);
             try {
-                const data = await offersApi.getMyOffers() as Offer[];
-                setOffers(data);
-            } catch {
-                // ignore
+                const [offersData, statsData] = await Promise.all([
+                    offersApi.getMyOffers() as Promise<Offer[]>,
+                    sellerApi.getStats(),
+                ]);
+                setOffers(offersData);
+                setSellerStats(statsData);
+            } catch (loadFailure) {
+                setLoadError(loadFailure instanceof Error ? loadFailure.message : 'Не удалось загрузить кабинет');
+            } finally {
+                setLoadingDashboard(false);
             }
         };
         void load();
@@ -66,11 +83,11 @@ export default function VendorDashboardPage() {
     const isFeatured = (o: Offer) =>
         o.featuredUntil && new Date(o.featuredUntil) > new Date();
 
-    const stats = [
-        { title: 'Всего заработано', value: '$1,450.00', trend: '+12.5%', isPositive: true, icon: TrendingUp, color: 'from-emerald-500 to-emerald-400' },
-        { title: 'Активные товары', value: String(offers.length || 0), trend: '', isPositive: true, icon: Package, color: 'from-purple-500 to-purple-400' },
-        { title: 'Уникальные клиенты', value: '156', trend: '+18%', isPositive: true, icon: Users, color: 'from-blue-500 to-blue-400' },
-        { title: 'Конверсия', value: '8.4%', trend: '-1.2%', isPositive: false, icon: Activity, color: 'from-orange-500 to-orange-400' },
+    const dashboardCards = [
+        { title: 'Зачислено продавцу', value: `${(sellerStats?.totalEarnings ?? 0).toLocaleString('ru-RU')} сум`, icon: TrendingUp, color: 'from-emerald-500 to-emerald-400' },
+        { title: 'Все продажи', value: String(sellerStats?.totalSales ?? 0), icon: ShoppingBag, color: 'from-blue-500 to-blue-400' },
+        { title: 'Активные товары', value: String(sellerStats?.activeOffers ?? offers.filter((offer) => offer.isActive).length), icon: Package, color: 'from-purple-500 to-purple-400' },
+        { title: 'События Topka', value: String(sellerStats?.activeEvents ?? 0), icon: CalendarDays, color: 'from-orange-500 to-orange-400' },
     ];
 
     return (
@@ -82,20 +99,23 @@ export default function VendorDashboardPage() {
                 </div>
             </div>
 
+            {loadError && (
+                <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    {loadError}
+                </div>
+            )}
+
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                {stats.map((stat, i) => (
+                {dashboardCards.map((stat, i) => (
                     <div key={i} className="rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 bg-white/[0.03] backdrop-blur-[20px] border border-white/[0.08] shadow-[0_10px_30px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)]">
                         <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${stat.color} opacity-10 rounded-full blur-[30px] -mr-10 -mt-10 transition-opacity group-hover:opacity-20`} />
                         <div className="flex justify-between items-start mb-6">
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/5">
                                 <stat.icon className="w-6 h-6 text-white/80" />
                             </div>
-                            {stat.trend && (
-                                <span className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${stat.isPositive ? 'text-emerald-400 bg-emerald-400/10' : 'text-red-400 bg-red-400/10'}`}>
-                                    {stat.trend}
-                                </span>
-                            )}
+                            {loadingDashboard && <span className="h-5 w-12 animate-pulse rounded-full bg-white/5" />}
                         </div>
                         <div>
                             <h3 className="text-3xl font-bold text-white mb-1 tracking-tight">{stat.value}</h3>
@@ -110,7 +130,7 @@ export default function VendorDashboardPage() {
                 <div className="rounded-3xl p-6 mb-10 bg-white/[0.02] border border-white/[0.06]">
                     <div className="flex items-center justify-between mb-5">
                         <h2 className="text-xl font-bold text-white">Мои офферы</h2>
-                        <span className="text-xs text-white/30">Баланс: <span className="text-white/70 font-semibold">${user?.balance?.toFixed(2)}</span></span>
+                        <span className="text-xs text-white/30">Баланс: <span className="text-white/70 font-semibold">{(user?.balance ?? 0).toLocaleString('ru-RU')} сум</span></span>
                     </div>
                     <div className="space-y-3">
                         {offers.map((o) => (
@@ -123,7 +143,7 @@ export default function VendorDashboardPage() {
                                     )}
                                     <div>
                                         <p className="text-white text-sm font-medium">{o.title}</p>
-                                        <p className="text-white/40 text-xs">{o.category} · ${o.price}</p>
+                                        <p className="text-white/40 text-xs">{o.category} · {o.price.toLocaleString('ru-RU')} сум</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -152,38 +172,33 @@ export default function VendorDashboardPage() {
                 </div>
             )}
 
-            {/* Chart */}
-            <div className="w-full h-96 rounded-3xl p-8 flex flex-col bg-white/[0.02] backdrop-blur-[20px] border border-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+            {/* Recent real orders */}
+            <div className="w-full rounded-3xl p-6 sm:p-8 flex flex-col bg-white/[0.02] backdrop-blur-[20px] border border-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h3 className="text-xl font-bold text-white mb-1">Динамика продаж</h3>
-                        <p className="text-sm text-white/50">За последние 7 дней</p>
+                        <h3 className="text-xl font-bold text-white mb-1">Последние заказы</h3>
+                        <p className="text-sm text-white/50">Фактические сделки из backend</p>
                     </div>
-                    <button className="text-sm font-medium text-purple-400 bg-purple-400/10 px-4 py-2 rounded-xl hover:bg-purple-400/20 transition-colors flex items-center gap-2 border-0 cursor-pointer">
-                        Отчет <ArrowUpRight className="w-4 h-4" />
-                    </button>
+                    <Link href="/vendor/orders" className="text-sm font-medium text-purple-400 bg-purple-400/10 px-4 py-2 rounded-xl hover:bg-purple-400/20 transition-colors flex items-center gap-2 no-underline">
+                        Все заказы <ArrowUpRight className="w-4 h-4" />
+                    </Link>
                 </div>
-                <div className="flex-1 flex items-end justify-between gap-2 opacity-50 relative pb-6 border-b border-white/5">
-                    <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                        <defs>
-                            <linearGradient id="gradientLine" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stopColor="#a855f7" />
-                                <stop offset="50%" stopColor="#8b5cf6" />
-                                <stop offset="100%" stopColor="#3b82f6" />
-                            </linearGradient>
-                            <linearGradient id="gradientFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-                                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M 0,150 Q 100,60 200,100 T 400,120 T 600,40 T 800,110 T 1000,20 L 1000,300 L 0,300 Z" fill="url(#gradientFill)" />
-                        <path d="M 0,150 Q 100,60 200,100 T 400,120 T 600,40 T 800,110 T 1000,20" fill="none" stroke="url(#gradientLine)" strokeWidth="4" strokeLinecap="round" />
-                        <circle cx="600" cy="40" r="6" fill="#fff" filter="drop-shadow(0 0 10px #fff)" />
-                        <circle cx="600" cy="40" r="14" fill="none" stroke="#fff" strokeWidth="2" strokeOpacity="0.5" />
-                    </svg>
-                </div>
-                <div className="flex justify-between mt-4 text-xs font-medium text-white/30 uppercase tracking-widest px-4">
-                    <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span className="text-white">Сб</span><span>Вс</span>
+                <div className="space-y-3">
+                    {(sellerStats?.recentTransactions ?? []).map((transaction) => (
+                        <div key={transaction.id} className="flex flex-col gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 sm:flex-row sm:items-center">
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-white">{transaction.offer?.title ?? 'Заказ'}</p>
+                                <p className="mt-1 text-xs text-white/40">{transaction.buyer?.displayName ?? transaction.buyer?.email ?? 'Покупатель'}</p>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 sm:justify-end">
+                                <span className="text-sm font-bold text-white">{transaction.price.toLocaleString('ru-RU')} сум</span>
+                                <span className="rounded-full bg-white/5 px-3 py-1 text-[10px] font-bold text-white/50">{ORDER_STATUS_LABELS[transaction.status] ?? transaction.status}</span>
+                            </div>
+                        </div>
+                    ))}
+                    {!loadingDashboard && (sellerStats?.recentTransactions.length ?? 0) === 0 && (
+                        <div className="py-10 text-center text-sm text-white/35">Заказов пока нет</div>
+                    )}
                 </div>
             </div>
 
@@ -226,7 +241,7 @@ export default function VendorDashboardPage() {
                                         </span>
                                     )}
                                     <p className="text-white font-bold text-base">{plan.label}</p>
-                                    <p className="text-amber-400 text-sm font-semibold">${plan.price}</p>
+                                    <p className="text-amber-400 text-sm font-semibold">{plan.price.toLocaleString('ru-RU')} сум</p>
                                 </button>
                             ))}
                         </div>
@@ -239,7 +254,7 @@ export default function VendorDashboardPage() {
 
                         <div className="flex items-center justify-between mb-4 text-sm text-white/40">
                             <span>Ваш баланс</span>
-                            <span className="text-white font-semibold">${user?.balance?.toFixed(2)}</span>
+                            <span className="text-white font-semibold">{(user?.balance ?? 0).toLocaleString('ru-RU')} сум</span>
                         </div>
 
                         <button
@@ -249,7 +264,7 @@ export default function VendorDashboardPage() {
                         >
                             {promoting
                                 ? 'Обработка...'
-                                : `Продвинуть за $${selectedDays * 1}`}
+                                : `Продвинуть за ${(selectedDays * 12_000).toLocaleString('ru-RU')} сум`}
                         </button>
                     </div>
                 </div>

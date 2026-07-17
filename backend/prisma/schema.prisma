@@ -16,13 +16,19 @@ model User {
   avatarUrl            String?
   role                 String                @default("USER")
   tier                 String                @default("SILVER")
-  balance              Float                 @default(0.0)
+  balance              Int                   @default(0)
   rewardPoints         Int                   @default(0)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  tokensValidAfter     DateTime?
   telegramId           String?               @unique
+  appleSub             String?               @unique
   phone                String?
   deviceToken          String?
+  notifyPurchases      Boolean               @default(true)
+  notifyMessages       Boolean               @default(true)
+  notifyNearby         Boolean               @default(true)
   b2cProfile           B2CProfile?
   ownedCompanies       Company[]             @relation("CompanyOwner")
   savedOffers          SavedOffer[]
@@ -39,11 +45,50 @@ model User {
   squad                Squad?                @relation("UserSquad", fields: [squadId], references: [id])
   hasSquadReward       Boolean               @default(false)
   organizedEvents      Event[]               @relation("OrganizerEvents")
+  sessions             UserSession[]
+  passwordResetCodes   PasswordResetCode[]
+  cartItems            CartItem[]
+  savedEvents          SavedEvent[]
+  financialEntries     FinancialEntry[]
+  moderationReports    ModerationReport[]
+  moderationAppeals    ModerationAppeal[]
+  blocksCreated        UserBlock[]           @relation("UserBlocker")
+  blocksReceived       UserBlock[]           @relation("UserBlocked")
 
   @@index([role])
   @@index([tier])
   @@index([phone])
   @@index([squadId])
+  @@index([deletedAt])
+}
+
+model PasswordResetCode {
+  id         String    @id @default(uuid())
+  userId     String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, consumedAt, expiresAt])
+}
+
+model UserSession {
+  id         String    @id @default(uuid())
+  userId     String
+  deviceId   String?
+  deviceName String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
 
 model B2CProfile {
@@ -108,6 +153,20 @@ model Event {
   @@index([createdAt])
 }
 
+// eventId intentionally has no foreign key: the feed also contains stable IDs
+// from the external Topka source, not only rows from the Event table.
+model SavedEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId, createdAt])
+  @@index([eventId])
+}
+
 model TopkaPost {
   id               String    @id @default(uuid())
   postType         String    @default("event")
@@ -155,23 +214,25 @@ model Squad {
   id                  String    @id @default(uuid())
   name                String
   inviteCode          String    @unique
-  monthlyGoal         Float     @default(1000000.0)
+  monthlyGoal         Int       @default(1000000)
   rewardTriggeredDate DateTime?
   createdAt           DateTime  @default(now())
   members             User[]    @relation("UserSquad")
 }
 
 model Deposit {
-  id         String   @id @default(uuid())
-  userId     String
-  amount     Float
-  currency   String   @default("UZS")
-  provider   String   @default("CLICK") // CLICK, PAYME, MOCK
-  providerId String?  @unique // Transaction ID from the provider
-  status     String   @default("PENDING") // PENDING, SUCCESS, FAILED
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  user       User     @relation("UserDeposits", fields: [userId], references: [id])
+  id               String           @id @default(uuid())
+  userId           String
+  amount           Int
+  currency         String           @default("UZS")
+  provider         String           @default("CLICK") // CLICK, PAYME, MOCK
+  providerId       String?          @unique // Transaction ID from the provider
+  idempotencyKey   String?          @unique
+  status           String           @default("PENDING") // PENDING, SUCCESS, FAILED
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  user             User             @relation("UserDeposits", fields: [userId], references: [id])
+  financialEntries FinancialEntry[]
 
   @@index([userId, status])
 }
@@ -180,11 +241,14 @@ model Offer {
   id                String                @id @default(uuid())
   title             String
   description       String
-  price             Float                 @default(0.0)
+  price             Int                   @default(0)
   discountPercent   Int?                  @default(0)
   vendorLogo        String?
+  imageUrl          String?
+  thumbnailUrl      String?
   usageInstructions String?
   category          String
+  fulfillmentType   String                @default("INSTRUCTIONS")
   isExclusive       Boolean               @default(false)
   hiddenData        String
   isActive          Boolean               @default(true)
@@ -205,6 +269,7 @@ model Offer {
   savedBy           SavedOffer[]
   reviews           Review[]
   transactions      Transaction[]
+  cartItems         CartItem[]
 
   @@index([isActive, isFlashDrop])
   @@index([isActive, expiresAt])
@@ -217,24 +282,24 @@ model Offer {
 }
 
 model Promocode {
-  id            String                @id @default(uuid())
-  companyId     String
-  offerId       String?
-  title         String
-  description   String?
-  codeType      String                @default("STATIC")
-  code          String?
-  discountValue Float
+  id             String                @id @default(uuid())
+  companyId      String
+  offerId        String?
+  title          String
+  description    String?
+  codeType       String                @default("STATIC")
+  code           String?
+  discountValue  Float
   maxActivations Int?
   perUserLimit   Int                   @default(1)
-  validFrom     DateTime?
-  validTo       DateTime?
-  status        String                @default("ACTIVE")
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  company       Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  offer         Offer?                @relation(fields: [offerId], references: [id], onDelete: SetNull)
-  activations   PromocodeActivation[]
+  validFrom      DateTime?
+  validTo        DateTime?
+  status         String                @default("ACTIVE")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  company        Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  offer          Offer?                @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  activations    PromocodeActivation[]
 
   @@index([companyId, status])
   @@index([offerId])
@@ -279,6 +344,21 @@ model SavedOffer {
   @@index([offerId])
 }
 
+model CartItem {
+  id        String   @id @default(uuid())
+  userId    String
+  offerId   String
+  isGift    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, offerId])
+  @@index([userId, createdAt])
+  @@index([offerId])
+}
+
 model UserInterest {
   id        String   @id @default(uuid())
   userId    String
@@ -295,30 +375,54 @@ model UserInterest {
 }
 
 model Transaction {
-  id         String     @id @default(uuid())
-  offerId    String
-  buyerId    String
-  price      Float
-  status     String     @default("PENDING")
-  expiresAt  DateTime?
-  isGift     Boolean    @default(false)
-  giftCode   String?    @unique
-  isRedeemed Boolean    @default(false)
+  id                    String           @id @default(uuid())
+  offerId               String
+  buyerId               String
+  price                 Int
+  status                String           @default("PENDING")
+  expiresAt             DateTime?
+  isGift                Boolean          @default(false)
+  giftCode              String?          @unique
+  isRedeemed            Boolean          @default(false)
   promocodeActivationId String?
-  promocodeDiscount     Float?
+  promocodeDiscount     Int?
+  idempotencyKey        String?          @unique
   promocodeCodeSnapshot String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  chatRooms  ChatRoom[]
-  dispute    Dispute?
-  buyer      User       @relation("BuyerTransactions", fields: [buyerId], references: [id])
-  offer      Offer      @relation(fields: [offerId], references: [id])
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  chatRooms             ChatRoom[]
+  dispute               Dispute?
+  buyer                 User             @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  offer                 Offer            @relation(fields: [offerId], references: [id])
+  financialEntries      FinancialEntry[]
 
   @@index([buyerId, status])
   @@index([buyerId, createdAt])
   @@index([offerId])
   @@index([promocodeActivationId])
   @@index([status, createdAt])
+}
+
+model FinancialEntry {
+  id             String       @id @default(uuid())
+  userId         String
+  transactionId  String?
+  depositId      String?
+  type           String
+  amount         Int
+  balanceAfter   Int
+  currency       String       @default("UZS")
+  idempotencyKey String       @unique
+  metadata       String?
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id])
+  transaction    Transaction? @relation(fields: [transactionId], references: [id])
+  deposit        Deposit?     @relation(fields: [depositId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([transactionId])
+  @@index([depositId])
+  @@index([type, createdAt])
 }
 
 model Subscription {
@@ -353,9 +457,16 @@ model Dispute {
   transactionId String      @unique
   reason        String
   status        String      @default("OPEN")
+  resolution    String?
+  adminNote     String?
+  resolvedBy    String?
+  resolvedAt    DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([resolvedBy, resolvedAt])
 }
 
 model ChatRoom {
@@ -394,6 +505,58 @@ model AdminLog {
   targetId  String?
   details   String?
   createdAt DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([action, createdAt])
+}
+
+model ModerationReport {
+  id          String   @id @default(uuid())
+  reporterId  String
+  targetType  String
+  targetId    String
+  category    String
+  description String
+  status      String   @default("OPEN")
+  resolution  String?
+  resolvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  reporter    User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId, createdAt])
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model ModerationAppeal {
+  id          String   @id @default(uuid())
+  userId      String
+  subjectType String
+  subjectId   String?
+  reason      String
+  status      String   @default("OPEN")
+  resolution  String?
+  resolvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model UserBlock {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("UserBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("UserBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId, createdAt])
+  @@index([blockedId, createdAt])
 }
 
 model AnalyticsEvent {
@@ -407,4 +570,22 @@ model AnalyticsEvent {
 
   @@index([userId, eventType, createdAt])
   @@index([eventType, createdAt])
+}
+
+model DiagnosticIssue {
+  id          String   @id @default(uuid())
+  fingerprint String   @unique
+  kind        String
+  message     String
+  appVersion  String?
+  osVersion   String?
+  deviceModel String?
+  userId      String?
+  breadcrumbs String?
+  occurrences Int      @default(1)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @updatedAt
+
+  @@index([kind, lastSeenAt])
+  @@index([occurrences, lastSeenAt])
 }

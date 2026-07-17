@@ -1,37 +1,42 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRightLeft, RefreshCw, Undo2 } from 'lucide-react';
+import { ArrowRightLeft, RefreshCw, Search, Undo2 } from 'lucide-react';
 import api, { Transaction } from '@/lib/api';
 
 export default function AdminTransactions() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('');
 
     const fetchTransactions = async () => {
         setLoading(true);
+        setError(null);
         try {
-            const res = await api.admin.getTransactions();
+            const res = await api.admin.getTransactions({ search, status });
             setTransactions(res.transactions);
         } catch (error) {
-            console.error('Failed to fetch transactions:', error);
+            setError(error instanceof Error ? error.message : 'Не удалось загрузить транзакции');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchTransactions();
-    }, []);
+        const timer = window.setTimeout(() => { void fetchTransactions(); }, 250);
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search, status]);
 
     const handleRefund = async (id: string) => {
         if (!window.confirm('Оформить возврат средств? Деньги вернутся покутателю, товар будет отменен.')) return;
         try {
-            await api.patch(`/admin/transactions/${id}/refund`, {});
-            fetchTransactions();
+            await api.admin.refundTransaction(id);
+            await fetchTransactions();
         } catch (error) {
-            console.error('Failed to refund', error);
-            alert('Ошибка при оформлении возврата');
+            setError(error instanceof Error ? error.message : 'Ошибка при оформлении возврата');
         }
     };
 
@@ -52,15 +57,27 @@ export default function AdminTransactions() {
 
     return (
         <div className="space-y-6 animate-fade-in fade-in-up">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2">Транзакции</h1>
                     <p className="text-white/40">История покупок и возвраты</p>
                 </div>
-                <button onClick={fetchTransactions} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
-                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+                <div className="flex flex-wrap gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Покупатель или товар" className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white" />
+                    </div>
+                    <select value={status} onChange={(event) => setStatus(event.target.value)} className="bg-[#101524] border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                        <option value="">Все статусы</option>
+                        {['ESCROW', 'DISPUTED', 'PAID', 'COMPLETED', 'REFUNDED', 'CANCELLED'].map((value) => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                    <button onClick={fetchTransactions} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
+                        <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
             </div>
+
+            {error && <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300">{error}</div>}
 
             <div className="bg-[#101524]/60 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -93,7 +110,7 @@ export default function AdminTransactions() {
                                         <div className="text-xs text-white/30">{new Date(tx.createdAt).toLocaleString()}</div>
                                     </td>
                                     <td className="py-4 px-6 font-mono text-sm text-white font-bold">
-                                        ${tx.price.toFixed(2)}
+                                        {tx.price.toLocaleString('ru-RU')} сум
                                     </td>
                                     <td className="py-4 px-6">
                                         <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${getStatusStyle(tx.status)}`}>
@@ -101,7 +118,7 @@ export default function AdminTransactions() {
                                         </span>
                                     </td>
                                     <td className="py-4 px-6 text-right">
-                                        {(tx.status === 'PAID' || tx.status === 'COMPLETED') && (
+                                        {['PAID', 'COMPLETED', 'ESCROW', 'DISPUTED'].includes(tx.status) && (
                                             <button
                                                 onClick={() => handleRefund(tx.id)}
                                                 title="Оформить возврат"

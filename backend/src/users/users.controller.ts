@@ -4,10 +4,12 @@ import {
   Patch,
   Put,
   Post,
+  Delete,
   Body,
   Param,
   UseGuards,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { UsersService } from './users.service';
@@ -28,12 +30,68 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('me/export')
+  async exportMyData(@Req() req: AuthRequest) {
+    return this.usersService.exportPersonalData(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Patch('me')
   async updateMe(
     @Req() req: AuthRequest,
     @Body() body: { displayName?: string; avatarUrl?: string },
   ) {
     return this.usersService.updateProfile(req.user.userId, body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/avatar')
+  uploadMyAvatar(
+    @Req() req: AuthRequest,
+    @Body() body: { dataUrl?: string },
+  ) {
+    if (!body.dataUrl) {
+      throw new BadRequestException('dataUrl is required');
+    }
+    return this.usersService.uploadAvatar(req.user.userId, body.dataUrl);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('me/avatar')
+  removeMyAvatar(@Req() req: AuthRequest) {
+    return this.usersService.removeAvatar(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/password/status')
+  getPasswordStatus(@Req() req: AuthRequest) {
+    return this.usersService.getPasswordStatus(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('me/password')
+  changePassword(
+    @Req() req: AuthRequest,
+    @Body() body: { currentPassword?: string; newPassword?: string },
+  ) {
+    return this.usersService.changePassword(
+      req.user.userId,
+      body.currentPassword,
+      body.newPassword ?? '',
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/delete')
+  deleteAccount(
+    @Req() req: AuthRequest,
+    @Body() body: { currentPassword?: string; confirmation?: string },
+  ) {
+    return this.usersService.deleteAccount(
+      req.user.userId,
+      body.currentPassword,
+      body.confirmation ?? '',
+    );
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -46,6 +104,24 @@ export class UsersController {
   @Get('me/saved-offers')
   async getMySavedOffers(@Req() req: AuthRequest) {
     return this.usersService.listSavedOffers(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/blocked')
+  blockedUsers(@Req() req: AuthRequest) {
+    return this.usersService.listBlockedUsers(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/block')
+  blockUser(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.usersService.blockUser(req.user.userId, id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/block')
+  unblockUser(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.usersService.unblockUser(req.user.userId, id);
   }
 
   @UseGuards(AuthGuard('jwt'))

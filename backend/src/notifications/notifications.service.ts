@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { BotService } from '../bot/bot.service';
 import * as apn from 'apn';
+import { existsSync, readFileSync } from 'node:fs';
 
 @Injectable()
 export class NotificationsService {
@@ -22,8 +23,9 @@ export class NotificationsService {
     const key = process.env.APN_KEY; // can be path or base64 string
     const keyId = process.env.APN_KEY_ID;
     const teamId = process.env.APN_TEAM_ID;
+    const bundleId = process.env.APN_BUNDLE_ID;
 
-    if (!key || !keyId || !teamId) {
+    if (!key || !keyId || !teamId || !bundleId) {
       this.logger.warn('APNs credentials not fully configured. Push notifications are disabled.');
       return;
     }
@@ -31,16 +33,32 @@ export class NotificationsService {
     try {
       this.apnProvider = new apn.Provider({
         token: {
-          key: Buffer.from(key, 'base64').toString() === key ? key : Buffer.from(key, 'base64'),
+          key: this.resolveApnKey(key),
           keyId: keyId,
           teamId: teamId,
         },
-        production: process.env.NODE_ENV === 'production',
+        production:
+          process.env.APN_PRODUCTION === 'true' ||
+          process.env.NODE_ENV === 'production',
       });
       this.logger.log('APNs Provider initialized successfully.');
     } catch (e: any) {
-      this.logger.error(`Failed to initialize APNs: ${e.message}`);
+      this.logger.error('Failed to initialize APNs provider');
     }
+  }
+
+  private resolveApnKey(value: string): string | Buffer {
+    if (existsSync(value)) {
+      return readFileSync(value);
+    }
+    if (value.includes('BEGIN PRIVATE KEY')) {
+      return value;
+    }
+    const decoded = Buffer.from(value, 'base64');
+    if (decoded.toString('utf8').includes('BEGIN PRIVATE KEY')) {
+      return decoded;
+    }
+    throw new Error('APN_KEY must be a .p8 path, PEM value, or base64-encoded PEM');
   }
 
   async updateDeviceToken(userId: string, token: string) {
@@ -51,11 +69,59 @@ export class NotificationsService {
     return { success: true };
   }
 
-  async sendPushNotification(userId: string, title: string, body: string, payload?: any) {
+  async getPreferences(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { notifyPurchases: true, notifyMessages: true, notifyNearby: true },
+    });
+    return {
+      purchases: user.notifyPurchases,
+      messages: user.notifyMessages,
+      nearby: user.notifyNearby,
+    };
+  }
+
+  async updatePreferences(
+    userId: string,
+    preferences: { purchases?: boolean; messages?: boolean; nearby?: boolean },
+  ) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(typeof preferences.purchases === 'boolean' && { notifyPurchases: preferences.purchases }),
+        ...(typeof preferences.messages === 'boolean' && { notifyMessages: preferences.messages }),
+        ...(typeof preferences.nearby === 'boolean' && { notifyNearby: preferences.nearby }),
+      },
+      select: { notifyPurchases: true, notifyMessages: true, notifyNearby: true },
+    });
+    return {
+      purchases: user.notifyPurchases,
+      messages: user.notifyMessages,
+      nearby: user.notifyNearby,
+    };
+  }
+
+  async sendPushNotification(
+    userId: string,
+    title: string,
+    body: string,
+    payload?: any,
+    explicitCategory?: 'messages' | 'purchases' | 'security',
+  ) {
+    const category = explicitCategory || (payload?.roomId ? 'messages' : 'purchases');
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { deviceToken: true, telegramId: true },
+      select: {
+        deviceToken: true,
+        telegramId: true,
+        notifyPurchases: true,
+        notifyMessages: true,
+      },
     });
+
+    if (!user || (category !== 'security' && (category === 'messages' ? !user.notifyMessages : !user.notifyPurchases))) {
+      return;
+    }
 
     // 1. Send via Telegram if connected
     if (user?.telegramId) {
@@ -72,17 +138,38 @@ export class NotificationsService {
     note.badge = 1;
     note.sound = 'ping.aiff';
     note.alert = { title, body };
-    note.topic = process.env.APN_BUNDLE_ID || 'com.perkly.app'; // Your iOS App Bundle ID
-    if (payload) note.payload = payload;
+    (note as apn.Notification & { category: string }).category =
+      category === 'security'
+        ? 'PERKLY_SECURITY'
+        : category === 'messages'
+          ? 'PERKLY_MESSAGE'
+          : 'PERKLY_PURCHASE';
+    note.topic = process.env.APN_BUNDLE_ID!;
+    note.payload = { ...(payload || {}), notificationType: category };
 
     try {
       const result = await this.apnProvider.send(note, user.deviceToken);
       if (result.failed.length > 0) {
-        this.logger.error(`APNs Send Error: ${JSON.stringify(result.failed)}`);
-        // If token is unregistered, we could remove it from DB
+        const failures = result.failed.map((failure) => ({
+          status: failure.status,
+          reason: failure.response?.reason || failure.error?.message || 'unknown',
+        }));
+        this.logger.error(`APNs delivery failed: ${JSON.stringify(failures)}`);
+
+        const invalidToken = result.failed.some((failure) =>
+          ['BadDeviceToken', 'Unregistered', 'DeviceTokenNotForTopic'].includes(
+            failure.response?.reason || '',
+          ),
+        );
+        if (invalidToken) {
+          await this.prisma.user.updateMany({
+            where: { id: userId, deviceToken: user.deviceToken },
+            data: { deviceToken: null },
+          });
+        }
       }
     } catch (e: any) {
-      this.logger.error(`APNs Exception: ${e.message}`);
+      this.logger.error('APNs delivery exception');
     }
   }
 

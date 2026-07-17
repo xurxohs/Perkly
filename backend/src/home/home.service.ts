@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { REWARD_POINT_VALUE_UZS } from '../common/money';
 import { TtlCache } from '../common/ttl-cache';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { EventsService } from '../events/events.service';
@@ -430,8 +431,27 @@ export class HomeService {
   }
 
   private async loadUnreadChats(userId: string) {
+    const blockRows = await this.prisma.userBlock.findMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+    const blockedIds = blockRows.map((row) =>
+      row.blockerId === userId ? row.blockedId : row.blockerId,
+    );
     const roomIds = await this.prisma.chatRoom.findMany({
-      where: { participants: { some: { id: userId } } },
+      where: {
+        AND: [
+          { participants: { some: { id: userId } } },
+          {
+            OR: [
+              { type: { not: 'DIRECT' } },
+              { participants: { none: { id: { in: blockedIds } } } },
+            ],
+          },
+        ],
+      },
       select: { id: true },
     });
     const ids = roomIds.map((room) => room.id);
@@ -811,7 +831,7 @@ export class HomeService {
       return [
         {
           id: 'daily-value',
-          title: `До $${savingsSummary.todayPotentialSavings.toFixed(0)} выгоды сегодня`,
+          title: `До ${Math.round(savingsSummary.todayPotentialSavings).toLocaleString('ru-RU')} сум выгоды сегодня`,
           subtitle: 'Откройте подборку и заберите лучшие предложения дня',
           imageUrl:
             'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&q=80',
@@ -832,12 +852,14 @@ export class HomeService {
       id: `promo-${offer.id}`,
       title:
         estimatedSavings > 0
-          ? `Сэкономьте $${estimatedSavings.toFixed(0)}`
+          ? `Сэкономьте ${Math.round(estimatedSavings).toLocaleString('ru-RU')} сум`
           : offer.discountPercent
             ? `-${offer.discountPercent}% сегодня`
             : offer.title,
       subtitle: offer.title,
-      imageUrl: offer.vendorLogo || 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&q=80',
+      imageUrl:
+        offer.vendorLogo ||
+        'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&q=80',
       ctaTitle: 'Забрать',
       destinationType: 'offer',
       destinationId: offer.id,
@@ -1003,10 +1025,9 @@ export class HomeService {
       ? dailyBonus.todayReward.points
       : 0;
     const wheelAttempts = wheelStatus?.spinsRemaining ?? 0;
-    const pointsCashValue = lostPoints / 100;
-    const wheelCashValue = wheelAttempts * 0.5;
+    const pointsCashValue = lostPoints * REWARD_POINT_VALUE_UZS;
     const cashValue = this.roundMoney(
-      savingsSummary.expiringSavings + pointsCashValue + wheelCashValue,
+      savingsSummary.expiringSavings + pointsCashValue,
     );
     const expiringOffersCount = flashDrops.filter((offer) => {
       const hoursLeft = this.hoursLeft(offer.expiresAt);
@@ -1021,11 +1042,11 @@ export class HomeService {
       expiringOffersCount,
       title:
         cashValue > 0
-          ? `Не потеряйте $${cashValue.toFixed(cashValue >= 10 ? 0 : 2)} сегодня`
+          ? `Не потеряйте ${Math.round(cashValue).toLocaleString('ru-RU')} сум сегодня`
           : 'Сегодня всё под контролем',
       subtitle:
         cashValue > 0
-          ? 'Сюда входят горящие акции, wheel и daily bonus'
+          ? 'Сюда входят горящие акции и daily bonus'
           : 'Новые потери появятся, когда акции начнут истекать',
       resetAt: dailyBonus?.resetAt ?? wheelStatus?.resetAt ?? null,
     };
@@ -1073,7 +1094,7 @@ export class HomeService {
       topCategory,
       message:
         savedThisWeek > 0
-          ? `За 7 дней Perkly сохранил вам $${this.roundMoney(savedThisWeek).toFixed(savedThisWeek >= 10 ? 0 : 2)}`
+          ? `За 7 дней Perkly сохранил вам ${Math.round(this.roundMoney(savedThisWeek)).toLocaleString('ru-RU')} сум`
           : 'Начните неделю с первого bonus claim и flash drop',
     };
   }
@@ -1090,7 +1111,7 @@ export class HomeService {
         type: 'catalog',
         title: 'Сэкономить',
         subtitle: 'Лучшие акции дня уже собраны',
-        value: `$${savingsSummary.todayPotentialSavings.toFixed(0)}`,
+        value: `${Math.round(savingsSummary.todayPotentialSavings).toLocaleString('ru-RU')} сум`,
         icon: 'sparkles',
         tint: 'purple',
         destination: 'catalog',
@@ -1162,9 +1183,7 @@ export class HomeService {
             ? 'Не потеряйте'
             : 'Выгода под контролем',
         subtitle: input.lostSavings.subtitle,
-        value: `$${input.lostSavings.cashValue.toFixed(
-          input.lostSavings.cashValue >= 10 ? 0 : 2,
-        )}`,
+        value: `${Math.round(input.lostSavings.cashValue).toLocaleString('ru-RU')} сум`,
         icon: 'exclamationmark.triangle.fill',
         tint: input.lostSavings.cashValue > 0 ? 'red' : 'green',
         destination: 'catalog',
@@ -1209,7 +1228,7 @@ export class HomeService {
           input.savingsSummary.todayPotentialSavings > 0
             ? 'Можно забрать сегодня'
             : 'Новые выгоды уже в подборке',
-        value: `$${input.savingsSummary.todayPotentialSavings.toFixed(0)}`,
+        value: `${Math.round(input.savingsSummary.todayPotentialSavings).toLocaleString('ru-RU')} сум`,
         icon: 'arrow.down.circle.fill',
         tint: 'green',
         destination: 'catalog',

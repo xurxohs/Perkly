@@ -5,6 +5,7 @@ import { TransactionStatus } from '../common/enums';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { sellerPayout } from '../common/money';
 
 @Controller('seller')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -70,8 +71,11 @@ export class SellerController {
       },
     });
 
+    const completedVolume = earningsAggregate._sum.price || 0;
+
     return {
-      totalEarnings: earningsAggregate._sum.price || 0,
+      totalEarnings: sellerPayout(completedVolume),
+      completedVolume,
       totalSales: totalSalesCount,
       activeOffers: activeOffersCount,
       activeEvents: eventStats._count.id || 0,
@@ -111,13 +115,27 @@ export class SellerController {
     @Request() req: { user: { userId: string; role?: string } },
     @Query('skip') skip = '0',
     @Query('take') take = '20',
+    @Query('status') status?: string,
   ) {
     const sellerId = req.user.userId;
+    const parsedSkip = Number.parseInt(skip, 10);
+    const parsedTake = Number.parseInt(take, 10);
+    const safeSkip = Number.isFinite(parsedSkip) ? Math.max(0, parsedSkip) : 0;
+    const safeTake = Number.isFinite(parsedTake)
+      ? Math.min(100, Math.max(1, parsedTake))
+      : 20;
+    const allowedStatuses = new Set<string>(Object.values(TransactionStatus));
+    const statusFilter = status && allowedStatuses.has(status) ? status : undefined;
+    const where = {
+      offer: { sellerId },
+      ...(statusFilter ? { status: statusFilter } : {}),
+    };
+
     const [data, total] = await Promise.all([
       this.prisma.transaction.findMany({
-        where: { offer: { sellerId } },
-        skip: parseInt(skip),
-        take: parseInt(take),
+        where,
+        skip: safeSkip,
+        take: safeTake,
         orderBy: { createdAt: 'desc' },
         include: {
           offer: { select: { id: true, title: true, price: true } },
@@ -125,7 +143,7 @@ export class SellerController {
         },
       }),
       this.prisma.transaction.count({
-        where: { offer: { sellerId } },
+        where,
       }),
     ]);
 

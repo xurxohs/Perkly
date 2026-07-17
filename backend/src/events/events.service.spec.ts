@@ -1,5 +1,6 @@
 import { EventsService } from './events.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException } from '@nestjs/common';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -7,6 +8,8 @@ describe('EventsService', () => {
     event: {
       findMany: jest.Mock;
       count: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
     };
     topkaPost: {
       findMany: jest.Mock;
@@ -20,6 +23,8 @@ describe('EventsService', () => {
       event: {
         findMany: jest.fn(),
         count: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
       },
       topkaPost: {
         findMany: jest.fn(),
@@ -46,6 +51,33 @@ describe('EventsService', () => {
 
   afterEach(() => {
     fetchSpy.mockRestore();
+  });
+
+  it('enforces event moderation in the service layer', async () => {
+    await expect(
+      service.createVendorEvent('organizer-1', {
+        title: 'Clean event',
+        description: 'Clean description',
+        fullDescription: 'f.u.c.k',
+        category: 'Концерт',
+        date: new Date('2026-08-01T18:00:00.000Z'),
+        startTime: '18:00',
+        ageLimit: '18+',
+        location: 'Tashkent',
+        address: 'Tashkent',
+        imageUrl: 'https://example.com/event.jpg',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    await expect(
+      service.update({
+        where: { id: 'event-1' },
+        data: { description: { set: 'n@zi gathering' } },
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prisma.event.create).not.toHaveBeenCalled();
+    expect(prisma.event.update).not.toHaveBeenCalled();
   });
 
   it('limits event source queries before merging', async () => {
@@ -128,7 +160,10 @@ describe('EventsService', () => {
     prisma.topkaPost.count.mockResolvedValue(0);
     fetchSpy.mockResolvedValue({
       ok: true,
-      json: async () => ({ updated_at: '2026-01-01T00:00:00.000Z', events: [] }),
+      json: async () => ({
+        updated_at: '2026-01-01T00:00:00.000Z',
+        events: [],
+      }),
     } as unknown as Response);
 
     const result = await service.findAll({

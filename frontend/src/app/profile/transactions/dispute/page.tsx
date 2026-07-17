@@ -34,7 +34,7 @@ function DisputeContent() {
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
-            router.push('/auth/login');
+            router.push('/login');
             return;
         }
 

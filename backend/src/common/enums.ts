@@ -24,6 +24,7 @@ export enum TransactionStatus {
   DISPUTED = 'DISPUTED',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
+  REFUNDED = 'REFUNDED',
 }
 
 export enum DisputeStatus {

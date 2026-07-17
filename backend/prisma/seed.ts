@@ -39,7 +39,7 @@ async function main() {
             {
                 title: 'Telegram Premium на 3 месяца',
                 description: 'Подарочная подписка Telegram Premium на 3 месяца. Код активируется в Telegram.',
-                price: 0.50,
+                price: 6000,
                 category: OfferCategory.SUBSCRIPTIONS,
                 hiddenData: 'https://t.me/giftcode/PERKLY-TELEGRAM-3M',
                 sellerId: systemUser.id,
@@ -50,7 +50,7 @@ async function main() {
             {
                 title: 'Yandex Plus на 6 месяцев',
                 description: 'Активация подписки Яндекс Плюс Мульти на ваш аккаунт',
-                price: 2.00,
+                price: 24000,
                 category: OfferCategory.SUBSCRIPTIONS,
                 hiddenData: 'YANDEX-PLUS-PROMO-6M',
                 sellerId: systemUser.id,
@@ -61,7 +61,7 @@ async function main() {
             {
                 title: 'Netflix Premium на 1 Месяц',
                 description: '1 экран 4K Ultra HD. Подходит для ТВ.',
-                price: 4.99,
+                price: 59880,
                 category: OfferCategory.SUBSCRIPTIONS,
                 hiddenData: 'NETFLIX-ACCOUNT-CREDS-HERE',
                 sellerId: systemUser.id,
@@ -71,7 +71,7 @@ async function main() {
             {
                 title: 'Uzum Market: Скидка 100 000 сум',
                 description: 'Промокод на заказ в Uzum Market от 300 000 сум.',
-                price: 1.50,
+                price: 18000,
                 category: OfferCategory.MARKETPLACES,
                 hiddenData: 'UZUM-PERKLY-100K',
                 sellerId: systemUser.id,
@@ -81,7 +81,7 @@ async function main() {
             {
                 title: 'Uzum Market: Скидка 50 000 сум',
                 description: 'Купон на первый заказ от 200 000 сум в приложении Uzum Market.',
-                price: 0.99,
+                price: 11880,
                 category: OfferCategory.MARKETPLACES,
                 hiddenData: 'UZUM-FIRST-50K',
                 sellerId: systemUser.id,
@@ -92,7 +92,7 @@ async function main() {
             {
                 title: 'Yandex Go: -30% на 3 поездки',
                 description: 'Активируйте промокод и получите скидку на следующие 3 поездки в тарифе Комфорт или Бизнес.',
-                price: 1.20,
+                price: 14400,
                 category: OfferCategory.OTHER,
                 hiddenData: 'YANDEX-GO-30PERCENT',
                 sellerId: systemUser.id,
@@ -102,7 +102,7 @@ async function main() {
             {
                 title: 'Skillbox: Скидка 55% на любой курс',
                 description: 'Уникальный промокод на покупку курсов программирования, дизайна и маркетинга.',
-                price: 5.00,
+                price: 60000,
                 category: OfferCategory.COURSES,
                 hiddenData: 'SKILLBOX-TECH-55',
                 sellerId: systemUser.id,
@@ -112,7 +112,7 @@ async function main() {
             {
                 title: 'PlayStation Plus Essential 1 месяц',
                 description: 'Код подписки PS Plus Essential на 1 месяц для вашего аккаунта.',
-                price: 0.80,
+                price: 9600,
                 category: OfferCategory.GAMES,
                 hiddenData: 'PSPLUS-PERKLY-1M',
                 sellerId: systemUser.id,
@@ -123,7 +123,7 @@ async function main() {
             {
                 title: 'BeFit: Абонемент на 1 месяц',
                 description: 'Гостевой пас (безлимит) на 1 месяц в любой зал BeFit.',
-                price: 15.00,
+                price: 180000,
                 category: OfferCategory.FITNESS,
                 hiddenData: 'BEFIT-1MONTH-FREE',
                 sellerId: systemUser.id,
@@ -131,11 +131,11 @@ async function main() {
                 vendorLogo: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
             },
             {
-                title: 'Steam: Пополнение баланса 10$',
-                description: 'Код на пополнение кошелька Steam на 10 долларов (США/Global).',
-                price: 8.50,
+                title: 'Steam: Пополнение баланса',
+                description: 'Код на пополнение кошелька Steam. Глобальный регион.',
+                price: 102000,
                 category: OfferCategory.GAMES,
-                hiddenData: 'STEAM-WALLET-10USD-XYZ123',
+                hiddenData: 'STEAM-WALLET-GLOBAL-XYZ123',
                 sellerId: systemUser.id,
                 isFlashDrop: false,
                 vendorLogo: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80',
@@ -143,7 +143,7 @@ async function main() {
             {
                 title: 'Telegram Premium 1 Месяц',
                 description: 'Подарочная подписка Telegram Premium на 1 месяц.',
-                price: 2.50,
+                price: 30000,
                 category: OfferCategory.SUBSCRIPTIONS,
                 hiddenData: 'https://t.me/giftcode/XXXX-YYYY-ZZZZ',
                 sellerId: systemUser.id,

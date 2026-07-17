@@ -119,7 +119,7 @@ export class WalletService {
     try {
       return pass.getAsBuffer();
     } catch (error) {
-      this.logger.error('Failed to generate Apple Wallet pass', error);
+      this.logger.error('Failed to generate Apple Wallet pass');
       throw new ServiceUnavailableException(
         'Apple Wallet pass generation failed. Check Wallet certificates.',
       );
@@ -202,7 +202,7 @@ export class WalletService {
             key: 'price',
             label: 'Цена',
             value: price,
-            currencyCode: 'USD',
+            currencyCode: 'UZS',
           },
           {
             key: 'status',
@@ -251,7 +251,7 @@ export class WalletService {
           this.config.get<string>('APPLE_WALLET_KEY_PASSPHRASE') || undefined,
       };
     } catch (error) {
-      this.logger.warn(`Apple Wallet certificates unavailable: ${error}`);
+      this.logger.warn('Apple Wallet certificates unavailable');
       throw new ServiceUnavailableException(
         'Apple Wallet certificates are not configured on this server.',
       );

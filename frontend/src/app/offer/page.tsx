@@ -44,7 +44,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
         openGraph: {
             title: offer.title,
             description: offer.description,
-            images: offer.vendorLogo ? [offer.vendorLogo] : [],
+            images: offer.imageUrl ? [offer.imageUrl] : offer.vendorLogo ? [offer.vendorLogo] : [],
         },
     };
 }
@@ -83,13 +83,13 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                 {/* Left - Image */}
                 <div className="md:col-span-2">
                     <div className="rounded-3xl overflow-hidden aspect-square flex items-center justify-center p-8 transition-transform duration-500 hover:scale-[1.02] bg-white/5 backdrop-blur-3xl border border-white/10 shadow-2xl">
-                        {offer.vendorLogo ? (
+                        {(offer.imageUrl || offer.vendorLogo) ? (
                             <div className="relative w-full h-full">
-                                <Image 
-                                  src={offer.vendorLogo} 
-                                  fill 
-                                  className="object-contain drop-shadow-2xl" 
-                                  alt={offer.title} 
+                                <Image
+                                  src={offer.imageUrl || offer.vendorLogo || ''}
+                                  fill
+                                  className="object-contain drop-shadow-2xl"
+                                  alt={offer.title}
                                 />
                             </div>
                         ) : (
@@ -135,7 +135,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                     {/* Price */}
                     <div className="flex items-baseline gap-3 mb-6">
                         <span className="text-4xl font-black text-gradient-green">
-                            {offer.price === 0 ? 'Бесплатно' : `${offer.price.toFixed(2)}$`}
+                            {offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}
                         </span>
                     </div>
 

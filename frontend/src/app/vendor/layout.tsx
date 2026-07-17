@@ -9,7 +9,8 @@ import {
     LayoutDashboard,
     PackageSearch,
     ShoppingBag,
-    CreditCard,
+    ChartNoAxesCombined,
+    TicketPercent,
     Settings,
     LogOut,
     ChevronRight,
@@ -25,7 +26,7 @@ export default function VendorLayout({
     const { user, loading, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const canUseVendorHub = user?.role === 'VENDOR' || user?.role === 'ADMIN';
 
     // Protect route
@@ -37,13 +38,20 @@ export default function VendorLayout({
         }
     }, [user, loading, canUseVendorHub, router]);
 
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 768px)');
+        const frame = window.requestAnimationFrame(() => setIsSidebarOpen(media.matches));
+        return () => window.cancelAnimationFrame(frame);
+    }, []);
+
     if (loading || !user || !canUseVendorHub) return null;
 
     const navItems = [
-        { name: 'Дашборд', path: '/vendor', icon: LayoutDashboard },
-        { name: 'Мои Товары', path: '/vendor/products', icon: PackageSearch },
+        { name: 'Обзор', path: '/vendor', icon: LayoutDashboard },
+        { name: 'Товары', path: '/vendor/products', icon: PackageSearch },
+        { name: 'Промокоды', path: '/vendor/promocodes', icon: TicketPercent },
         { name: 'Заказы', path: '/vendor/orders', icon: ShoppingBag },
-        { name: 'Выплаты', path: '/vendor/analytics', icon: CreditCard },
+        { name: 'Аналитика', path: '/vendor/analytics', icon: ChartNoAxesCombined },
         { name: 'Настройки', path: '/vendor/settings', icon: Settings },
     ];
 
@@ -56,8 +64,16 @@ export default function VendorLayout({
             </div>
 
             {/* Sidebar - Liquid Glass Style */}
+            {isSidebarOpen && (
+                <button
+                    className="fixed inset-0 z-30 bg-black/55 backdrop-blur-sm md:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                    aria-label="Закрыть меню"
+                />
+            )}
+
             <aside
-                className={`${isSidebarOpen ? 'w-72' : 'w-24'} transition-all duration-500 ease-in-out relative z-20 flex flex-col bg-white/5 backdrop-blur-[30px] border-r border-white/5 shadow-2xl`}
+                className={`${isSidebarOpen ? 'translate-x-0 md:w-72' : '-translate-x-full md:translate-x-0 md:w-24'} fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-white/5 bg-[#0d1220]/95 shadow-2xl backdrop-blur-[30px] transition-all duration-500 ease-in-out md:relative`}
             >
                 {/* Logo Area */}
                 <div className="p-8 flex items-center justify-between border-b border-white/5">
@@ -100,11 +116,16 @@ export default function VendorLayout({
                 {/* Navigation Area */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto mt-4">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.path;
+                        const isActive = item.path === '/vendor'
+                            ? pathname === item.path
+                            : pathname.startsWith(item.path);
                         return (
                             <Link
                                 key={item.name}
                                 href={item.path}
+                                onClick={() => {
+                                    if (window.innerWidth < 768) setIsSidebarOpen(false);
+                                }}
                                 className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 no-underline group ${isActive ? 'text-white bg-white/10 shadow-inner-border' : 'text-white/60 hover:text-white'}`}
                             >
                                 <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-purple-400' : 'group-hover:text-white/90'}`} />
@@ -133,10 +154,17 @@ export default function VendorLayout({
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 relative z-10 overflow-y-auto min-h-screen">
-                <div className="max-w-7xl mx-auto p-8 lg:p-12">
+            <main className="flex-1 relative z-10 overflow-y-auto min-h-screen min-w-0">
+                <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-12">
                     {/* Minimalist Top Header info */}
-                    <header className="flex justify-end items-center mb-10 pb-6 border-b border-white/5">
+                    <header className="flex justify-between items-center mb-8 pb-5 border-b border-white/5">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-white/70 md:hidden"
+                            aria-label="Открыть меню"
+                        >
+                            <Menu className="h-5 w-5" />
+                        </button>
                         <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full border border-white/5">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 p-[2px] relative overflow-hidden">
                                 <Image 

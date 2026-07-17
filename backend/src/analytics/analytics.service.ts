@@ -50,9 +50,7 @@ export class AnalyticsService {
           metadata: data.metadata || null,
         },
       });
-      this.logger.log(
-        `Event tracked: ${data.eventType} (user: ${data.userId || 'anon'}, session: ${data.sessionId || 'none'})`,
-      );
+      this.logger.log(`Event tracked: ${data.eventType}`);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return event;
     } catch (error) {
@@ -89,7 +87,7 @@ export class AnalyticsService {
       this.adminTelegramId,
       message,
     );
-    this.logger.log(`Admin notified about new user: ${user.email}`);
+    this.logger.log('Admin notified about new user');
   }
 
   async sendToGoogleSheetsWebhook(user: UserData) {
@@ -119,9 +117,7 @@ export class AnalyticsService {
       if (!response.ok) {
         this.logger.warn(`Webhook responded with status ${response.status}`);
       } else {
-        this.logger.log(
-          `User data sent to Google Sheets webhook: ${user.email}`,
-        );
+        this.logger.log('User registration sent to configured webhook');
       }
     } catch (error) {
       this.logger.error(

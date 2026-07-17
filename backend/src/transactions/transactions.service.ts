@@ -9,13 +9,20 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { Promocode, PromocodeActivation, Transaction } from '@prisma/client';
+import {
+  Prisma,
+  Promocode,
+  PromocodeActivation,
+  Transaction,
+} from '@prisma/client';
 import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
 import {
   PURCHASED_OFFER_SELECT,
   USER_ADMIN_SELECT,
 } from '../offers/offer.selects';
+import { REWARD_POINT_VALUE_UZS, sellerPayout } from '../common/money';
+import { randomBytes } from 'crypto';
 
 type PurchaseOffer = {
   id: string;
@@ -60,7 +67,18 @@ export class TransactionsService {
     isGift = false,
     pointsUsed = 0,
     promocodeActivationId?: string,
+    idempotencyKey?: string,
   ): Promise<Transaction> {
+    const normalizedIdempotencyKey = idempotencyKey?.trim()
+      ? `purchase:${buyerId}:${idempotencyKey.trim().slice(0, 120)}`
+      : undefined;
+    if (normalizedIdempotencyKey) {
+      const existing = await this.prisma.transaction.findUnique({
+        where: { idempotencyKey: normalizedIdempotencyKey },
+        include: { offer: { select: PURCHASED_OFFER_SELECT } },
+      });
+      if (existing) return existing;
+    }
     // Find offer
     const offer = await this.prisma.offer.findUnique({
       where: { id: offerId },
@@ -92,12 +110,12 @@ export class TransactionsService {
     if (normalizedPoints > buyer.rewardPoints) {
       throw new BadRequestException('Not enough reward points');
     }
-    const requestedPointsDiscount = normalizedPoints / 100;
+    const requestedPointsDiscount = normalizedPoints * REWARD_POINT_VALUE_UZS;
     const maxPointsDiscount = priceAfterPromo * 0.5;
     const pointsDiscount = Math.min(requestedPointsDiscount, maxPointsDiscount);
-    const pointsToSpend = Math.floor(pointsDiscount * 100);
-    const finalPrice = Number(
-      Math.max(0, priceAfterPromo - pointsDiscount).toFixed(2),
+    const pointsToSpend = Math.floor(pointsDiscount / REWARD_POINT_VALUE_UZS);
+    const finalPrice = Math.round(
+      Math.max(0, priceAfterPromo - pointsDiscount),
     );
 
     if (buyer.balance < finalPrice) {
@@ -105,75 +123,116 @@ export class TransactionsService {
     }
 
     // Execute transaction atomically
-    const transaction = await this.prisma.$transaction(async (tx) => {
-      if (promo) {
-        const updatedActivation = await tx.promocodeActivation.updateMany({
-          where: {
-            id: promo.activationId,
-            userId: buyerId,
-            status: { in: ['ISSUED', 'COPIED'] },
-          },
+    let transaction: Transaction;
+    try {
+      transaction = await this.prisma.$transaction(async (tx) => {
+        if (promo) {
+          const updatedActivation = await tx.promocodeActivation.updateMany({
+            where: {
+              id: promo.activationId,
+              userId: buyerId,
+              status: { in: ['ISSUED', 'COPIED'] },
+            },
+            data: {
+              status: 'USED',
+              usedAt: new Date(),
+            },
+          });
+
+          if (updatedActivation.count !== 1) {
+            throw new BadRequestException(
+              'Promocode activation is already used',
+            );
+          }
+        }
+
+        // Conditional debit prevents concurrent purchases from making the
+        // balance negative after both requests pass the initial read.
+        const debit = await tx.user.updateMany({
+          where: { id: buyerId, balance: { gte: finalPrice } },
+          data: { balance: { decrement: finalPrice } },
+        });
+        if (debit.count !== 1) {
+          throw new BadRequestException('Insufficient balance');
+        }
+
+        // Add reward points to buyer (1 point per unit, +15% if squad reward active)
+        const baseRewardPoints = Math.floor(finalPrice / 12000);
+        const extraPoints = buyer.hasSquadReward
+          ? Math.floor(baseRewardPoints * 0.15)
+          : 0;
+        await tx.user.update({
+          where: { id: buyerId },
           data: {
-            status: 'USED',
-            usedAt: new Date(),
+            rewardPoints: {
+              increment: baseRewardPoints + extraPoints - pointsToSpend,
+            },
+            ...(buyer.hasSquadReward ? { hasSquadReward: false } : {}),
           },
         });
 
-        if (updatedActivation.count !== 1) {
-          throw new BadRequestException('Promocode activation is already used');
-        }
-      }
+        // Calculate expiresAt if the offer has a period
+        const expiresAt =
+          offer.periodDays > 0
+            ? new Date(Date.now() + offer.periodDays * 24 * 60 * 60 * 1000)
+            : null;
 
-      // Deduct buyer balance
-      await tx.user.update({
-        where: { id: buyerId },
-        data: { balance: { decrement: finalPrice } },
-      });
-
-      // Add reward points to buyer (1 point per unit, +15% if squad reward active)
-      const extraPoints = buyer.hasSquadReward
-        ? Math.floor(finalPrice * 0.15)
-        : 0;
-      await tx.user.update({
-        where: { id: buyerId },
-        data: {
-          rewardPoints: {
-            increment: Math.floor(finalPrice) + extraPoints - pointsToSpend,
-          },
-          ...(buyer.hasSquadReward ? { hasSquadReward: false } : {}),
-        },
-      });
-
-      // Calculate expiresAt if the offer has a period
-      const expiresAt =
-        offer.periodDays > 0
-          ? new Date(Date.now() + offer.periodDays * 24 * 60 * 60 * 1000)
+        // Generate gift code if requested
+        const giftCode = isGift
+          ? randomBytes(9).toString('base64url').slice(0, 12).toUpperCase()
           : null;
 
-      // Generate gift code if requested
-      const giftCode = isGift
-        ? Math.random().toString(36).substring(2, 10).toUpperCase()
-        : null;
+        // Create transaction record
+        const created = await tx.transaction.create({
+          data: {
+            offerId,
+            buyerId,
+            price: finalPrice,
+            status: TransactionStatus.ESCROW,
+            expiresAt,
+            isGift,
+            giftCode,
+            promocodeActivationId: promo?.activationId,
+            promocodeDiscount: promo?.discountAmount,
+            promocodeCodeSnapshot: promo?.code,
+            idempotencyKey: normalizedIdempotencyKey,
+          },
+          include: {
+            offer: { select: PURCHASED_OFFER_SELECT },
+          },
+        });
 
-      // Create transaction record
-      return tx.transaction.create({
-        data: {
-          offerId,
-          buyerId,
-          price: finalPrice,
-          status: TransactionStatus.ESCROW,
-          expiresAt,
-          isGift,
-          giftCode,
-          promocodeActivationId: promo?.activationId,
-          promocodeDiscount: promo?.discountAmount,
-          promocodeCodeSnapshot: promo?.code,
-        },
-        include: {
-          offer: { select: PURCHASED_OFFER_SELECT },
-        },
+        const balance = await tx.user.findUniqueOrThrow({
+          where: { id: buyerId },
+          select: { balance: true },
+        });
+        await tx.financialEntry.create({
+          data: {
+            userId: buyerId,
+            transactionId: created.id,
+            type: 'PURCHASE_DEBIT',
+            amount: -finalPrice,
+            balanceAfter: balance.balance,
+            idempotencyKey: `purchase-debit:${created.id}`,
+            metadata: JSON.stringify({ offerId, isGift }),
+          },
+        });
+        return created;
       });
-    });
+    } catch (error) {
+      if (
+        normalizedIdempotencyKey &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existing = await this.prisma.transaction.findUnique({
+          where: { idempotencyKey: normalizedIdempotencyKey },
+          include: { offer: { select: PURCHASED_OFFER_SELECT } },
+        });
+        if (existing) return existing;
+      }
+      throw error;
+    }
 
     const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
     const inlineKeyboard = {
@@ -188,9 +247,9 @@ export class TransactionsService {
     };
 
     // Try to notify the buyer
-    let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за $${finalPrice}.`;
+    let message = `🎉 *Покупка успешна!*\n\nВы приобрели "${offer.title}" за ${finalPrice.toLocaleString('ru-RU')} сум.`;
     if (promo) {
-      message += `\nПромокод: ${promo.label} (-$${promo.discountAmount}).`;
+      message += `\nПромокод: ${promo.label} (-${promo.discountAmount.toLocaleString('ru-RU')} сум).`;
     }
     message += `\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
 
@@ -223,7 +282,7 @@ export class TransactionsService {
           ],
         ],
       };
-      const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства ($${finalPrice}) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
+      const message = `💰 *Новая продажа!*\n\nВаш товар "${offer.title}" куплен.\n\n🛡 *Сделка защищена Эскроу.*\nСредства (${finalPrice.toLocaleString('ru-RU')} сум) будут зачислены на ваш баланс после того, как покупатель подтвердит получение товара.\n\n_Проверьте вкладку "Заказы" в панели продавца._`;
       await this.notificationsService.sendPushNotification(
         seller.id,
         '💰 Новая продажа!',
@@ -401,7 +460,7 @@ export class TransactionsService {
       throw new BadRequestException('Promocode discount is invalid');
     }
 
-    const discountAmount = Number(((amount * percent) / 100).toFixed(2));
+    const discountAmount = Math.round((amount * percent) / 100);
 
     return {
       activationId: activation.id,
@@ -409,7 +468,7 @@ export class TransactionsService {
       label: activation.promocode.title,
       percent,
       discountAmount,
-      finalAmount: Number(Math.max(0, amount - discountAmount).toFixed(2)),
+      finalAmount: Math.round(Math.max(0, amount - discountAmount)),
     };
   }
 
@@ -425,19 +484,39 @@ export class TransactionsService {
     if (transaction.status !== (TransactionStatus.ESCROW as string))
       throw new BadRequestException('Transaction is not in escrow');
 
+    const payout = sellerPayout(transaction.price);
     const updatedTx = await this.prisma.$transaction(async (tx) => {
+      const transition = await tx.transaction.updateMany({
+        where: { id, status: TransactionStatus.ESCROW },
+        data: { status: TransactionStatus.COMPLETED },
+      });
+      if (transition.count !== 1) {
+        throw new BadRequestException('Transaction is no longer in escrow');
+      }
+
       // Credit seller balance
-      await tx.user.update({
+      const seller = await tx.user.update({
         where: { id: transaction.offer.sellerId },
-        data: { balance: { increment: transaction.price } },
+        data: { balance: { increment: payout } },
+        select: { balance: true },
       });
 
       // Update tx
-      return tx.transaction.update({
+      const completed = await tx.transaction.findUniqueOrThrow({
         where: { id },
-        data: { status: TransactionStatus.COMPLETED },
         include: { offer: true, buyer: true },
       });
+      await tx.financialEntry.create({
+        data: {
+          userId: transaction.offer.sellerId,
+          transactionId: id,
+          type: 'ESCROW_RELEASE',
+          amount: payout,
+          balanceAfter: seller.balance,
+          idempotencyKey: `escrow-release:${id}`,
+        },
+      });
+      return completed;
     });
 
     // Notify seller
@@ -445,7 +524,7 @@ export class TransactionsService {
       where: { id: transaction.offer.sellerId },
     });
     if (seller) {
-      const message = `✅ *Покупатель подтвердил получение!*\n\nСделка по "${transaction.offer.title}" успешно завершена.\nСредства ($${transaction.price}) зачислены на ваш баланс.`;
+      const message = `✅ *Покупатель подтвердил получение!*\n\nСделка по "${transaction.offer.title}" успешно завершена.\nСредства (${payout.toLocaleString('ru-RU')} сум) зачислены на ваш баланс.`;
       await this.notificationsService.sendPushNotification(
         seller.id,
         '✅ Покупатель подтвердил получение!',
@@ -550,15 +629,38 @@ export class TransactionsService {
       }
 
       const transaction = await this.prisma.$transaction(async (tx) => {
-        await tx.user.update({
+        const buyer = await tx.user.update({
           where: { id: existing.buyerId },
           data: { balance: { increment: existing.price } },
+          select: { balance: true },
+        });
+        await tx.financialEntry.create({
+          data: {
+            userId: existing.buyerId,
+            transactionId: id,
+            type: 'PURCHASE_REFUND',
+            amount: existing.price,
+            balanceAfter: buyer.balance,
+            idempotencyKey: `purchase-refund:${id}`,
+          },
         });
 
         if (existing.status === TransactionStatus.COMPLETED) {
-          await tx.user.update({
+          const payout = sellerPayout(existing.price);
+          const seller = await tx.user.update({
             where: { id: existing.offer.sellerId },
-            data: { balance: { decrement: existing.price } },
+            data: { balance: { decrement: payout } },
+            select: { balance: true },
+          });
+          await tx.financialEntry.create({
+            data: {
+              userId: existing.offer.sellerId,
+              transactionId: id,
+              type: 'SELLER_PAYOUT_REVERSAL',
+              amount: -payout,
+              balanceAfter: seller.balance,
+              idempotencyKey: `seller-payout-reversal:${id}`,
+            },
           });
         }
 

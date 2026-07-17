@@ -1,54 +1,79 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import {
-  ADMIN_OFFER_SELECT,
-  USER_ADMIN_SELECT,
-} from '../offers/offer.selects';
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { ADMIN_OFFER_SELECT, USER_ADMIN_SELECT } from '../offers/offer.selects';
+import {
+  isValidOfferPriceUzs,
+  isWholeUzsAmount,
+  MAX_OFFER_PRICE_UZS,
+  MAX_WALLET_BALANCE_UZS,
+  MIN_PAID_OFFER_PRICE_UZS,
+  platformFee,
+  sellerPayout,
+} from '../common/money';
+import { randomUUID } from 'crypto';
+import { Prisma } from '@prisma/client';
+import { assertAcceptableUserContent } from '../common/content-moderation';
 
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
   async getDashboardStats() {
-    const usersCount = await this.prisma.user.count();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const newUsersToday = await this.prisma.user.count({
-      where: { createdAt: { gte: today } },
-    });
-
-    const activeOffersCount = await this.prisma.offer.count({
-      where: { isActive: true },
-    });
-
-    // Total volume of COMPLETED and PAID transactions
-    const totalVolumeResult = await this.prisma.transaction.aggregate({
-      _sum: { price: true },
-      where: { status: { in: ['COMPLETED', 'PAID'] } },
-    });
+    const [
+      usersCount,
+      newUsersToday,
+      activeOffersCount,
+      totalVolumeResult,
+      openDisputesCount,
+      pendingCompaniesCount,
+      openReportsCount,
+      openAppealsCount,
+      diagnosticOccurrences,
+      recentTransactions,
+      recentUsers,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { createdAt: { gte: today } } }),
+      this.prisma.offer.count({ where: { isActive: true } }),
+      this.prisma.transaction.aggregate({
+        _sum: { price: true },
+        where: { status: { in: ['COMPLETED', 'PAID'] } },
+      }),
+      this.prisma.dispute.count({ where: { status: 'OPEN' } }),
+      this.prisma.company.count({
+        where: { status: 'PENDING_MODERATION' },
+      }),
+      this.prisma.moderationReport.count({
+        where: { status: { in: ['OPEN', 'REVIEWING'] } },
+      }),
+      this.prisma.moderationAppeal.count({
+        where: { status: { in: ['OPEN', 'REVIEWING'] } },
+      }),
+      this.prisma.diagnosticIssue.aggregate({
+        _sum: { occurrences: true },
+      }),
+      this.prisma.transaction.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          buyer: { select: USER_ADMIN_SELECT },
+          offer: { select: ADMIN_OFFER_SELECT },
+        },
+      }),
+      this.prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: USER_ADMIN_SELECT,
+      }),
+    ]);
     const totalVolume = totalVolumeResult._sum.price || 0;
-
-    const openDisputesCount = await this.prisma.dispute.count({
-      where: { status: 'OPEN' },
-    });
-
-    // Platform income: assumed as 5% of total volume
-    const platformIncome = totalVolume * 0.05;
-
-    const recentTransactions = await this.prisma.transaction.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        buyer: { select: USER_ADMIN_SELECT },
-        offer: { select: ADMIN_OFFER_SELECT },
-      },
-    });
-
-    const recentUsers = await this.prisma.user.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      select: USER_ADMIN_SELECT,
-    });
+    const platformIncome = platformFee(totalVolume);
 
     return {
       usersCount,
@@ -56,6 +81,10 @@ export class AdminService {
       activeOffersCount,
       totalVolume,
       openDisputesCount,
+      pendingCompaniesCount,
+      openReportsCount,
+      openAppealsCount,
+      diagnosticOccurrences: diagnosticOccurrences._sum.occurrences ?? 0,
       platformIncome,
       recentTransactions,
       recentUsers,
@@ -64,6 +93,8 @@ export class AdminService {
 
   // User Management
   async getAllUsers(page = 1, limit = 20, search = '') {
+    page = this.page(page);
+    limit = this.limit(limit);
     const skip = (page - 1) * limit;
     const where = search
       ? {
@@ -87,47 +118,224 @@ export class AdminService {
     return { users, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateUser(id: string, data: any, adminId: string) {
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: {
-        role: data.role,
-        tier: data.tier,
-        balance: data.balance,
-      },
-    });
+  async updateUser(
+    id: string,
+    data: { role?: unknown; tier?: unknown; balance?: unknown },
+    adminId: string,
+  ) {
+    const roles = new Set(['USER', 'VENDOR', 'ADMIN']);
+    const tiers = new Set(['SILVER', 'GOLD', 'PLATINUM']);
+    if (
+      data.role !== undefined &&
+      (typeof data.role !== 'string' || !roles.has(data.role))
+    ) {
+      throw new BadRequestException('Invalid role');
+    }
+    if (
+      data.tier !== undefined &&
+      (typeof data.tier !== 'string' || !tiers.has(data.tier))
+    ) {
+      throw new BadRequestException('Invalid tier');
+    }
+    if (
+      data.balance !== undefined &&
+      !isWholeUzsAmount(data.balance, {
+        min: 0,
+        max: MAX_WALLET_BALANCE_UZS,
+      })
+    ) {
+      throw new BadRequestException(
+        `Balance must be a whole UZS amount between 0 and ${MAX_WALLET_BALANCE_UZS.toLocaleString('en-US')}`,
+      );
+    }
+    if (
+      data.role === undefined &&
+      data.tier === undefined &&
+      data.balance === undefined
+    ) {
+      throw new BadRequestException('No supported user fields supplied');
+    }
 
-    await this.prisma.adminLog.create({
-      data: {
-        adminId,
-        action: 'UPDATE_USER',
-        targetId: id,
-        details: JSON.stringify(data),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.user.findUnique({
+        where: { id },
+        select: { balance: true },
+      });
+      if (!current) throw new NotFoundException('User not found');
+      const user = await tx.user.update({
+        where: { id },
+        data: {
+          ...(data.role !== undefined ? { role: data.role as string } : {}),
+          ...(data.tier !== undefined ? { tier: data.tier as string } : {}),
+          ...(data.balance !== undefined
+            ? { balance: data.balance as number }
+            : {}),
+        },
+        select: USER_ADMIN_SELECT,
+      });
+      if (data.balance !== undefined && data.balance !== current.balance) {
+        await tx.financialEntry.create({
+          data: {
+            userId: id,
+            type: 'ADMIN_BALANCE_ADJUSTMENT',
+            amount: (data.balance as number) - current.balance,
+            balanceAfter: data.balance as number,
+            idempotencyKey: `admin-adjustment:${id}:${randomUUID()}`,
+            metadata: JSON.stringify({
+              adminId,
+              previousBalance: current.balance,
+            }),
+          },
+        });
+      }
+      await tx.adminLog.create({
+        data: {
+          adminId,
+          action: 'UPDATE_USER',
+          targetId: id,
+          details: JSON.stringify({
+            role: data.role,
+            tier: data.tier,
+            balance: data.balance,
+          }),
+        },
+      });
+      return user;
     });
-
-    return user;
   }
 
   // Offers/Products Management
-  async getAllOffers(page = 1, limit = 20) {
+  async getAllOffers(page = 1, limit = 20, search = '', status = '') {
+    page = this.page(page);
+    limit = this.limit(limit);
     const skip = (page - 1) * limit;
+    const where: Prisma.OfferWhereInput = {};
+    const normalizedSearch = search.trim();
+    if (normalizedSearch) {
+      where.OR = [
+        {
+          title: {
+            contains: normalizedSearch,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          category: {
+            contains: normalizedSearch,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          seller: {
+            is: {
+              OR: [
+                {
+                  email: {
+                    contains: normalizedSearch,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+                {
+                  displayName: {
+                    contains: normalizedSearch,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ];
+    }
+    if (status === 'ACTIVE') where.isActive = true;
+    if (status === 'INACTIVE') where.isActive = false;
     const [offers, total] = await Promise.all([
       this.prisma.offer.findMany({
+        where,
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
         select: ADMIN_OFFER_SELECT,
       }),
-      this.prisma.offer.count(),
+      this.prisma.offer.count({ where }),
     ]);
     return { offers, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateOffer(id: string, data: any, adminId: string) {
+  async updateOffer(
+    id: string,
+    data: {
+      title?: unknown;
+      description?: unknown;
+      price?: unknown;
+      discountPercent?: unknown;
+      category?: unknown;
+      isActive?: unknown;
+      isFlashDrop?: unknown;
+      isExclusive?: unknown;
+    },
+    adminId: string,
+  ) {
+    const update: Prisma.OfferUpdateInput = {};
+    if (data.title !== undefined) {
+      if (typeof data.title !== 'string' || !data.title.trim()) {
+        throw new BadRequestException('title is required');
+      }
+      assertAcceptableUserContent(data.title, 'Offer title');
+      update.title = data.title.trim().slice(0, 200);
+    }
+    if (data.description !== undefined) {
+      if (typeof data.description !== 'string' || !data.description.trim()) {
+        throw new BadRequestException('description is required');
+      }
+      assertAcceptableUserContent(data.description, 'Offer description');
+      update.description = data.description.trim().slice(0, 5_000);
+    }
+    if (data.price !== undefined) {
+      if (!isValidOfferPriceUzs(data.price)) {
+        throw new BadRequestException(
+          `price must be 0 or ${MIN_PAID_OFFER_PRICE_UZS.toLocaleString('en-US')}..${MAX_OFFER_PRICE_UZS.toLocaleString('en-US')} UZS`,
+        );
+      }
+      update.price = data.price;
+    }
+    if (data.discountPercent !== undefined) {
+      if (
+        typeof data.discountPercent !== 'number' ||
+        !Number.isInteger(data.discountPercent) ||
+        data.discountPercent < 0 ||
+        data.discountPercent > 100
+      ) {
+        throw new BadRequestException(
+          'discountPercent must be an integer between 0 and 100',
+        );
+      }
+      update.discountPercent = data.discountPercent;
+    }
+    if (data.category !== undefined) {
+      if (
+        typeof data.category !== 'string' ||
+        !/^[A-Z][A-Z0-9_]{1,39}$/.test(data.category.trim().toUpperCase())
+      ) {
+        throw new BadRequestException('Invalid category');
+      }
+      update.category = data.category.trim().toUpperCase();
+    }
+    for (const field of ['isActive', 'isFlashDrop', 'isExclusive'] as const) {
+      if (data[field] !== undefined) {
+        if (typeof data[field] !== 'boolean') {
+          throw new BadRequestException(`${field} must be a boolean`);
+        }
+        update[field] = data[field];
+      }
+    }
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException('No supported offer fields supplied');
+    }
     const offer = await this.prisma.offer.update({
       where: { id },
-      data: { isActive: data.isActive },
+      data: update,
+      select: ADMIN_OFFER_SELECT,
     });
     await this.prisma.adminLog.create({
       data: {
@@ -141,18 +349,51 @@ export class AdminService {
   }
 
   async deleteOffer(id: string, adminId: string) {
-    const offer = await this.prisma.offer.delete({ where: { id } });
+    const offer = await this.prisma.offer.update({
+      where: { id },
+      data: { isActive: false },
+    });
     await this.prisma.adminLog.create({
-      data: { adminId, action: 'DELETE_OFFER', targetId: id },
+      data: { adminId, action: 'ARCHIVE_OFFER', targetId: id },
     });
     return offer;
   }
 
   // Transactions
-  async getAllTransactions(page = 1, limit = 20) {
+  async getAllTransactions(page = 1, limit = 20, status = '', search = '') {
+    page = this.page(page);
+    limit = this.limit(limit);
     const skip = (page - 1) * limit;
+    const where: Prisma.TransactionWhereInput = {};
+    if (status.trim()) where.status = status.trim().toUpperCase();
+    const normalizedSearch = search.trim();
+    if (normalizedSearch) {
+      where.OR = [
+        {
+          offer: {
+            is: {
+              title: {
+                contains: normalizedSearch,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        },
+        {
+          buyer: {
+            is: {
+              email: {
+                contains: normalizedSearch,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        },
+      ];
+    }
     const [transactions, total] = await Promise.all([
       this.prisma.transaction.findMany({
+        where,
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
@@ -161,7 +402,7 @@ export class AdminService {
           offer: { select: ADMIN_OFFER_SELECT },
         },
       }),
-      this.prisma.transaction.count(),
+      this.prisma.transaction.count({ where }),
     ]);
     return { transactions, total, page, totalPages: Math.ceil(total / limit) };
   }
@@ -174,29 +415,73 @@ export class AdminService {
         offer: { select: ADMIN_OFFER_SELECT },
       },
     });
-    if (!tx || (tx.status !== 'COMPLETED' && tx.status !== 'PAID')) {
+    const refundableStatuses = ['COMPLETED', 'PAID', 'ESCROW', 'DISPUTED'];
+    if (!tx || !refundableStatuses.includes(tx.status)) {
       throw new NotFoundException('Transaction not valid for refund');
     }
 
     // Process refund logic using transactions (prisma.$transaction) to ensure atomicity
     await this.prisma.$transaction(async (prisma) => {
-      // 1. Mark status as CANCELLED
-      await prisma.transaction.update({
-        where: { id },
-        data: { status: 'CANCELLED' },
+      const transition = await prisma.transaction.updateMany({
+        where: { id, status: { in: refundableStatuses } },
+        data: { status: 'REFUNDED' },
       });
+      if (transition.count !== 1) {
+        throw new BadRequestException('Transaction was already refunded');
+      }
 
-      // 2. Refund buyer
-      await prisma.user.update({
-        where: { id: tx.buyerId },
+      const buyerCredit = await prisma.user.updateMany({
+        where: {
+          id: tx.buyerId,
+          balance: { lte: MAX_WALLET_BALANCE_UZS - tx.price },
+        },
         data: { balance: { increment: tx.price } },
       });
+      if (buyerCredit.count !== 1) {
+        throw new BadRequestException('Buyer wallet balance limit exceeded');
+      }
+      const buyer = await prisma.user.findUniqueOrThrow({
+        where: { id: tx.buyerId },
+        select: { balance: true },
+      });
+      await prisma.financialEntry.create({
+        data: {
+          userId: tx.buyerId,
+          transactionId: id,
+          type: 'ADMIN_REFUND',
+          amount: tx.price,
+          balanceAfter: buyer.balance,
+          idempotencyKey: `admin-refund:${id}`,
+          metadata: JSON.stringify({ adminId }),
+        },
+      });
 
-      // 3. Deduct from seller (ignoring platform fee logic for now, or deducting what they earned)
-      if (tx.offer?.sellerId) {
-        await prisma.user.update({
+      if (tx.status === 'COMPLETED' && tx.offer?.sellerId) {
+        const payout = sellerPayout(tx.price);
+        const currentSeller = await prisma.user.findUniqueOrThrow({
           where: { id: tx.offer.sellerId },
-          data: { balance: { decrement: tx.price * 0.95 } }, // assuming 5% fee was taken
+          select: { balance: true },
+        });
+        const actualReversal = Math.min(payout, currentSeller.balance);
+        const seller = await prisma.user.update({
+          where: { id: tx.offer.sellerId },
+          data: { balance: { decrement: actualReversal } },
+          select: { balance: true },
+        });
+        await prisma.financialEntry.create({
+          data: {
+            userId: tx.offer.sellerId,
+            transactionId: id,
+            type: 'ADMIN_PAYOUT_REVERSAL',
+            amount: -actualReversal,
+            balanceAfter: seller.balance,
+            idempotencyKey: `admin-payout-reversal:${id}`,
+            metadata: JSON.stringify({
+              adminId,
+              expectedReversal: payout,
+              shortfall: payout - actualReversal,
+            }),
+          },
         });
       }
 
@@ -215,10 +500,16 @@ export class AdminService {
   }
 
   // Disputes
-  async getAllDisputes(page = 1, limit = 20) {
+  async getAllDisputes(page = 1, limit = 20, status = '') {
+    page = this.page(page);
+    limit = this.limit(limit);
     const skip = (page - 1) * limit;
+    const where = status.trim()
+      ? { status: status.trim().toUpperCase() }
+      : undefined;
     const [disputes, total] = await Promise.all([
       this.prisma.dispute.findMany({
+        where,
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
@@ -231,7 +522,7 @@ export class AdminService {
           },
         },
       }),
-      this.prisma.dispute.count(),
+      this.prisma.dispute.count({ where }),
     ]);
     return { disputes, total, page, totalPages: Math.ceil(total / limit) };
   }
@@ -240,60 +531,178 @@ export class AdminService {
     id: string,
     resolution: 'BUYER' | 'SELLER',
     adminId: string,
+    adminNote?: string,
   ) {
     const dispute = await this.prisma.dispute.findUnique({
       where: { id },
       include: { transaction: true },
     });
     if (!dispute) throw new NotFoundException('Dispute not found');
+    if (dispute.status !== 'OPEN') {
+      throw new BadRequestException('Dispute is already resolved');
+    }
+    if (resolution !== 'BUYER' && resolution !== 'SELLER') {
+      throw new BadRequestException('Invalid dispute resolution');
+    }
 
+    const normalizedNote = adminNote?.trim().slice(0, 2_000) || null;
     await this.prisma.$transaction(async (prisma) => {
-      // 1. Close dispute
-      await prisma.dispute.update({
-        where: { id },
-        data: { status: 'CLOSED' },
+      const transition = await prisma.dispute.updateMany({
+        where: { id, status: 'OPEN' },
+        data: {
+          status: 'RESOLVED',
+          resolution,
+          adminNote: normalizedNote,
+          resolvedBy: adminId,
+          resolvedAt: new Date(),
+        },
       });
+      if (transition.count !== 1) {
+        throw new BadRequestException('Dispute is already resolved');
+      }
 
       const tx = dispute.transaction;
       if (resolution === 'BUYER') {
-        // Refund Buyer
         await prisma.transaction.update({
           where: { id: tx.id },
-          data: { status: 'CANCELLED' },
+          data: { status: 'REFUNDED' },
         });
-        await prisma.user.update({
-          where: { id: tx.buyerId },
+        const credited = await prisma.user.updateMany({
+          where: {
+            id: tx.buyerId,
+            balance: { lte: MAX_WALLET_BALANCE_UZS - tx.price },
+          },
           data: { balance: { increment: tx.price } },
         });
+        if (credited.count !== 1) {
+          throw new BadRequestException('Buyer wallet balance limit exceeded');
+        }
+        const buyer = await prisma.user.findUniqueOrThrow({
+          where: { id: tx.buyerId },
+          select: { balance: true },
+        });
+        await prisma.financialEntry.create({
+          data: {
+            userId: tx.buyerId,
+            transactionId: tx.id,
+            type: 'ADMIN_DISPUTE_REFUND',
+            amount: tx.price,
+            balanceAfter: buyer.balance,
+            idempotencyKey: `admin-dispute-refund:${id}`,
+            metadata: JSON.stringify({ adminId }),
+          },
+        });
       } else if (resolution === 'SELLER') {
-        // Payout to Seller
         await prisma.transaction.update({
           where: { id: tx.id },
           data: { status: 'COMPLETED' },
         });
-        // Assume seller already has their frozen balance moved or we increment it here
         const offer = await prisma.offer.findUnique({
           where: { id: tx.offerId },
         });
         if (offer) {
-          await prisma.user.update({
+          const payout = sellerPayout(tx.price);
+          const credited = await prisma.user.updateMany({
+            where: {
+              id: offer.sellerId,
+              balance: { lte: MAX_WALLET_BALANCE_UZS - payout },
+            },
+            data: { balance: { increment: payout } },
+          });
+          if (credited.count !== 1) {
+            throw new BadRequestException(
+              'Seller wallet balance limit exceeded',
+            );
+          }
+          const seller = await prisma.user.findUniqueOrThrow({
             where: { id: offer.sellerId },
-            data: { balance: { increment: tx.price * 0.95 } },
+            select: { balance: true },
+          });
+          await prisma.financialEntry.create({
+            data: {
+              userId: offer.sellerId,
+              transactionId: tx.id,
+              type: 'ADMIN_DISPUTE_PAYOUT',
+              amount: payout,
+              balanceAfter: seller.balance,
+              idempotencyKey: `admin-dispute-payout:${id}`,
+              metadata: JSON.stringify({ adminId }),
+            },
           });
         }
       }
 
-      // 3. Log the action
       await prisma.adminLog.create({
         data: {
           adminId,
           action: 'RESOLVE_DISPUTE',
           targetId: id,
-          details: JSON.stringify({ resolution }),
+          details: JSON.stringify({ resolution, adminNote: normalizedNote }),
         },
       });
     });
 
-    return { message: 'Dispute resolved' };
+    return {
+      message: 'Dispute resolved',
+      dispute: await this.prisma.dispute.findUnique({
+        where: { id },
+        include: {
+          transaction: {
+            include: {
+              buyer: { select: USER_ADMIN_SELECT },
+              offer: { select: ADMIN_OFFER_SELECT },
+            },
+          },
+        },
+      }),
+    };
+  }
+
+  async getAdminLogs(page = 1, limit = 50, action = '') {
+    page = this.page(page);
+    limit = this.limit(limit);
+    const skip = (page - 1) * limit;
+    const where: Prisma.AdminLogWhereInput = action.trim()
+      ? {
+          action: {
+            contains: action.trim(),
+            mode: Prisma.QueryMode.insensitive,
+          },
+        }
+      : {};
+    const [logs, total] = await Promise.all([
+      this.prisma.adminLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.adminLog.count({ where }),
+    ]);
+    const adminIds = [...new Set(logs.map((log) => log.adminId))];
+    const admins = await this.prisma.user.findMany({
+      where: { id: { in: adminIds } },
+      select: { id: true, email: true, displayName: true },
+    });
+    const adminsById = new Map(admins.map((admin) => [admin.id, admin]));
+    return {
+      logs: logs.map((log) => ({
+        ...log,
+        admin: adminsById.get(log.adminId) ?? null,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  private page(value: number) {
+    return Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1;
+  }
+
+  private limit(value: number) {
+    return Number.isFinite(value)
+      ? Math.min(100, Math.max(1, Math.floor(value)))
+      : 20;
   }
 }

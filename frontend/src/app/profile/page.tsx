@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2 } from 'lucide-react';
+import { User as UserIcon, Crown, Coins, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Gift } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { usersApi, offersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation, SavedOffer } from '@/lib/api';
+import { usersApi, offersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation, SavedOffer, DailyBonusStatus } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -30,6 +30,21 @@ const PROMOCODE_ACTIVATION_META: Record<string, { label: string; className: stri
         label: 'Использован',
         className: 'bg-green-500/10 text-green-400 border-green-500/20',
     },
+};
+
+const offerUsesQr = (transaction: Transaction) => {
+    if (transaction.isGift) return true;
+    const type = transaction.offer?.fulfillmentType ?? 'DIGITAL_CODE';
+    return type === 'PROMOCODE' || type === 'DIGITAL_CODE';
+};
+
+const offerAccessLabel = (transaction: Transaction) => {
+    switch (transaction.offer?.fulfillmentType) {
+        case 'LINK': return 'Ссылка';
+        case 'INSTRUCTIONS': return 'Данные';
+        case 'PROMOCODE': return 'Промокод';
+        default: return 'Ключ';
+    }
 };
 
 
@@ -64,6 +79,10 @@ export default function ProfilePage() {
     const [tgUrl, setTgUrl] = useState('');
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    // Daily Bonus states
+    const [dailyStatus, setDailyStatus] = useState<DailyBonusStatus | null>(null);
+    const [claimingDaily, setClaimingDaily] = useState(false);
+
     // Clean up polling on unmount
     useEffect(() => {
         return () => { if (pollRef.current) clearInterval(pollRef.current); };
@@ -72,11 +91,39 @@ export default function ProfilePage() {
     const handleStartChat = async (sellerId?: string) => {
         if (!sellerId) return;
         try {
-            await api.post('/chat/rooms', { sellerId });
+            await api.post('/chat/rooms', { targetUserId: sellerId });
             router.push('/messages');
         } catch (error) {
             console.error('Failed to start chat:', error);
         }
+    };
+
+    const handleClaimDailyBonus = async () => {
+        if (claimingDaily || !dailyStatus?.canClaimToday) return;
+        setClaimingDaily(true);
+        hapticImpact('medium');
+        try {
+            const res = await usersApi.claimDailyBonus();
+            hapticNotification('success');
+            alert(res.message);
+            await refreshUser();
+            const newStatus = await usersApi.getDailyBonusStatus();
+            setDailyStatus(newStatus);
+        } catch (err: unknown) {
+            hapticNotification('error');
+            alert(err instanceof Error ? err.message : 'Ошибка при получении бонуса');
+        } finally {
+            setClaimingDaily(false);
+        }
+    };
+
+    const getStreakWord = (streak: number) => {
+        const lastDigit = streak % 10;
+        const lastTwoDigits = streak % 100;
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'дней';
+        if (lastDigit === 1) return 'день';
+        if (lastDigit >= 2 && lastDigit <= 4) return 'дня';
+        return 'дней';
     };
 
     useEffect(() => {
@@ -92,6 +139,7 @@ export default function ProfilePage() {
                 setTransactions(res.data);
             }).catch(() => { });
             transactionsApi.getSubscriptions().then(setSubscriptions).catch(() => { });
+            usersApi.getDailyBonusStatus().then(setDailyStatus).catch(() => { });
             setSavedOffersLoading(true);
             usersApi.getSavedOffers()
                 .then(setSavedOffers)
@@ -162,7 +210,7 @@ export default function ProfilePage() {
                 await paymentsApi.mockWebhook(deposit.id, true);
                 await refreshUser();
                 setTopUpModalOpen(false);
-                alert(`Баланс успешно пополнен на $${amount}!`);
+                alert(`Баланс успешно пополнен на ${amount.toLocaleString('ru-RU')} сум!`);
                 return;
             }
 
@@ -375,7 +423,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="rounded-xl p-5 text-center flex flex-col items-center justify-center relative group bg-white/[0.02] border border-white/[0.06]">
                         <Coins className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                        <div className="text-2xl font-extrabold text-white">{user.balance.toFixed(2)}$</div>
+                        <div className="text-2xl font-extrabold text-white">{user.balance.toLocaleString('ru-RU')} сум</div>
                         <div className="text-xs text-white/30 mt-1 mb-3">Баланс</div>
                         <button
                             onClick={() => setTopUpModalOpen(true)}
@@ -439,6 +487,66 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
+                {/* Daily Bonus Section */}
+                {dailyStatus && (
+                    <div className="w-full p-6 rounded-2xl mb-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+
+                        <div className="flex items-center justify-between mb-4 relative z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.3)] border border-amber-500/30">
+                                    <Gift className="w-5 h-5 text-amber-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-white leading-tight">Ежедневный бонус</h3>
+                                    <span className="text-xs text-white/30">Заходите каждый день для получения наград</span>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-sm font-bold text-amber-400">Серия: {dailyStatus.currentStreak} {getStreakWord(dailyStatus.currentStreak)}</div>
+                                <div className="text-[10px] text-white/30 uppercase tracking-wider">Рекорд: {dailyStatus.longestStreak}</div>
+                            </div>
+                        </div>
+
+                        {/* 7 Days Progress Grid */}
+                        <div className="grid grid-cols-7 gap-1.5 mb-5 relative z-10">
+                            {dailyStatus.weekProgress.map((day, idx) => (
+                                <div
+                                    key={day.day || idx}
+                                    className={`flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all ${
+                                        day.claimed
+                                            ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                                            : !day.claimed && dailyStatus.canClaimToday && idx === 6
+                                                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-extrabold animate-pulse'
+                                                : 'bg-white/5 border-white/10 text-white/35'
+                                    }`}
+                                >
+                                    <span className="text-[9px] font-bold uppercase tracking-wider mb-1">{day.label}</span>
+                                    <div className="text-xs my-0.5">{day.claimed ? '✅' : '🪙'}</div>
+                                    <span className="text-[9px] font-black">{day.reward.points > 0 ? `+${day.reward.points}` : '0'}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Claim Action */}
+                        <div className="relative z-10">
+                            {dailyStatus.canClaimToday ? (
+                                <button
+                                    onClick={handleClaimDailyBonus}
+                                    disabled={claimingDaily}
+                                    className="w-full py-3 rounded-xl font-extrabold text-sm transition-all transform active:scale-[0.98] bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white shadow-lg shadow-orange-500/10 border-0 cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                    {claimingDaily ? 'Получение...' : `🎁 Забрать бонус (+${dailyStatus.todayReward.points} Points)`}
+                                </button>
+                            ) : (
+                                <div className="w-full py-3 rounded-xl font-bold text-xs bg-white/5 border border-white/10 text-white/30 flex items-center justify-center text-center cursor-default">
+                                    Бонус забран! Возвращайтесь завтра.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Squad Rewards Button */}
                 <Link href="/profile/squad" className="w-full flex items-center justify-between p-5 rounded-2xl mb-4 group no-underline transition-all hover:scale-[1.01] bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
@@ -558,7 +666,7 @@ export default function ProfilePage() {
                                                         <div className="text-xs text-white/30">{tx.offer?.category}</div>
                                                         {tx.isGift && <div className="text-[10px] text-pink-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
                                                     </td>
-                                                    <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toFixed(2)}$</td>
+                                                    <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toLocaleString('ru-RU')} сум</td>
                                                     <td className="py-3 px-4">
                                                         <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' :
                                                             tx.status === 'ESCROW' ? 'text-blue-400 bg-blue-500/10' :
@@ -588,10 +696,10 @@ export default function ProfilePage() {
                                                                     className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}
                                                                 >
                                                                     {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />}
-                                                                    {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
+                                                                    {revealedKeys[tx.id] ? 'Скрыть' : offerAccessLabel(tx)}
                                                                 </button>
                                                             )}
-                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
+                                                            {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && offerUsesQr(tx) && (
                                                                 <button
                                                                     onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })}
                                                                     className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500"
@@ -614,7 +722,7 @@ export default function ProfilePage() {
                                                                 </>
                                                             )}
                                                             {tx.isGift && tx.giftCode && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
                                                                         const link = `https://t.me/${botUsername}?start=gift_${tx.giftCode}`;
@@ -669,7 +777,7 @@ export default function ProfilePage() {
                                                     <div className="text-xs text-white/30">{tx.offer?.category}</div>
                                                     {tx.isGift && <div className="text-[10px] text-pink-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
                                                 </div>
-                                                <div className="text-sm font-semibold text-white shrink-0 block">{tx.price.toFixed(2)}$</div>
+                                                <div className="text-sm font-semibold text-white shrink-0 block">{tx.price.toLocaleString('ru-RU')} сум</div>
                                             </div>
                                             <div className="flex justify-between items-center mb-3">
                                                 <span className={`text-xs font-semibold px-2 py-1 rounded-md ${tx.status === 'COMPLETED' || tx.status === 'PAID' ? 'text-green-400 bg-green-500/10' : tx.status === 'ESCROW' ? 'text-blue-400 bg-blue-500/10' : tx.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10' : tx.status === 'DISPUTED' ? 'text-orange-400 bg-orange-500/10' : tx.status === 'CANCELLED' ? 'text-red-400 bg-red-500/10' : 'text-white/50 bg-white/5'}`}>
@@ -685,11 +793,11 @@ export default function ProfilePage() {
                                                 )}
                                                 {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
                                                     <button onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))} className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                                                        {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />} {revealedKeys[tx.id] ? 'Скрыть' : 'Ключ'}
+                                                        {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />} {revealedKeys[tx.id] ? 'Скрыть' : offerAccessLabel(tx)}
                                                     </button>
                                                 )}
                                                 {tx.isGift && tx.giftCode && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
                                                             const link = `https://t.me/${botUsername}?start=gift_${tx.giftCode}`;
@@ -702,7 +810,7 @@ export default function ProfilePage() {
                                                         <Copy className="w-3 h-3" /> Ссылка на подарок
                                                     </button>
                                                 )}
-                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
+                                                {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && offerUsesQr(tx) && (
                                                     <button onClick={() => setQrModalData({ title: tx.offer?.title || 'Промокод', data: tx.offer?.hiddenData || '' })} className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-green-500/10 text-green-500">
                                                         <QrCode className="w-3.5 h-3.5" /> QR
                                                     </button>
@@ -771,8 +879,8 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <button 
-                                            onClick={() => router.push(`/offer/${tx.offerId}`)}
+                                        <button
+                                            onClick={() => router.push(`/offer/?id=${tx.offerId}`)}
                                             className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-all no-underline"
                                         >
                                             Продлить
@@ -814,7 +922,7 @@ export default function ProfilePage() {
                                                 <p className="text-sm text-white/40 mt-2 line-clamp-2">{savedOffer.offer.description}</p>
                                                 <div className="flex items-center gap-3 mt-3">
                                                     <span className="text-lg font-extrabold text-gradient-green">
-                                                        {savedOffer.offer.price === 0 ? 'Бесплатно' : `${savedOffer.offer.price.toFixed(2)}$`}
+                                                        {savedOffer.offer.price === 0 ? 'Бесплатно' : `${savedOffer.offer.price.toLocaleString('ru-RU')} сум`}
                                                     </span>
                                                     <span className="text-xs text-white/30">
                                                         {new Date(savedOffer.createdAt).toLocaleDateString('ru-RU')}
@@ -1064,7 +1172,7 @@ export default function ProfilePage() {
                             <p className="text-sm text-white/40">Введите 8-значный код вашего подарка</p>
                         </div>
 
-                        <input 
+                        <input
                             value={redeemCode}
                             onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                             placeholder="Например: A1B2C3D4"
@@ -1073,13 +1181,13 @@ export default function ProfilePage() {
                         />
 
                         <div className="flex gap-3 w-full">
-                            <button 
+                            <button
                                 onClick={() => setRedeemModalOpen(false)}
                                 className="flex-1 py-3 rounded-xl bg-white/5 text-white/60 font-bold border-0 cursor-pointer"
                             >
                                 Отмена
                             </button>
-                            <button 
+                            <button
                                 onClick={handleRedeemGift}
                                 disabled={redeeming || redeemCode.length < 4}
                                 className="flex-2 py-3 px-6 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold border-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"

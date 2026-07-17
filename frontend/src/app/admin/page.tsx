@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, ShoppingBag, CreditCard, Scale, TrendingUp } from 'lucide-react';
+import { Users, ShoppingBag, CreditCard, Scale, TrendingUp, Building2, ShieldAlert, Activity } from 'lucide-react';
 import api, { AdminStats } from '@/lib/api';
 
 export default function AdminDashboard() {
@@ -35,9 +35,12 @@ export default function AdminDashboard() {
     const cards = [
         { title: 'Всего пользователей', value: stats.usersCount, sub: `+${stats.newUsersToday} за сегодня`, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10', blob: 'bg-blue-400/20' },
         { title: 'Активных товаров', value: stats.activeOffersCount, icon: ShoppingBag, color: 'text-green-400', bg: 'bg-green-400/10', blob: 'bg-green-400/20' },
-        { title: 'Оборот (Сумма)', value: `$${stats.totalVolume.toFixed(2)}`, icon: CreditCard, color: 'text-purple-400', bg: 'bg-purple-400/10', blob: 'bg-purple-400/20' },
-        { title: 'Доход платформы', value: `$${stats.platformIncome.toFixed(2)}`, sub: '(5% комиссия)', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-400/10', blob: 'bg-amber-400/20' },
+        { title: 'Оборот', value: `${stats.totalVolume.toLocaleString('ru-RU')} сум`, icon: CreditCard, color: 'text-purple-400', bg: 'bg-purple-400/10', blob: 'bg-purple-400/20' },
+        { title: 'Доход платформы', value: `${stats.platformIncome.toLocaleString('ru-RU')} сум`, sub: '(5% комиссия)', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-400/10', blob: 'bg-amber-400/20' },
         { title: 'Открытых споров', value: stats.openDisputesCount, icon: Scale, color: stats.openDisputesCount > 0 ? 'text-red-400' : 'text-gray-400', bg: stats.openDisputesCount > 0 ? 'bg-red-400/10' : 'bg-white/5', blob: stats.openDisputesCount > 0 ? 'bg-red-400/20' : 'bg-white/10' },
+        { title: 'Компании на проверке', value: stats.pendingCompaniesCount, icon: Building2, color: 'text-cyan-400', bg: 'bg-cyan-400/10', blob: 'bg-cyan-400/20' },
+        { title: 'Жалобы и апелляции', value: stats.openReportsCount + stats.openAppealsCount, icon: ShieldAlert, color: 'text-orange-400', bg: 'bg-orange-400/10', blob: 'bg-orange-400/20' },
+        { title: 'Повторы ошибок', value: stats.diagnosticOccurrences, icon: Activity, color: 'text-pink-400', bg: 'bg-pink-400/10', blob: 'bg-pink-400/20' },
     ];
 
     return (
@@ -48,7 +51,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {cards.map((card, idx) => {
                     const Icon = card.icon;
                     return (
@@ -81,7 +84,7 @@ export default function AdminDashboard() {
                                     <div className="text-xs text-white/40">Покупатель: {tx.buyer?.email}</div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-sm font-bold text-green-400 mb-1">+${tx.price}</div>
+                                    <div className="text-sm font-bold text-green-400 mb-1">+{tx.price.toLocaleString('ru-RU')} сум</div>
                                     <div className="text-xs text-white/30">{new Date(tx.createdAt).toLocaleDateString()}</div>
                                 </div>
                             </div>

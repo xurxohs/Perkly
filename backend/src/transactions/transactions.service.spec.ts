@@ -6,13 +6,25 @@ describe('TransactionsService', () => {
   let service: TransactionsService;
   let prisma: {
     offer: { findUnique: jest.Mock };
-    user: { findUnique: jest.Mock; update: jest.Mock };
+    user: {
+      findUnique: jest.Mock;
+      findUniqueOrThrow: jest.Mock;
+      update: jest.Mock;
+      updateMany: jest.Mock;
+    };
     promocodeActivation: {
       findUnique: jest.Mock;
       findFirst: jest.Mock;
       updateMany: jest.Mock;
     };
-    transaction: { create: jest.Mock };
+    transaction: {
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      findUniqueOrThrow: jest.Mock;
+      update: jest.Mock;
+      updateMany: jest.Mock;
+    };
+    financialEntry: { create: jest.Mock };
     $transaction: jest.Mock;
   };
   let notificationsService: { sendPushNotification: jest.Mock };
@@ -68,13 +80,25 @@ describe('TransactionsService', () => {
   beforeEach(() => {
     prisma = {
       offer: { findUnique: jest.fn() },
-      user: { findUnique: jest.fn(), update: jest.fn() },
+      user: {
+        findUnique: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+        update: jest.fn(),
+        updateMany: jest.fn(),
+      },
       promocodeActivation: {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
         updateMany: jest.fn(),
       },
-      transaction: { create: jest.fn() },
+      transaction: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+        update: jest.fn(),
+        updateMany: jest.fn(),
+      },
+      financialEntry: { create: jest.fn() },
       $transaction: jest.fn(),
     };
     notificationsService = { sendPushNotification: jest.fn() };
@@ -103,7 +127,10 @@ describe('TransactionsService', () => {
       .mockResolvedValueOnce({ id: 'seller-1' });
     prisma.promocodeActivation.findUnique.mockResolvedValue(activation);
     prisma.promocodeActivation.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({ balance: 420 });
     prisma.transaction.create.mockResolvedValue(createdTransaction);
+    prisma.financialEntry.create.mockResolvedValue({ id: 'entry-1' });
     prisma.$transaction.mockImplementation((callback) => callback(prisma));
     notificationsService.sendPushNotification.mockResolvedValue(undefined);
 
@@ -122,8 +149,8 @@ describe('TransactionsService', () => {
         usedAt: expect.any(Date),
       },
     });
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'buyer-1' },
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 'buyer-1', balance: { gte: 80 } },
       data: { balance: { decrement: 80 } },
     });
     expect(prisma.transaction.create).toHaveBeenCalledWith(
@@ -138,6 +165,15 @@ describe('TransactionsService', () => {
         }),
       }),
     );
+    expect(prisma.financialEntry.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'buyer-1',
+        transactionId: 'tx-1',
+        type: 'PURCHASE_DEBIT',
+        amount: -80,
+        balanceAfter: 420,
+      }),
+    });
   });
 
   it('rejects an activation that is not valid for the purchased offer', async () => {
@@ -150,5 +186,73 @@ describe('TransactionsService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('returns the original purchase for a repeated idempotency key', async () => {
+    const existing = {
+      id: 'tx-existing',
+      offerId: 'offer-1',
+      buyerId: 'buyer-1',
+      price: 100,
+      status: TransactionStatus.ESCROW,
+      offer,
+    };
+    prisma.transaction.findUnique.mockResolvedValue(existing);
+
+    await expect(
+      service.purchase('buyer-1', 'offer-1', false, 0, undefined, 'request-1'),
+    ).resolves.toEqual(existing);
+    expect(prisma.offer.findUnique).not.toHaveBeenCalled();
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('releases escrow exactly once through a conditional state transition', async () => {
+    const escrow = {
+      id: 'tx-1',
+      buyerId: 'buyer-1',
+      price: 10000,
+      status: TransactionStatus.ESCROW,
+      offer: { ...offer, sellerId: 'seller-1' },
+    };
+    const completed = {
+      ...escrow,
+      status: TransactionStatus.COMPLETED,
+      buyer: { id: 'buyer-1', squadId: null },
+    };
+    prisma.transaction.findUnique.mockResolvedValue(escrow);
+    prisma.transaction.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.update.mockResolvedValue({ balance: 109500 });
+    prisma.transaction.findUniqueOrThrow.mockResolvedValue(completed);
+    prisma.financialEntry.create.mockResolvedValue({ id: 'entry-1' });
+    prisma.user.findUnique.mockResolvedValue({ id: 'seller-1' });
+    prisma.$transaction.mockImplementation((callback) => callback(prisma));
+    notificationsService.sendPushNotification.mockResolvedValue(undefined);
+
+    await expect(service.confirmDelivery('tx-1', 'buyer-1')).resolves.toEqual(completed);
+    expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+      where: { id: 'tx-1', status: TransactionStatus.ESCROW },
+      data: { status: TransactionStatus.COMPLETED },
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { balance: { increment: 9500 } } }),
+    );
+  });
+
+  it('does not pay the seller when another request already released escrow', async () => {
+    prisma.transaction.findUnique.mockResolvedValue({
+      id: 'tx-1',
+      buyerId: 'buyer-1',
+      price: 10000,
+      status: TransactionStatus.ESCROW,
+      offer,
+    });
+    prisma.transaction.updateMany.mockResolvedValue({ count: 0 });
+    prisma.$transaction.mockImplementation((callback) => callback(prisma));
+
+    await expect(service.confirmDelivery('tx-1', 'buyer-1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(prisma.financialEntry.create).not.toHaveBeenCalled();
   });
 });

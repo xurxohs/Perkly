@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { randomInt } from 'crypto';
 import { Event, Prisma, TopkaPost } from '@prisma/client';
 import { TtlCache } from '../common/ttl-cache';
 import {
   NormalizedPagination,
   normalizePagination,
 } from '../common/pagination';
+import { assertAcceptableUserContent } from '../common/content-moderation';
 
 type EventMedia = {
   originalUrl?: string | null;
@@ -80,7 +82,32 @@ export class EventsService {
 
   constructor(private prisma: PrismaService) {}
 
+  listSaved(userId: string) {
+    return this.prisma.savedEvent.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, eventId: true, createdAt: true },
+    });
+  }
+
+  async save(userId: string, eventId: string) {
+    return this.prisma.savedEvent.upsert({
+      where: { userId_eventId: { userId, eventId } },
+      create: { userId, eventId },
+      update: {},
+      select: { id: true, eventId: true, createdAt: true },
+    });
+  }
+
+  async unsave(userId: string, eventId: string) {
+    const result = await this.prisma.savedEvent.deleteMany({
+      where: { userId, eventId },
+    });
+    return { deleted: result.count > 0 };
+  }
+
   async create(data: Prisma.EventCreateInput): Promise<Event> {
+    this.assertEventContent(data);
     return await this.prisma.event.create({
       data,
     });
@@ -90,6 +117,7 @@ export class EventsService {
     organizerId: string,
     data: VendorEventCreateData,
   ): Promise<Event> {
+    this.assertEventContent(data);
     return this.prisma.event.create({
       data: {
         ...data,
@@ -174,6 +202,7 @@ export class EventsService {
     data: Prisma.EventUpdateInput;
   }): Promise<Event> {
     const { where, data } = params;
+    this.assertEventContent(data);
     return await this.prisma.event.update({
       data,
       where,
@@ -184,6 +213,39 @@ export class EventsService {
     return this.prisma.event.delete({
       where,
     });
+  }
+
+  private assertEventContent(
+    data:
+      | Prisma.EventCreateInput
+      | Prisma.EventUpdateInput
+      | VendorEventCreateData,
+  ) {
+    const title = this.stringUpdateValue(data.title);
+    const description = this.stringUpdateValue(data.description);
+    const fullDescription = this.stringUpdateValue(data.fullDescription);
+    if (title !== undefined) {
+      assertAcceptableUserContent(title, 'Event title');
+    }
+    if (description !== undefined) {
+      assertAcceptableUserContent(description, 'Event description');
+    }
+    if (fullDescription !== undefined) {
+      assertAcceptableUserContent(fullDescription, 'Event fullDescription');
+    }
+  }
+
+  private stringUpdateValue(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    if (
+      value &&
+      typeof value === 'object' &&
+      'set' in value &&
+      typeof value.set === 'string'
+    ) {
+      return value.set;
+    }
+    return undefined;
   }
 
   async proxyTopkaMedia(url: string): Promise<{
@@ -241,8 +303,8 @@ export class EventsService {
           location: 'Tashkent Hall',
           address: 'улица Амира Темура, 107',
           imageUrl: `https://picsum.photos/seed/${i + 20}/800/1200`,
-          viewersCount: Math.floor(Math.random() * 200) + 50,
-          participantsCount: Math.floor(Math.random() * 1500) + 200,
+          viewersCount: randomInt(50, 250),
+          participantsCount: randomInt(200, 1700),
           organizerId,
         },
       });

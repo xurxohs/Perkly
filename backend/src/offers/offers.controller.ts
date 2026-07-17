@@ -10,6 +10,8 @@ import {
   Query,
   UseGuards,
   Req,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { OffersService } from './offers.service';
@@ -19,6 +21,12 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { PublicOffer, VendorOffer } from './offer.selects';
 import { normalizePagination, parseFiniteNumber } from '../common/pagination';
+import { assertAcceptableUserContent } from '../common/content-moderation';
+import {
+  isValidOfferPriceUzs,
+  MAX_OFFER_PRICE_UZS,
+  MIN_PAID_OFFER_PRICE_UZS,
+} from '../common/money';
 
 interface AuthRequest extends Request {
   user: { userId: string; role?: string };
@@ -49,6 +57,18 @@ export class OffersController {
     );
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
+  @Post('vendor/upload')
+  async uploadVendorLogo(
+    @Body() body: { dataUrl: string },
+  ): Promise<{ url: string }> {
+    if (!body.dataUrl) {
+      throw new BadRequestException('dataUrl is required');
+    }
+    return this.offersService.saveVendorLogo(body.dataUrl);
+  }
+
   // ======= FEATURED PLACEMENT =======
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -74,6 +94,7 @@ export class OffersController {
     @Query('skip') skip?: string,
     @Query('take') take?: string,
     @Query('category') category?: string,
+    @Query('fulfillmentType') fulfillmentType?: string,
     @Query('search') search?: string,
     @Query('sort') sort?: string,
     @Query('isFlashDrop') isFlashDrop?: string,
@@ -92,6 +113,9 @@ export class OffersController {
     return this.offersService.findAllFiltered({
       ...pagination,
       category,
+      fulfillmentType: fulfillmentType
+        ? this.normalizeFulfillmentType(fulfillmentType)
+        : undefined,
       search,
       sort,
       isFlashDrop:
@@ -116,6 +140,23 @@ export class OffersController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('recommendations/me')
+  recommendations(
+    @Req() req: AuthRequest,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('limit') limit?: string,
+    @Query('exclude') exclude?: string,
+  ) {
+    return this.offersService.recommendationsForUser(req.user.userId, {
+      lat: parseFiniteNumber(lat),
+      lng: parseFiniteNumber(lng),
+      limit: parseFiniteNumber(limit),
+      exclude: new Set((exclude ?? '').split(',').filter(Boolean)),
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Post(':id/save')
   saveOffer(@Req() req: AuthRequest, @Param('id') id: string) {
     return this.offersService.saveOffer(req.user.userId, id);
@@ -133,19 +174,40 @@ export class OffersController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'VENDOR')
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
-    @Body() updateOfferDto: Prisma.OfferUpdateInput,
+    @Req() req: AuthRequest,
+    @Body() body: Record<string, unknown>,
   ): Promise<Offer> {
-    return this.offersService.update({ where: { id }, data: updateOfferDto });
+    if (req.user.role === 'VENDOR') {
+      const offer = await this.offersService.findRaw(id);
+      if (!offer) throw new NotFoundException('Offer not found');
+      if (offer.sellerId !== req.user.userId) {
+        throw new ForbiddenException('You can only update your own offers');
+      }
+    }
+    return this.offersService.update({
+      where: { id },
+      data: this.normalizeVendorOfferUpdateBody(body),
+    });
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'VENDOR')
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<Offer> {
+  async remove(
+    @Param('id') id: string,
+    @Req() req: AuthRequest,
+  ): Promise<Offer> {
+    if (req.user.role === 'VENDOR') {
+      const offer = await this.offersService.findRaw(id);
+      if (!offer) throw new NotFoundException('Offer not found');
+      if (offer.sellerId !== req.user.userId) {
+        throw new ForbiddenException('You can only delete your own offers');
+      }
+    }
     return this.offersService.remove({ id });
   }
 
@@ -154,34 +216,65 @@ export class OffersController {
   ): Omit<Prisma.OfferCreateInput, 'seller'> {
     const title = this.requiredString(body, 'title');
     const description = this.requiredString(body, 'description');
-    const category = this.requiredString(body, 'category');
+    const category = this.normalizeCategory(
+      this.requiredString(body, 'category'),
+    );
     const hiddenData = this.requiredString(body, 'hiddenData');
+    const fulfillmentType = this.normalizeFulfillmentType(
+      this.optionalString(body, 'fulfillmentType') ?? 'INSTRUCTIONS',
+    );
     const price = this.requiredNumber(body, 'price');
+    assertAcceptableUserContent(title, 'Offer title');
+    assertAcceptableUserContent(description, 'Offer description');
+    if (!isValidOfferPriceUzs(price)) {
+      throw new BadRequestException(
+        `price must be 0 for a free offer or a whole UZS amount between ${MIN_PAID_OFFER_PRICE_UZS.toLocaleString('en-US')} and ${MAX_OFFER_PRICE_UZS.toLocaleString('en-US')}`,
+      );
+    }
 
     const payload: Omit<Prisma.OfferCreateInput, 'seller'> = {
       title,
       description,
       category,
       hiddenData,
+      fulfillmentType,
       price,
       isActive: this.optionalBoolean(body, 'isActive') ?? true,
     };
 
-    const vendorLogo =
-      this.optionalString(body, 'vendorLogo') ??
-      this.optionalString(body, 'imageUrl');
+    const vendorLogo = this.optionalString(body, 'vendorLogo');
     if (vendorLogo) payload.vendorLogo = vendorLogo;
+
+    const imageUrl = this.optionalString(body, 'imageUrl');
+    if (imageUrl) payload.imageUrl = imageUrl;
+
+    const thumbnailUrl =
+      this.optionalString(body, 'thumbnailUrl') ??
+      (imageUrl?.includes('/uploads/vendor/')
+        ? imageUrl.replace(/\.webp$/, '-thumb.webp')
+        : undefined);
+    if (thumbnailUrl) payload.thumbnailUrl = thumbnailUrl;
 
     const usageInstructions = this.optionalString(body, 'usageInstructions');
     if (usageInstructions) payload.usageInstructions = usageInstructions;
 
     const discountPercent = this.optionalInteger(body, 'discountPercent');
     if (discountPercent !== undefined) {
+      if (discountPercent < 0 || discountPercent > 100) {
+        throw new BadRequestException(
+          'discountPercent must be between 0 and 100',
+        );
+      }
       payload.discountPercent = discountPercent;
     }
 
     const periodDays = this.optionalInteger(body, 'periodDays');
-    if (periodDays !== undefined) payload.periodDays = periodDays;
+    if (periodDays !== undefined) {
+      if (periodDays < 0 || periodDays > 3650) {
+        throw new BadRequestException('periodDays must be between 0 and 3650');
+      }
+      payload.periodDays = periodDays;
+    }
 
     const isExclusive = this.optionalBoolean(body, 'isExclusive');
     if (isExclusive !== undefined) payload.isExclusive = isExclusive;
@@ -201,12 +294,115 @@ export class OffersController {
     return payload;
   }
 
+  private normalizeVendorOfferUpdateBody(
+    body: Record<string, unknown>,
+  ): Prisma.OfferUpdateInput {
+    const payload: Prisma.OfferUpdateInput = {};
+    const stringFields = [
+      'title',
+      'description',
+      'category',
+      'hiddenData',
+      'vendorLogo',
+      'imageUrl',
+      'thumbnailUrl',
+      'usageInstructions',
+      'fulfillmentType',
+    ] as const;
+    for (const field of stringFields) {
+      const value = this.optionalString(body, field);
+      if (value !== undefined) {
+        if (field === 'title' || field === 'description') {
+          assertAcceptableUserContent(value, `Offer ${field}`);
+        }
+        payload[field] =
+          field === 'category'
+            ? this.normalizeCategory(value)
+            : field === 'fulfillmentType'
+              ? this.normalizeFulfillmentType(value)
+              : value;
+      }
+    }
+
+    const price = this.optionalInteger(body, 'price');
+    if (price !== undefined) {
+      if (!isValidOfferPriceUzs(price)) {
+        throw new BadRequestException(
+          `price must be 0 for a free offer or a whole UZS amount between ${MIN_PAID_OFFER_PRICE_UZS.toLocaleString('en-US')} and ${MAX_OFFER_PRICE_UZS.toLocaleString('en-US')}`,
+        );
+      }
+      payload.price = price;
+    }
+    const discountPercent = this.optionalInteger(body, 'discountPercent');
+    if (discountPercent !== undefined) {
+      if (discountPercent < 0 || discountPercent > 100) {
+        throw new BadRequestException(
+          'discountPercent must be between 0 and 100',
+        );
+      }
+      payload.discountPercent = discountPercent;
+    }
+    const periodDays = this.optionalInteger(body, 'periodDays');
+    if (periodDays !== undefined) {
+      if (periodDays < 0 || periodDays > 3650) {
+        throw new BadRequestException('periodDays must be between 0 and 3650');
+      }
+      payload.periodDays = periodDays;
+    }
+    for (const field of ['isActive', 'isExclusive', 'isFlashDrop'] as const) {
+      const value = this.optionalBoolean(body, field);
+      if (value !== undefined) payload[field] = value;
+    }
+    const expiresAt = this.optionalDate(body, 'expiresAt');
+    if (expiresAt !== undefined) payload.expiresAt = expiresAt;
+    const latitude = this.optionalNumber(body, 'latitude');
+    const longitude = this.optionalNumber(body, 'longitude');
+    if (latitude !== undefined) {
+      if (latitude < -90 || latitude > 90)
+        throw new BadRequestException('Invalid latitude');
+      payload.latitude = latitude;
+    }
+    if (longitude !== undefined) {
+      if (longitude < -180 || longitude > 180)
+        throw new BadRequestException('Invalid longitude');
+      payload.longitude = longitude;
+    }
+    if (Object.keys(payload).length === 0) {
+      throw new BadRequestException('No supported offer fields supplied');
+    }
+    return payload;
+  }
+
   private requiredString(body: Record<string, unknown>, field: string): string {
     const value = this.optionalString(body, field);
     if (!value) {
       throw new BadRequestException(`${field} is required`);
     }
     return value;
+  }
+
+  private normalizeCategory(value: string): string {
+    const category = value.trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9_]{1,39}$/.test(category)) {
+      throw new BadRequestException('Invalid category');
+    }
+    return category;
+  }
+
+  private normalizeFulfillmentType(value: string): string {
+    const normalized = value.trim().toUpperCase();
+    const supported = [
+      'PROMOCODE',
+      'DIGITAL_CODE',
+      'LINK',
+      'INSTRUCTIONS',
+    ];
+    if (!supported.includes(normalized)) {
+      throw new BadRequestException(
+        `fulfillmentType must be one of: ${supported.join(', ')}`,
+      );
+    }
+    return normalized;
   }
 
   private optionalString(

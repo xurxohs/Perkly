@@ -1,0 +1,2 @@
+-- Monetary values are created, stored and transported directly in UZS.
+-- Intentionally no currency conversion is performed.

@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Coins, Ticket, Coffee } from 'lucide-react';
 import React from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { usersApi } from '@/lib/api';
 
 interface Prize {
     label: string;
@@ -15,99 +17,82 @@ interface Prize {
 }
 
 const PRIZES: Prize[] = [
-    { label: '10 Perkly Points', shortLabel: '10', color: '#ef4444', icon: '🪙', probability: 30, value: '10pp', description: 'Вам начислено 10 Perkly Points!' },
-    { label: 'Скидка 5%', shortLabel: '5%', color: '#f97316', icon: '🏷️', probability: 25, value: '5off', description: 'Скидка 5% на любую покупку!' },
-    { label: '25 Perkly Points', shortLabel: '25', color: '#eab308', icon: '🪙', probability: 20, value: '25pp', description: 'Отлично! 25 Perkly Points!' },
-    { label: 'Бесплатный кофе', shortLabel: '☕', color: '#22c55e', icon: '☕', probability: 8, value: 'coffee', description: 'Промокод на бесплатный кофе в Safia!' },
-    { label: '50 Perkly Points', shortLabel: '50', color: '#3b82f6', icon: '💎', probability: 10, value: '50pp', description: 'Вау! 50 Perkly Points на ваш счёт!' },
-    { label: 'Скидка 15%', shortLabel: '15%', color: '#a855f7', icon: '🔥', probability: 5, value: '15off', description: 'Суперскидка 15% на любой товар!' },
-    { label: '100 Perkly Points', shortLabel: '100', color: '#ec4899', icon: '👑', probability: 1, value: '100pp', description: '🎉 ДЖЕКПОТ! 100 Perkly Points!' },
-    { label: 'Попробуйте ещё', shortLabel: '🔄', color: '#f59e0b', icon: '🔄', probability: 1, value: 'retry', description: 'Не повезло... Попробуйте завтра!' },
+    { label: '25 Points', shortLabel: '25', color: '#ef4444', icon: '🪙', probability: 30, value: '25pp', description: 'Вам начислено 25 Perkly Points!' },
+    { label: '50 Points', shortLabel: '50', color: '#f97316', icon: '💎', probability: 24, value: '50pp', description: 'Вау! 50 Perkly Points!' },
+    { label: '75 Points', shortLabel: '75', color: '#eab308', icon: '🪙', probability: 18, value: '75pp', description: 'Начислено 75 Perkly Points!' },
+    { label: '100 Points', shortLabel: '100', color: '#22c55e', icon: '👑', probability: 12, value: '100pp', description: 'Отлично! 100 Perkly Points!' },
+    { label: '150 Points', shortLabel: '150', color: '#3b82f6', icon: '💎', probability: 7, value: '150pp', description: 'Здорово! 150 Perkly Points!' },
+    { label: '200 Points', shortLabel: '200', color: '#a855f7', icon: '🔥', probability: 4, value: '200pp', description: 'Прекрасно! 200 Perkly Points!' },
+    { label: '300 Points', shortLabel: '300', color: '#ec4899', icon: '🏆', probability: 1, value: '300pp', description: '🎉 ДЖЕКПОТ! 300 Perkly Points!' },
+    { label: 'Попробуйте ещё', shortLabel: '🔄', color: '#f59e0b', icon: '🔄', probability: 4, value: 'retry', description: 'Не повезло... Попробуйте завтра!' },
 ];
 
 const SEGMENT_ANGLE = 360 / PRIZES.length;
 const SPIN_DURATION = 5000; // ms
 const DAILY_LIMIT = 3;
 
-function getWeightedRandom(): number {
-    const totalWeight = PRIZES.reduce((sum, p) => sum + p.probability, 0);
-    let random = Math.random() * totalWeight;
-    for (let i = 0; i < PRIZES.length; i++) {
-        random -= PRIZES[i].probability;
-        if (random <= 0) return i;
-    }
-    return 0;
-}
-
-function recordSpin() {
-    const today = new Date().toDateString();
-    const data = localStorage.getItem('perkly_wheel');
-    let spins = 1;
-    try {
-        const parsed = data ? JSON.parse(data) : null;
-        if (parsed?.date === today) spins = (parsed.spins || 0) + 1;
-    } catch { }
-    localStorage.setItem('perkly_wheel', JSON.stringify({ date: today, spins }));
-}
-
 export default function FortuneWheel() {
+    const { user, refreshUser } = useAuth();
     const [rotation, setRotation] = useState(0);
     const [isSpinning, setIsSpinning] = useState(false);
     const [prize, setPrize] = useState<Prize | null>(null);
     const [showModal, setShowModal] = useState(false);
-    const [spinsLeft, setSpinsLeft] = useState<number>(() => {
-        if (typeof window === 'undefined') return DAILY_LIMIT;
-        // Force reset limit for the user as requested
-        localStorage.removeItem('perkly_wheel');
-        return DAILY_LIMIT;
-    });
-    const [totalPoints, setTotalPoints] = useState<number>(() => {
-        if (typeof window === 'undefined') return 0;
-        const pts = localStorage.getItem('perkly_points');
-        return pts ? parseInt(pts) : 0;
-    });
+    const [spinsLeft, setSpinsLeft] = useState<number>(DAILY_LIMIT);
     const wheelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Any other non-state-setting initialization can go here
-    }, []);
+        if (!user) return;
+        usersApi.getWheelStatus()
+            .then((status) => {
+                setSpinsLeft(status.spinsRemaining);
+            })
+            .catch((err) => {
+                console.warn('Failed to load wheel status', err);
+            });
+    }, [user]);
 
-    const resetSpins = () => {
-        localStorage.removeItem('perkly_wheel');
-        setSpinsLeft(DAILY_LIMIT);
-    };
-
-    const spin = () => {
-        if (isSpinning || spinsLeft <= 0) return;
+    const spin = async () => {
+        if (isSpinning || spinsLeft <= 0 || !user) return;
 
         setIsSpinning(true);
         setPrize(null);
         setShowModal(false);
 
-        const winIndex = getWeightedRandom();
-        const segmentCenter = winIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-        const fullSpins = 5 + Math.floor(Math.random() * 3);
-        const targetRotation = fullSpins * 360 + (360 - segmentCenter);
-
-        setRotation(prev => prev + targetRotation);
-
-        recordSpin();
-        setSpinsLeft(prev => prev - 1);
-
-        setTimeout(() => {
-            setIsSpinning(false);
-            const won = PRIZES[winIndex];
-            setPrize(won);
-            setShowModal(true);
-
-            if (won.value.endsWith('pp')) {
-                const ptsValue = parseInt(won.value);
-                const current = parseInt(localStorage.getItem('perkly_points') || '0');
-                const newTotal = current + ptsValue;
-                localStorage.setItem('perkly_points', String(newTotal));
-                setTotalPoints(newTotal);
+        try {
+            const res = await usersApi.spinWheel();
+            if (!res.success) {
+                throw new Error(res.message || 'Ошибка вращения');
             }
-        }, SPIN_DURATION + 300);
+
+            let winIndex = PRIZES.findIndex(p => p.label === res.reward);
+            if (winIndex === -1) {
+                if (res.points > 0) {
+                    winIndex = PRIZES.findIndex(p => p.value === `${res.points}pp`);
+                } else {
+                    winIndex = PRIZES.findIndex(p => p.value === 'retry');
+                }
+            }
+            if (winIndex === -1) winIndex = 0;
+
+            const segmentCenter = winIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
+            const fullSpins = 5 + Math.floor(Math.random() * 3);
+            const targetRotation = fullSpins * 360 + (360 - segmentCenter);
+
+            setRotation(prev => prev + targetRotation);
+            setSpinsLeft(res.spinsRemaining);
+
+            setTimeout(async () => {
+                setIsSpinning(false);
+                const won = PRIZES[winIndex];
+                setPrize(won);
+                setShowModal(true);
+                await refreshUser();
+            }, SPIN_DURATION + 300);
+
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : 'Не удалось крутить колесо');
+            setIsSpinning(false);
+        }
     };
 
     return (
@@ -115,7 +100,7 @@ export default function FortuneWheel() {
             {/* Points display */}
             <div className="flex items-center gap-2 mb-8 px-4 py-2 rounded-full badge-balance">
                 <Coins className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm font-semibold text-white">Баланс: <span className="text-yellow-400">{totalPoints}</span> Perkly Points</span>
+                <span className="text-sm font-semibold text-white">Баланс: <span className="text-yellow-400">{user?.rewardPoints ?? 0}</span> Perkly Points</span>
             </div>
 
             {/* Wheel container */}
@@ -224,15 +209,7 @@ export default function FortuneWheel() {
                     {isSpinning ? '🎰 Крутится...' : spinsLeft <= 0 ? 'Приходите завтра!' : '🎰 Крутить Бесплатно'}
                 </button>
 
-                {spinsLeft <= 3 && !isSpinning && (
-                    <button
-                        onClick={resetSpins}
-                        className="text-[10px] text-white/10 hover:text-white/30 transition-colors uppercase tracking-widest bg-transparent border-0 cursor-pointer pt-4"
-                        title="Сбросить попытки (для разработчиков)"
-                    >
-                        [ Разработчик: Сбросить попытки ]
-                    </button>
-                )}
+
             </div>
 
             {/* Prize history hint */}

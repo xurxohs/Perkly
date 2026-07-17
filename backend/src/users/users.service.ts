@@ -2,14 +2,19 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { SavedOffer, SAVED_OFFER_SELECT } from '../offers/offer.selects';
+import * as bcrypt from 'bcrypt';
+import { randomInt, randomUUID } from 'crypto';
+import { StorageService } from '../storage/storage.service';
 
 export const SUBSCRIPTION_PRICES: Record<string, number> = {
-  GOLD: 4.99,
-  PLATINUM: 9.99,
+  GOLD: 59_880,
+  PLATINUM: 119_880,
 };
 
 const DAILY_WHEEL_LIMIT = 3;
@@ -120,9 +125,15 @@ const USER_SELECT = {
 
 @Injectable()
 export class UsersService {
+  private readonly passwordAttempts = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
+
   constructor(
     private prisma: PrismaService,
     private entitlements: EntitlementsService,
+    private storage: StorageService,
   ) {}
 
   async findById(id: string) {
@@ -136,15 +147,382 @@ export class UsersService {
     return user;
   }
 
+  async exportPersonalData(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        ...USER_SELECT,
+        deletedAt: true,
+        notifyPurchases: true,
+        notifyMessages: true,
+        notifyNearby: true,
+        b2cProfile: true,
+        interests: {
+          select: {
+            category: true,
+            weight: true,
+            source: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        savedOffers: {
+          select: { offerId: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        savedEvents: {
+          select: { eventId: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    const [transactions, deposits, reviews, subscriptions, financialEntries] =
+      await Promise.all([
+        this.prisma.transaction.findMany({
+          where: { buyerId: userId },
+          select: {
+            id: true,
+            offerId: true,
+            price: true,
+            status: true,
+            isGift: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        }),
+        this.prisma.deposit.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            amount: true,
+            provider: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        }),
+        this.prisma.review.findMany({
+          where: { authorId: userId },
+          select: {
+            id: true,
+            offerId: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        }),
+        this.prisma.subscription.findMany({
+          where: { userId },
+          orderBy: { startDate: 'asc' },
+        }),
+        this.prisma.financialEntry.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            transactionId: true,
+            depositId: true,
+            type: true,
+            amount: true,
+            balanceAfter: true,
+            currency: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        }),
+      ]);
+
+    await this.prisma.adminLog.create({
+      data: {
+        adminId: userId,
+        action: 'PERSONAL_DATA_EXPORTED',
+        targetId: userId,
+        details: JSON.stringify({ requestedAt: new Date().toISOString() }),
+      },
+    });
+
+    return {
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      currency: 'UZS',
+      user,
+      transactions,
+      deposits,
+      reviews,
+      subscriptions,
+      financialEntries,
+    };
+  }
+
   async updateProfile(
     id: string,
-    data: { displayName?: string; avatarUrl?: string },
+    data: { displayName?: string; avatarUrl?: string | null },
   ) {
+    const update: { displayName?: string; avatarUrl?: string | null } = {};
+    if (data.displayName !== undefined) {
+      const displayName = data.displayName.trim().replace(/\s+/g, ' ');
+      if (displayName.length < 2 || displayName.length > 60) {
+        throw new BadRequestException('Имя должно содержать от 2 до 60 символов');
+      }
+      update.displayName = displayName;
+    }
+    if (data.avatarUrl !== undefined) update.avatarUrl = data.avatarUrl;
+
     return this.prisma.user.update({
       where: { id },
-      data,
+      data: update,
       select: USER_SELECT,
     });
+  }
+
+  async uploadAvatar(userId: string, dataUrl: string) {
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) throw new BadRequestException('Expected a base64 data URL');
+
+    const mime = match[1].toLowerCase();
+    const allowed = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+    if (!allowed.has(mime)) throw new BadRequestException('Unsupported image type');
+
+    const source = Buffer.from(match[2], 'base64');
+    if (source.length === 0 || source.length > 6 * 1024 * 1024) {
+      throw new BadRequestException('Avatar must be between 1 byte and 6 MB');
+    }
+
+    let body: Buffer;
+    try {
+      const sharpModule = await import('sharp');
+      const sharpFactory = ((sharpModule as unknown as { default?: typeof import('sharp') }).default
+        ?? sharpModule) as unknown as typeof import('sharp');
+      body = await sharpFactory(source, { limitInputPixels: 25_000_000 })
+        .rotate()
+        .resize(768, 768, { fit: 'cover', position: 'centre' })
+        .webp({ quality: 84, effort: 4 })
+        .toBuffer();
+    } catch {
+      throw new BadRequestException('Invalid or corrupted image');
+    }
+
+    const key = `avatars/${userId}/${Date.now()}-${randomUUID()}.webp`;
+    const avatarUrl = await this.storage.put(key, body, 'image/webp');
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: USER_SELECT,
+    });
+  }
+
+  removeAvatar(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: null },
+      select: USER_SELECT,
+    });
+  }
+
+  async blockUser(blockerId: string, blockedId: string) {
+    if (blockerId === blockedId) {
+      throw new BadRequestException('You cannot block yourself');
+    }
+    const target = await this.prisma.user.findUnique({
+      where: { id: blockedId },
+      select: { id: true, deletedAt: true },
+    });
+    if (!target || target.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+    return this.prisma.userBlock.upsert({
+      where: { blockerId_blockedId: { blockerId, blockedId } },
+      update: {},
+      create: { blockerId, blockedId },
+    });
+  }
+
+  async unblockUser(blockerId: string, blockedId: string) {
+    const result = await this.prisma.userBlock.deleteMany({
+      where: { blockerId, blockedId },
+    });
+    return { success: true, removed: result.count > 0 };
+  }
+
+  listBlockedUsers(blockerId: string) {
+    return this.prisma.userBlock.findMany({
+      where: {
+        blockerId,
+        blocked: { deletedAt: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        blocked: {
+          select: {
+            id: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getPasswordStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    return { hasPassword: Boolean(user.passwordHash) };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string | undefined,
+    newPassword: string,
+  ) {
+    const attempt = this.passwordAttempts.get(userId);
+    if (attempt && attempt.resetAt > Date.now() && attempt.count >= 5) {
+      throw new HttpException(
+        'Слишком много попыток. Попробуйте через 15 минут',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (newPassword.length < 8) {
+      throw new BadRequestException(
+        'Новый пароль должен содержать минимум 8 символов',
+      );
+    }
+    if (newPassword.length > 128) {
+      throw new BadRequestException('Пароль слишком длинный');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    if (user.passwordHash) {
+      const valid =
+        Boolean(currentPassword) &&
+        (await bcrypt.compare(currentPassword!, user.passwordHash));
+      if (!valid) {
+        this.recordPasswordFailure(userId);
+        throw new BadRequestException('Текущий пароль указан неверно');
+      }
+      if (await bcrypt.compare(newPassword, user.passwordHash)) {
+        throw new BadRequestException(
+          'Новый пароль должен отличаться от текущего',
+        );
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+    this.passwordAttempts.delete(userId);
+    return { success: true };
+  }
+
+  private recordPasswordFailure(userId: string) {
+    const now = Date.now();
+    const current = this.passwordAttempts.get(userId);
+    if (!current || current.resetAt <= now) {
+      this.passwordAttempts.set(userId, {
+        count: 1,
+        resetAt: now + 15 * 60_000,
+      });
+      return;
+    }
+    current.count += 1;
+  }
+
+  async deleteAccount(
+    userId: string,
+    currentPassword: string | undefined,
+    confirmation: string,
+  ) {
+    const attempt = this.passwordAttempts.get(userId);
+    if (attempt && attempt.resetAt > Date.now() && attempt.count >= 5) {
+      throw new HttpException(
+        'Слишком много попыток. Попробуйте через 15 минут',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    if (confirmation !== 'УДАЛИТЬ') {
+      throw new BadRequestException('Введите УДАЛИТЬ для подтверждения');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, deletedAt: true },
+    });
+    if (!user || user.deletedAt)
+      throw new NotFoundException('Пользователь не найден');
+
+    if (user.passwordHash) {
+      const valid =
+        Boolean(currentPassword) &&
+        (await bcrypt.compare(currentPassword!, user.passwordHash));
+      if (!valid) {
+        this.recordPasswordFailure(userId);
+        throw new BadRequestException('Текущий пароль указан неверно');
+      }
+    }
+
+    const activeOperations = await this.prisma.transaction.count({
+      where: {
+        status: { in: ['PENDING', 'PAID', 'ESCROW', 'DISPUTED'] },
+        OR: [{ buyerId: userId }, { offer: { sellerId: userId } }],
+      },
+    });
+    if (activeOperations > 0) {
+      throw new BadRequestException(
+        'Сначала завершите активные покупки, продажи и споры',
+      );
+    }
+
+    const deletedAt = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: deletedAt },
+      });
+      await tx.savedOffer.deleteMany({ where: { userId } });
+      await tx.userInterest.deleteMany({ where: { userId } });
+      await tx.b2CProfile.deleteMany({ where: { userId } });
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          email: `deleted_${userId}@deleted.perkly.local`,
+          passwordHash: null,
+          displayName: 'Удалённый пользователь',
+          avatarUrl: null,
+          telegramId: null,
+          phone: null,
+          deviceToken: null,
+          balance: 0,
+          rewardPoints: 0,
+          role: 'USER',
+          tier: 'SILVER',
+          squadId: null,
+          deletedAt,
+          tokensValidAfter: deletedAt,
+        },
+      });
+    });
+
+    this.passwordAttempts.delete(userId);
+    return { success: true };
   }
 
   async getStats(userId: string) {
@@ -256,7 +634,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
     if (user.balance < cost) {
       throw new BadRequestException(
-        `Insufficient balance. Need $${cost.toFixed(2)}, have $${user.balance.toFixed(2)}`,
+        `Insufficient balance. Need ${cost.toLocaleString('ru-RU')} UZS, have ${user.balance.toLocaleString('ru-RU')} UZS`,
       );
     }
 
@@ -833,7 +1211,7 @@ export class UsersService {
       (sum, reward) => sum + reward.weight,
       0,
     );
-    let threshold = Math.random() * totalWeight;
+    let threshold = randomInt(totalWeight);
 
     for (const reward of WHEEL_REWARDS) {
       threshold -= reward.weight;

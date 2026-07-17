@@ -49,8 +49,15 @@ export class AdminController {
   async getOffers(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
+    @Query('search') search: string = '',
+    @Query('status') status: string = '',
   ) {
-    return this.adminService.getAllOffers(Number(page), Number(limit));
+    return this.adminService.getAllOffers(
+      Number(page),
+      Number(limit),
+      search,
+      status,
+    );
   }
 
   @Patch('offers/:id')
@@ -75,8 +82,15 @@ export class AdminController {
   async getTransactions(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
+    @Query('status') status: string = '',
+    @Query('search') search: string = '',
   ) {
-    return this.adminService.getAllTransactions(Number(page), Number(limit));
+    return this.adminService.getAllTransactions(
+      Number(page),
+      Number(limit),
+      status,
+      search,
+    );
   }
 
   @Patch('transactions/:id/refund')
@@ -92,16 +106,36 @@ export class AdminController {
   async getDisputes(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
+    @Query('status') status: string = '',
   ) {
-    return this.adminService.getAllDisputes(Number(page), Number(limit));
+    return this.adminService.getAllDisputes(
+      Number(page),
+      Number(limit),
+      status,
+    );
   }
 
   @Patch('disputes/:id/resolve')
   async resolveDispute(
     @Param('id') id: string,
     @Body('resolution') resolution: 'BUYER' | 'SELLER',
+    @Body('adminNote') adminNote: string | undefined,
     @Req() req: { user: { userId: string; role?: string } },
   ) {
-    return this.adminService.resolveDispute(id, resolution, req.user.userId);
+    return this.adminService.resolveDispute(
+      id,
+      resolution,
+      req.user.userId,
+      adminNote,
+    );
+  }
+
+  @Get('logs')
+  async getLogs(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '50',
+    @Query('action') action: string = '',
+  ) {
+    return this.adminService.getAdminLogs(Number(page), Number(limit), action);
   }
 }

@@ -15,6 +15,7 @@ import { Context, Markup, Telegraf } from 'telegraf';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { Transaction, User, Offer } from '@prisma/client';
+import { randomInt } from 'crypto';
 
 @Update()
 @Injectable()
@@ -42,11 +43,9 @@ export class BotService {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         reply_markup: replyMarkup,
       });
-      this.logger.log(`Sent notification to ${telegramId}`);
+      this.logger.log('Telegram notification sent');
     } catch (error) {
-      this.logger.error(
-        `Failed to send notification to ${telegramId}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.error('Telegram notification delivery failed');
     }
   }
 
@@ -62,6 +61,42 @@ export class BotService {
     }
 
     const telegramIdStr = from.id.toString();
+    const match = text.match(/^\/start (login_|ref_|gift_)([a-zA-Z0-9-]+)/);
+
+    // A login/link deep link must not create a Telegram-only user. The token
+    // already identifies whether this is a login or an account binding.
+    if (match?.[1] === 'login_') {
+      const claim = await this.authService.claimLoginToken(
+        match[2],
+        telegramIdStr,
+      );
+      if (!claim.session) {
+        await ctx.reply(`❌ ${claim.error ?? 'Запрос входа недействителен.'}`);
+        return;
+      }
+
+      const action = claim.session.flow === 'link' ? 'подключения' : 'входа';
+      await ctx.reply(
+        `👋 Привет, *${from.first_name}*!\n\nДля ${action} в *Perkly* подтвердите свой номер кнопкой ниже.`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            keyboard: [
+              [
+                {
+                  text: '📱 Подтвердить мой номер',
+                  request_contact: true,
+                },
+              ],
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        },
+      );
+      return;
+    }
+
     const email = `tg_${telegramIdStr}@telegram.local`;
 
     let user = await this.prisma.user.findUnique({
@@ -93,34 +128,11 @@ export class BotService {
       });
     }
 
-    const match = text.match(/^\/start (login_|ref_|gift_)([a-zA-Z0-9-]+)/);
-
     if (match) {
       const type = match[1];
       const token = match[2];
 
-      if (type === 'login_') {
-        this.pendingLogins.set(telegramIdStr, token);
-        await ctx.reply(
-          `👋 Привет, *${from.first_name}*!\n\nДля входа в *Perkly* нажмите кнопку ниже, чтобы поделиться вашим номером телефона. Это безопасно — мы используем его только для вашей идентификации.`,
-          {
-            parse_mode: 'Markdown',
-            reply_markup: {
-              keyboard: [
-                [
-                  {
-                    text: '📱 Поделиться номером телефона',
-                    request_contact: true,
-                  },
-                ],
-              ],
-              resize_keyboard: true,
-              one_time_keyboard: true,
-            },
-          },
-        );
-        return;
-      } else if (type === 'ref_' && isNewUser) {
+      if (type === 'ref_' && isNewUser) {
         const referrerId = token;
         const existingRef = await this.prisma.analyticsEvent.findFirst({
           where: { eventType: 'REFERRAL', userId: user.id },
@@ -203,9 +215,6 @@ export class BotService {
     );
   }
 
-  // Map to store pending login tokens: telegramId -> loginToken
-  private pendingLogins = new Map<string, string>();
-
   @On('contact')
   async onContact(@Ctx() ctx: Context) {
     const from = ctx.from;
@@ -215,14 +224,15 @@ export class BotService {
     if (!from || !message || !('contact' in message) || !message.contact)
       return;
 
-    const contact = message.contact as { phone_number: string };
+    const contact = message.contact as {
+      phone_number: string;
+      user_id?: number;
+    };
 
     const telegramId = from.id.toString();
-    const loginToken = this.pendingLogins.get(telegramId);
-
-    if (!loginToken) {
+    if (contact.user_id && contact.user_id !== from.id) {
       await ctx.reply(
-        '❓ Не нашли активного запроса входа. Вернитесь на сайт и нажмите кнопку ещё раз.',
+        '❌ Нажмите кнопку подтверждения и отправьте именно свой номер телефона.',
         {
           reply_markup: { remove_keyboard: true },
         },
@@ -236,21 +246,23 @@ export class BotService {
     // Validate phone — +998, +7, +77 (and any other format)
     const normalizedPhone = String(phone).startsWith('+') ? phone : `+${phone}`;
 
-    this.logger.log(`Received contact from ${telegramId}: ${normalizedPhone}`);
+    this.logger.log('Telegram login contact received');
 
-    // Resolve the login token in auth service
-    await this.authService.resolveLoginToken(
-      loginToken,
+    const result = await this.authService.resolveClaimedLogin(
       telegramId,
       normalizedPhone,
       displayName,
     );
 
-    // Clean up
-    this.pendingLogins.delete(telegramId);
+    if (!result.ok) {
+      await ctx.reply(`❌ ${result.message}`, {
+        reply_markup: { remove_keyboard: true },
+      });
+      return;
+    }
 
     await ctx.reply(
-      `✅ *Отлично, ${displayName}!*\n\nВаш номер ${normalizedPhone} подтверждён.\n\n🔙 Вернитесь на сайт — вы уже вошли в аккаунт!`,
+      `✅ *Готово, ${displayName}!*\n\nВаш номер ${normalizedPhone} подтверждён.\n\n🔙 Вернитесь в Perkly — ${result.flow === 'link' ? 'аккаунт подключён' : 'вход выполнен'}.`,
       {
         parse_mode: 'Markdown',
         reply_markup: { remove_keyboard: true },
@@ -357,7 +369,7 @@ export class BotService {
 
     const webAppUrl = process.env.FRONTEND_URL || 'https://perkly.uz';
     offers.data.forEach((offer, i) => {
-      response += `${i + 1}. *${offer.title}* — $${offer.price}\n`;
+      response += `${i + 1}. *${offer.title}* — ${offer.price.toLocaleString('ru-RU')} сум\n`;
     });
 
     await ctx.reply(response, {
@@ -418,7 +430,7 @@ export class BotService {
     const totalAmount = totalSales._sum.price || 0;
     const totalCount = totalSales._count.id || 0;
 
-    const message = `📊 *Ваша статистика продавца*\n\n*Сегодня:*\n💸 Выручка: $${todayAmount}\n🛍 Покупок: ${todayCount}\n\n*За все время:*\n💸 Выручка: $${totalAmount}\n🛍 Покупок: ${totalCount}\n\nВаш текущий баланс: $${user.balance}`;
+    const message = `📊 *Ваша статистика продавца*\n\n*Сегодня:*\n💸 Выручка: ${todayAmount.toLocaleString('ru-RU')} сум\n🛍 Покупок: ${todayCount}\n\n*За все время:*\n💸 Выручка: ${totalAmount.toLocaleString('ru-RU')} сум\n🛍 Покупок: ${totalCount}\n\nВаш текущий баланс: ${user.balance.toLocaleString('ru-RU')} сум`;
 
     await ctx.reply(message, { parse_mode: 'Markdown' });
   }
@@ -443,7 +455,7 @@ export class BotService {
       return;
     }
 
-    const message = `💰 *Ваш профиль:*\n\nИмя: ${user.displayName}\nБаланс: $${user.balance.toFixed(2)}\nPerkly Points: ${user.rewardPoints}\nТариф: ${user.tier}`;
+    const message = `💰 *Ваш профиль:*\n\nИмя: ${user.displayName}\nБаланс: ${user.balance.toLocaleString('ru-RU')} сум\nPerkly Points: ${user.rewardPoints}\nТариф: ${user.tier}`;
     await ctx.reply(message, { parse_mode: 'Markdown' });
   }
 
@@ -479,7 +491,7 @@ export class BotService {
         tx.status === 'COMPLETED' || tx.status === 'PAID'
           ? '✅ Оплачено'
           : tx.status;
-      message += `${i + 1}. *${tx.offer.title}* — $${tx.price}\nСтатус: ${status}\n`;
+      message += `${i + 1}. *${tx.offer.title}* — ${tx.price.toLocaleString('ru-RU')} сум\nСтатус: ${status}\n`;
       if (
         (tx.status === 'COMPLETED' || tx.status === 'PAID') &&
         tx.offer.hiddenData
@@ -545,7 +557,7 @@ export class BotService {
       return;
     }
 
-    const bonusAmount = Math.floor(Math.random() * (5000 - 500 + 1)) + 500;
+    const bonusAmount = randomInt(500, 5001);
 
     await this.prisma.user.update({
       where: { id: user.id },

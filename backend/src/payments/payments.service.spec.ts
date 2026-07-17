@@ -16,7 +16,11 @@ describe('PaymentsService', () => {
       update: jest.Mock;
     };
     user: {
-      update: jest.Mock;
+      updateMany: jest.Mock;
+      findUniqueOrThrow: jest.Mock;
+    };
+    financialEntry: {
+      create: jest.Mock;
     };
     $transaction: jest.Mock;
   };
@@ -30,7 +34,11 @@ describe('PaymentsService', () => {
         update: jest.fn(),
       },
       user: {
-        update: jest.fn(),
+        updateMany: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+      },
+      financialEntry: {
+        create: jest.fn(),
       },
       $transaction: jest.fn(),
     };
@@ -73,6 +81,7 @@ describe('PaymentsService', () => {
         amount: 10000,
         provider: 'CLICK',
         status: 'PENDING',
+        idempotencyKey: undefined,
       },
     });
   });
@@ -91,29 +100,41 @@ describe('PaymentsService', () => {
       status: 'PENDING',
     };
     const updatedDeposit = { ...deposit, status: 'SUCCESS' };
-    const updateDepositResult = Promise.resolve(updatedDeposit);
-    const updateUserResult = Promise.resolve({ id: 'user-1', balance: 25000 });
-
     prisma.deposit.findUnique.mockResolvedValue(deposit);
-    prisma.deposit.update.mockReturnValue(updateDepositResult);
-    prisma.user.update.mockReturnValue(updateUserResult);
-    prisma.$transaction.mockResolvedValue([updatedDeposit, { id: 'user-1' }]);
+    prisma.deposit.update.mockResolvedValue(updatedDeposit);
+    prisma.user.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({ balance: 25000 });
+    prisma.financialEntry.create.mockResolvedValue({ id: 'entry-1' });
+    prisma.$transaction.mockImplementation((callback) => callback(prisma));
 
     await expect(
       service.mockCompleteTopUp('user-1', 'deposit-1', true),
     ).resolves.toEqual(updatedDeposit);
 
-    expect(prisma.$transaction).toHaveBeenCalledWith([
-      updateDepositResult,
-      updateUserResult,
-    ]);
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
     expect(prisma.deposit.update).toHaveBeenCalledWith({
       where: { id: 'deposit-1' },
       data: { status: 'SUCCESS', providerId: 'mock_deposit-1' },
     });
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'user-1',
+        balance: { lte: 1999975000 },
+      },
       data: { balance: { increment: 25000 } },
+    });
+    expect(prisma.user.findUniqueOrThrow).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { balance: true },
+    });
+    expect(prisma.financialEntry.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'user-1',
+        depositId: 'deposit-1',
+        type: 'TOPUP_CREDIT',
+        amount: 25000,
+        balanceAfter: 25000,
+      }),
     });
   });
 
@@ -176,6 +197,26 @@ describe('PaymentsService', () => {
       where: { id: 'deposit-1' },
       data: { status: 'FAILED' },
     });
-    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rolls back a top-up when the wallet limit would be exceeded', async () => {
+    prisma.deposit.findUnique.mockResolvedValue({
+      id: 'deposit-1',
+      userId: 'user-1',
+      amount: 25000,
+      status: 'PENDING',
+    });
+    prisma.deposit.update.mockResolvedValue({
+      id: 'deposit-1',
+      status: 'SUCCESS',
+    });
+    prisma.user.updateMany.mockResolvedValue({ count: 0 });
+    prisma.$transaction.mockImplementation((callback) => callback(prisma));
+
+    await expect(
+      service.mockCompleteTopUp('user-1', 'deposit-1', true),
+    ).rejects.toThrow('Wallet balance limit exceeded');
+    expect(prisma.financialEntry.create).not.toHaveBeenCalled();
   });
 });

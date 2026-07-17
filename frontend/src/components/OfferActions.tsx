@@ -73,7 +73,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
   const handleShare = () => {
     const BOT_USERNAME = process.env.NEXT_PUBLIC_BOT_USERNAME || 'PerklyPlatformBot';
     const url = `https://t.me/${BOT_USERNAME}/app?startapp=offer_${offer.id}`;
-    const text = `🔥 Смотри, что я нашел в Perkly:\n\n${offer.title}\nЦена: ${offer.price === 0 ? 'Бесплатно' : offer.price + '$'}`;
+    const text = `🔥 Смотри, что я нашел в Perkly:\n\n${offer.title}\nЦена: ${offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}`;
 
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
@@ -167,7 +167,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
           disabled={purchasing}
           className="flex-1 py-4 rounded-xl text-white font-bold text-base cursor-pointer border-0 transition-all bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_25px_rgba(168,85,247,0.3)] disabled:opacity-60"
         >
-          {purchasing ? 'Обработка...' : isGift ? 'Купить подарок' : offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toFixed(2)}$`}
+          {purchasing ? 'Обработка...' : isGift ? 'Купить подарок' : offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`}
         </button>
 
         <button

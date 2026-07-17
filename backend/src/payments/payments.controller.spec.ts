@@ -33,10 +33,17 @@ describe('PaymentsController', () => {
     paymentsService.createTopUp.mockResolvedValue({ deposit: { id: 'dep-1' } });
 
     await expect(
-      controller.createTopUp({ user: { userId: 'user-1' } }, 10000),
+      controller.createTopUp(
+        { user: { userId: 'user-1' } },
+        { amount: 10000, idempotencyKey: 'topup-key' },
+      ),
     ).resolves.toEqual({ deposit: { id: 'dep-1' } });
 
-    expect(paymentsService.createTopUp).toHaveBeenCalledWith('user-1', 10000);
+    expect(paymentsService.createTopUp).toHaveBeenCalledWith(
+      'user-1',
+      10000,
+      'topup-key',
+    );
   });
 
   it('completes a mock webhook for the authenticated user', async () => {

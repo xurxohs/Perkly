@@ -119,7 +119,7 @@ export default function CouponsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filtered.map((offer) => {
                             const discount = getDiscount(offer.price);
-                            const originalPrice = offer.price > 0 ? (offer.price / (1 - discount / 100)).toFixed(2) : null;
+                            const originalPrice = offer.price > 0 ? Math.round(offer.price / (1 - discount / 100)) : null;
                             const imgUrl = couponImages[offer.category] || couponImages['DEFAULT'];
 
                             return (
@@ -162,10 +162,10 @@ export default function CouponsPage() {
                                             <div className="flex justify-between items-center">
                                                 <div>
                                                     {originalPrice && (
-                                                        <div className="text-xs text-white/20 line-through">${originalPrice}</div>
+                                                        <div className="text-xs text-white/20 line-through">{originalPrice.toLocaleString('ru-RU')} сум</div>
                                                     )}
                                                     <div className="text-lg font-extrabold text-gradient-green">
-                                                        {offer.price === 0 ? 'Бесплатно' : `$${offer.price.toFixed(2)}`}
+                                                        {offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}
                                                     </div>
                                                 </div>
 

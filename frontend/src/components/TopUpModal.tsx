@@ -12,18 +12,18 @@ interface TopUpModalProps {
 
 export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps) {
     const { hapticImpact, hapticNotification } = useTelegram();
-    const [amount, setAmount] = useState<string>('10');
+    const [amount, setAmount] = useState<string>('50000');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     if (!isOpen) return null;
 
-    const predefinedAmounts = [5, 10, 50, 100];
+    const predefinedAmounts = [50_000, 100_000, 250_000, 500_000];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const numAmount = parseFloat(amount);
-        if (isNaN(numAmount) || numAmount <= 0) {
+        if (!Number.isSafeInteger(numAmount) || numAmount < 1_000) {
             hapticNotification('error');
             setError('Введите корректную сумму');
             return;
@@ -66,18 +66,18 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div>
-                        <label className="text-sm font-medium text-white/60 mb-2 block">Сумма (USD)</label>
+                        <label className="text-sm font-medium text-white/60 mb-2 block">Сумма (UZS)</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">$</span>
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">сум</span>
                             <input
                                 type="number"
-                                min="1"
-                                step="0.01"
+                                min="1000"
+                                step="1000"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 disabled={loading}
-                                className="w-full bg-white/5 text-white font-bold text-xl py-4 pl-8 pr-4 rounded-xl outline-none transition-all placeholder-white/20 focus:bg-white/10 border border-white/10"
-                                placeholder="0.00"
+                                className="w-full bg-white/5 text-white font-bold text-xl py-4 pl-4 pr-16 rounded-xl outline-none transition-all placeholder-white/20 focus:bg-white/10 border border-white/10"
+                                placeholder="50 000"
                             />
                         </div>
                     </div>
@@ -94,7 +94,7 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
                                 }}
                                 className={`py-2 rounded-lg text-sm font-bold transition-all border-0 cursor-pointer ${amount === val.toString() ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/5'}`}
                             >
-                                ${val}
+                                {val.toLocaleString('ru-RU')}
                             </button>
                         ))}
                     </div>
@@ -105,8 +105,8 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
                         </div>
                     )}
 
-                    <div className="p-3 rounded-lg text-sm text-yellow-500/80 bg-yellow-500/10 border border-yellow-500/20 mt-2">
-                        <b>Mock Mode:</b> В целях тестирования средства будут зачислены мгновенно (фиктивный платеж).
+                    <div className="p-3 rounded-lg text-sm text-blue-300/80 bg-blue-500/10 border border-blue-500/20 mt-2">
+                        После продолжения откроется защищённая страница Click. Баланс обновится после подтверждения платежа.
                     </div>
 
                     <button

@@ -7,6 +7,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
+import {
+  isWholeUzsAmount,
+  MAX_TOP_UP_UZS,
+  MAX_WALLET_BALANCE_UZS,
+  MIN_TOP_UP_UZS,
+} from '../common/money';
 
 // Click Webhook Error Codes
 const CLICK_ERRORS = {
@@ -32,9 +38,45 @@ export class PaymentsService {
 
   constructor(private prisma: PrismaService) {}
 
-  async createTopUp(userId: string, amount: number) {
-    if (amount <= 0) {
-      throw new BadRequestException('Amount must be greater than zero');
+  async getDeposit(userId: string, depositId: string) {
+    const deposit = await this.prisma.deposit.findUnique({
+      where: { id: depositId },
+    });
+    if (!deposit) throw new NotFoundException('Deposit not found');
+    if (deposit.userId !== userId) {
+      throw new ForbiddenException('Deposit does not belong to this user');
+    }
+    return deposit;
+  }
+
+  async createTopUp(userId: string, amount: number, idempotencyKey?: string) {
+    if (
+      !isWholeUzsAmount(amount, {
+        min: MIN_TOP_UP_UZS,
+        max: MAX_TOP_UP_UZS,
+      })
+    ) {
+      throw new BadRequestException(
+        `Amount must be an integer between ${MIN_TOP_UP_UZS.toLocaleString('en-US')} and ${MAX_TOP_UP_UZS.toLocaleString('en-US')} UZS`,
+      );
+    }
+    if (
+      process.env.NODE_ENV === 'production' &&
+      (!process.env.CLICK_SECRET_KEY ||
+        !process.env.CLICK_MERCHANT_ID ||
+        !process.env.CLICK_SERVICE_ID)
+    ) {
+      throw new BadRequestException('Click merchant is not configured');
+    }
+
+    const normalizedKey = idempotencyKey?.trim()
+      ? `topup:${userId}:${idempotencyKey.trim().slice(0, 120)}`
+      : undefined;
+    if (normalizedKey) {
+      const existing = await this.prisma.deposit.findUnique({
+        where: { idempotencyKey: normalizedKey },
+      });
+      if (existing) return this.topUpResponse(existing, amount);
     }
 
     const deposit = await this.prisma.deposit.create({
@@ -43,12 +85,23 @@ export class PaymentsService {
         amount,
         provider: 'CLICK',
         status: 'PENDING',
+        idempotencyKey: normalizedKey,
       },
     });
 
+    return this.topUpResponse(deposit, amount);
+  }
+
+  private topUpResponse(deposit: { id: string }, amount: number) {
     // Generate Click Payment URL
-    const returnUrl = encodeURIComponent('perkly://wallet');
-    const paymentUrl = `https://my.click.uz/services/pay?service_id=${this.clickServiceId}&merchant_id=${this.clickMerchantId}&amount=${amount}&transaction_param=${deposit.id}&return_url=${returnUrl}`;
+    const query = new URLSearchParams({
+      service_id: this.clickServiceId,
+      merchant_id: this.clickMerchantId,
+      amount: amount.toFixed(2),
+      transaction_param: deposit.id,
+      return_url: process.env.CLICK_RETURN_URL || 'perkly://wallet',
+    });
+    const paymentUrl = `https://my.click.uz/services/pay?${query.toString()}`;
 
     return { deposit, paymentUrl };
   }
@@ -81,24 +134,56 @@ export class PaymentsService {
       });
     }
 
-    const [updatedDeposit] = await this.prisma.$transaction([
-      this.prisma.deposit.update({
+    return this.prisma.$transaction(async (tx) => {
+      const updatedDeposit = await tx.deposit.update({
         where: { id: deposit.id },
         data: {
           status: 'SUCCESS',
           providerId: `mock_${deposit.id}`,
         },
-      }),
-      this.prisma.user.update({
-        where: { id: userId },
+      });
+      const credited = await tx.user.updateMany({
+        where: {
+          id: userId,
+          balance: { lte: MAX_WALLET_BALANCE_UZS - deposit.amount },
+        },
         data: { balance: { increment: deposit.amount } },
-      }),
-    ]);
-
-    return updatedDeposit;
+      });
+      if (credited.count !== 1) {
+        throw new BadRequestException('Wallet balance limit exceeded');
+      }
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { balance: true },
+      });
+      await tx.financialEntry.create({
+        data: {
+          userId,
+          depositId: deposit.id,
+          type: 'TOPUP_CREDIT',
+          amount: deposit.amount,
+          balanceAfter: user.balance,
+          idempotencyKey: `topup-credit:${deposit.id}`,
+          metadata: JSON.stringify({ provider: 'MOCK' }),
+        },
+      });
+      return updatedDeposit;
+    });
   }
 
   async processClickWebhook(body: any) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      (!process.env.CLICK_SECRET_KEY ||
+        !process.env.CLICK_MERCHANT_ID ||
+        !process.env.CLICK_SERVICE_ID)
+    ) {
+      this.logger.error('Click webhook rejected: merchant is not configured');
+      throw {
+        error: CLICK_ERRORS.REQUEST_ERROR,
+        message: 'Payment provider is not configured',
+      };
+    }
     const {
       click_trans_id,
       service_id,
@@ -110,7 +195,19 @@ export class PaymentsService {
       error_note,
       sign_time,
       sign_string,
+      merchant_prepare_id,
     } = body;
+
+    const parsedAction = Number(action);
+    const parsedError = Number(error);
+    const parsedAmount = Number(amount);
+
+    if (String(service_id) !== this.clickServiceId) {
+      throw {
+        error: CLICK_ERRORS.REQUEST_ERROR,
+        message: 'Incorrect service_id',
+      };
+    }
 
     // 1. Check Signature
     const signString = `${click_trans_id}${service_id}${this.clickSecretKey}${merchant_trans_id}${amount}${action}${sign_time}`;
@@ -119,7 +216,15 @@ export class PaymentsService {
       .update(signString)
       .digest('hex');
 
-    if (generatedSign !== sign_string) {
+    const expected = Buffer.from(generatedSign, 'utf8');
+    const received = Buffer.from(
+      String(sign_string || '').toLowerCase(),
+      'utf8',
+    );
+    if (
+      expected.length !== received.length ||
+      !crypto.timingSafeEqual(expected, received)
+    ) {
       this.logger.error('Click sign check failed');
       throw {
         error: CLICK_ERRORS.SIGN_CHECK_FAILED,
@@ -128,7 +233,7 @@ export class PaymentsService {
     }
 
     // 2. Check Action (0 = Prepare, 1 = Complete)
-    if (action !== 0 && action !== 1) {
+    if (parsedAction !== 0 && parsedAction !== 1) {
       throw {
         error: CLICK_ERRORS.ACTION_NOT_FOUND,
         message: 'Action not found',
@@ -147,7 +252,13 @@ export class PaymentsService {
       };
     }
 
-    if (parseFloat(amount) !== deposit.amount) {
+    if (
+      !isWholeUzsAmount(parsedAmount, {
+        min: MIN_TOP_UP_UZS,
+        max: MAX_TOP_UP_UZS,
+      }) ||
+      parsedAmount !== deposit.amount
+    ) {
       throw {
         error: CLICK_ERRORS.INCORRECT_AMOUNT,
         message: 'Incorrect amount',
@@ -158,7 +269,7 @@ export class PaymentsService {
       throw { error: CLICK_ERRORS.ALREADY_PAID, message: 'Already paid' };
     }
 
-    if (action === 0) {
+    if (parsedAction === 0) {
       // PREPARE
       return {
         click_trans_id,
@@ -167,10 +278,15 @@ export class PaymentsService {
         error: CLICK_ERRORS.SUCCESS,
         error_note: 'Success',
       };
-    } else if (action === 1) {
+    } else if (parsedAction === 1) {
+      if (merchant_prepare_id && String(merchant_prepare_id) !== deposit.id) {
+        throw {
+          error: CLICK_ERRORS.TRANSACTION_DOES_NOT_EXIST,
+          message: 'Prepare transaction not found',
+        };
+      }
       // COMPLETE
-      if (error === -1 || error === -5017) {
-        // Payment cancelled by user or insufficient funds
+      if (parsedError !== 0) {
         await this.prisma.deposit.update({
           where: { id: deposit.id },
           data: { status: 'FAILED' },
@@ -185,19 +301,52 @@ export class PaymentsService {
       }
 
       // Success
-      await this.prisma.$transaction(async (tx) => {
-        await tx.deposit.update({
-          where: { id: deposit.id },
+      const completed = await this.prisma.$transaction(async (tx) => {
+        const update = await tx.deposit.updateMany({
+          where: { id: deposit.id, status: 'PENDING' },
           data: {
             status: 'SUCCESS',
             providerId: click_trans_id.toString(),
           },
         });
-        await tx.user.update({
-          where: { id: deposit.userId },
+        if (update.count !== 1) return false;
+        const credited = await tx.user.updateMany({
+          where: {
+            id: deposit.userId,
+            balance: { lte: MAX_WALLET_BALANCE_UZS - deposit.amount },
+          },
           data: { balance: { increment: deposit.amount } },
         });
+        if (credited.count !== 1) {
+          throw {
+            error: CLICK_ERRORS.UPDATE_FAILED,
+            message: 'Wallet balance limit exceeded',
+          };
+        }
+        const user = await tx.user.findUniqueOrThrow({
+          where: { id: deposit.userId },
+          select: { balance: true },
+        });
+        await tx.financialEntry.create({
+          data: {
+            userId: deposit.userId,
+            depositId: deposit.id,
+            type: 'TOPUP_CREDIT',
+            amount: deposit.amount,
+            balanceAfter: user.balance,
+            idempotencyKey: `topup-credit:${deposit.id}`,
+            metadata: JSON.stringify({
+              provider: 'CLICK',
+              clickTransId: String(click_trans_id),
+            }),
+          },
+        });
+        return true;
       });
+
+      if (!completed) {
+        throw { error: CLICK_ERRORS.ALREADY_PAID, message: 'Already paid' };
+      }
 
       return {
         click_trans_id,

@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
-import { LayoutDashboard, Users, ShoppingBag, CreditCard, Scale, Image as ImageIcon, Settings, LogOut, MessageCircle, Activity, Sparkles, Flame, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, CreditCard, Scale, ShieldAlert, ScrollText, LogOut, MessageCircle, Activity, Sparkles, Flame, Building2 } from 'lucide-react';
 
 const ADMIN_LINKS = [
     { name: 'Обзор', href: '/admin', icon: LayoutDashboard },
@@ -15,9 +15,10 @@ const ADMIN_LINKS = [
     { name: 'Товары', href: '/admin/offers', icon: ShoppingBag },
     { name: 'Транзакции', href: '/admin/transactions', icon: CreditCard },
     { name: 'Споры', href: '/admin/disputes', icon: Scale },
+    { name: 'Модерация', href: '/admin/moderation', icon: ShieldAlert },
     { name: 'Чаты', href: '/admin/chats', icon: MessageCircle },
-    { name: 'Баннеры', href: '/admin/banners', icon: ImageIcon },
-    { name: 'Настройки', href: '/admin/settings', icon: Settings },
+    { name: 'Мониторинг', href: '/admin/monitoring', icon: Activity },
+    { name: 'Журнал действий', href: '/admin/audit', icon: ScrollText },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

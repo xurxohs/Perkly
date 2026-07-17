@@ -6,9 +6,8 @@ import {
 } from '@nestjs/common';
 import { Prisma, TopkaPost } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 export type MediaVariant =
   | 'original'
@@ -66,7 +65,10 @@ export class TopkaAdminService {
   private readonly logger = new Logger(TopkaAdminService.name);
   private sharpUnavailableLogged = false;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   async list(filters: {
     status?: string;
@@ -171,13 +173,14 @@ export class TopkaAdminService {
     const variant = input.variant || 'original';
     const safeVariant = variant.replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const fileName = `${Date.now()}-${safeVariant}-${randomUUID()}.${optimized.extension}`;
-    const uploadDir = join(process.cwd(), 'uploads', 'topka');
-
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, fileName), optimized.buffer);
+    const url = await this.storage.put(
+      `topka/${fileName}`,
+      optimized.buffer,
+      optimized.mime,
+    );
 
     return {
-      url: `${this.publicBaseUrl()}/uploads/topka/${fileName}`,
+      url,
       variant,
       mime: optimized.mime,
       size: optimized.buffer.length,
@@ -294,11 +297,13 @@ export class TopkaAdminService {
   private assignString(
     data: Record<string, unknown>,
     key: string,
-    value?: string,
+    value?: unknown,
   ) {
-    if (value !== undefined) {
-      data[key] = value.trim();
+    if (value === undefined || value === null) return;
+    if (typeof value !== 'string') {
+      throw new BadRequestException(`${key} must be a string`);
     }
+    data[key] = value.trim();
   }
 
   private toDate(value?: string | null) {

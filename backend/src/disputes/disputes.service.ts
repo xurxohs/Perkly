@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { sellerPayout } from '../common/money';
 import { BotService } from '../bot/bot.service';
 import { DisputeStatus, TransactionStatus } from '../common/enums';
 
@@ -19,6 +20,12 @@ export class DisputesService {
   ) {}
 
   async create(transactionId: string, buyerId: string, reason: string) {
+    const normalizedReason = reason?.trim() ?? '';
+    if (normalizedReason.length < 10 || normalizedReason.length > 2000) {
+      throw new BadRequestException(
+        'Dispute reason must contain 10–2000 characters',
+      );
+    }
     // Find transaction
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionId },
@@ -47,7 +54,7 @@ export class DisputesService {
       const dispute = await tx.dispute.create({
         data: {
           transactionId,
-          reason,
+          reason: normalizedReason,
           status: DisputeStatus.OPEN,
         },
       });
@@ -76,7 +83,7 @@ export class DisputesService {
       where: { id: transaction.offer.sellerId },
     });
     if (seller && seller.telegramId) {
-      const message = `⚠️ *Открыт спор!*\n\nПокупатель открыл спор по вашему товару "${transaction.offer.title}".\nПричина: _${reason}_\n\nПожалуйста, перейдите в чат спора, чтобы решить проблему.`;
+      const message = `⚠️ *Открыт спор!*\n\nПокупатель открыл спор по вашему товару "${transaction.offer.title}".\nПричина: _${normalizedReason}_\n\nПожалуйста, перейдите в чат спора, чтобы решить проблему.`;
       await this.botService.sendTelegramNotification(
         seller.telegramId,
         message,
@@ -95,6 +102,9 @@ export class DisputesService {
     });
 
     if (!dispute) throw new NotFoundException('Dispute not found');
+    if (dispute.status !== DisputeStatus.OPEN) {
+      throw new BadRequestException('Dispute is already resolved');
+    }
     return dispute;
   }
 
@@ -138,10 +148,13 @@ export class DisputesService {
     // Only admin or seller can resolve (we will enforce this in the controller)
 
     await this.prisma.$transaction(async (tx) => {
-      const updatedDispute = await tx.dispute.update({
-        where: { id: disputeId },
+      const transition = await tx.dispute.updateMany({
+        where: { id: disputeId, status: DisputeStatus.OPEN },
         data: { status: resolution },
       });
+      if (transition.count !== 1) {
+        throw new BadRequestException('Dispute is already resolved');
+      }
 
       // Update transaction status depending on resolution
       const newTxStatus =
@@ -154,20 +167,46 @@ export class DisputesService {
         data: { status: newTxStatus },
       });
 
-      // If cancelled, we should also revert balances (buyer +price, seller -price)
+      // Revert/Payout balances depending on status
       if (newTxStatus === TransactionStatus.CANCELLED) {
-        await tx.user.update({
+        // Refund Buyer (No decrement to seller since money was in escrow)
+        const buyer = await tx.user.update({
           where: { id: dispute.transaction.buyerId },
           data: { balance: { increment: dispute.transaction.price } },
+          select: { balance: true },
         });
-        await tx.user.update({
+        await tx.financialEntry.create({
+          data: {
+            userId: dispute.transaction.buyerId,
+            transactionId: dispute.transactionId,
+            type: 'DISPUTE_REFUND',
+            amount: dispute.transaction.price,
+            balanceAfter: buyer.balance,
+            idempotencyKey: `dispute-refund:${dispute.id}`,
+          },
+        });
+      } else if (newTxStatus === TransactionStatus.COMPLETED) {
+        // Payout to Seller
+        const payout = sellerPayout(dispute.transaction.price);
+        const seller = await tx.user.update({
           where: { id: dispute.transaction.offer.sellerId },
-          data: { balance: { decrement: dispute.transaction.price } },
+          data: { balance: { increment: payout } },
+          select: { balance: true },
+        });
+        await tx.financialEntry.create({
+          data: {
+            userId: dispute.transaction.offer.sellerId,
+            transactionId: dispute.transactionId,
+            type: 'DISPUTE_SELLER_PAYOUT',
+            amount: payout,
+            balanceAfter: seller.balance,
+            idempotencyKey: `dispute-seller-payout:${dispute.id}`,
+          },
         });
       }
 
       // 1. Return the result of the transaction (which is the updated dispute)
-      return updatedDispute;
+      return tx.dispute.findUniqueOrThrow({ where: { id: disputeId } });
     });
 
     // 2. Fetch the updated transaction with necessary details for notification
@@ -199,7 +238,7 @@ export class DisputesService {
           message,
         );
       } catch (err) {
-        this.logger.error('Failed to send telegram notification', err);
+        this.logger.error('Failed to send dispute notification');
       }
     }
 

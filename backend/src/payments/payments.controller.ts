@@ -1,5 +1,7 @@
 import {
   Controller,
+  Get,
+  Param,
   Post,
   Body,
   UseGuards,
@@ -18,10 +20,23 @@ export class PaymentsController {
   @Post('topup')
   async createTopUp(
     @Req() req: { user: { userId: string } },
-    @Body('amount') amount: number,
+    @Body() body: { amount: number; idempotencyKey?: string },
   ) {
     const userId = req.user.userId;
-    return this.paymentsService.createTopUp(userId, amount);
+    return this.paymentsService.createTopUp(
+      userId,
+      body.amount,
+      body.idempotencyKey,
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('deposits/:id')
+  depositStatus(
+    @Req() req: { user: { userId: string } },
+    @Param('id') id: string,
+  ) {
+    return this.paymentsService.getDeposit(req.user.userId, id);
   }
 
   @Post('webhook/click')

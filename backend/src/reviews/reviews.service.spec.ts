@@ -92,6 +92,31 @@ describe('ReviewsService', () => {
     expect(prisma.review.create).not.toHaveBeenCalled();
   });
 
+  it('rejects objectionable or link-spam review comments', async () => {
+    await expect(
+      service.createForAuthor('user-1', {
+        offerId: 'offer-1',
+        rating: 5,
+        comment: 'f.u.c.k',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    await expect(
+      service.createForAuthor('user-1', {
+        offerId: 'offer-1',
+        rating: 5,
+        comment: [
+          'https://one.example',
+          'https://two.example',
+          'https://three.example',
+          'https://four.example',
+        ].join(' '),
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prisma.review.create).not.toHaveBeenCalled();
+  });
+
   it('returns offer review stats with zero fallback', async () => {
     prisma.review.aggregate.mockResolvedValue({
       _avg: { rating: null },

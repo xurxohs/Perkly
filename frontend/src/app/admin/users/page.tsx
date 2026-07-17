@@ -17,7 +17,7 @@ export default function AdminUsers() {
         setLoading(true);
         try {
             const res = await api.admin.getUsers(search);
-            setUsers(res);
+            setUsers(res.users);
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
@@ -128,7 +128,7 @@ export default function AdminUsers() {
                                         </span>
                                     </td>
                                     <td className="py-4 px-6 font-mono text-sm text-white">
-                                        ${user.balance.toFixed(2)}
+                                        {user.balance.toLocaleString('ru-RU')} сум
                                     </td>
                                     <td className="py-4 px-6 text-right space-x-2">
                                         <button
@@ -196,16 +196,20 @@ export default function AdminUsers() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-white/50 mb-1.5">Баланс ($)</label>
+                                <label className="block text-xs font-medium text-white/50 mb-1.5">Баланс (UZS)</label>
                                 <input
                                     type="number"
-                                    step="0.01"
                                     value={editForm.balance}
-                                    onChange={e => setEditForm(prev => ({ ...prev, balance: parseFloat(e.target.value) || 0 }))}
+                                    onChange={e => setEditForm(prev => ({
+                                        ...prev,
+                                        balance: Math.max(0, Math.round(Number(e.target.value) || 0)),
+                                    }))}
+                                    min={0}
+                                    step={1}
                                     title="Изменить баланс"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-red-500/50"
                                 />
-                                <p className="text-[10px] text-white/30 mt-1">Осторожно! Изменение баланса напрямую.</p>
+                                <p className="text-[10px] text-white/30 mt-1">Корректировка будет записана в финансовый журнал.</p>
                             </div>
                         </div>
 

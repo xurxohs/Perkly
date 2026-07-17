@@ -8,6 +8,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyStatic from '@fastify/static';
+import helmet from '@fastify/helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -27,11 +28,24 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  await app.register(helmet, {
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   await app.register(fastifyStatic, {
     root: join(process.cwd(), 'uploads'),
     prefix: '/uploads/',
   });
-  await app.listen({ port: Number(process.env.PORT) || 3001, host: '0.0.0.0' });
+  await app.listen({
+    port: Number(process.env.PORT) || 3001,
+    host: process.env.HOST?.trim() || '0.0.0.0',
+  });
 }
 bootstrap();

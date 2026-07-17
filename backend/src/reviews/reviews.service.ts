@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Review } from '@prisma/client';
+import { assertAcceptableUserContent } from '../common/content-moderation';
 
 export interface CreateReviewInput {
   offerId?: unknown;
@@ -19,6 +20,7 @@ export class ReviewsService {
     const offerId = this.requiredString(input.offerId, 'offerId');
     const rating = this.normalizeRating(input.rating);
     const comment = this.optionalString(input.comment);
+    if (comment) assertAcceptableUserContent(comment, 'Review');
 
     return this.prisma.review.create({
       data: {

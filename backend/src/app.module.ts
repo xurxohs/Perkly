@@ -26,6 +26,11 @@ import { HomeModule } from './home/home.module';
 import { TopkaAdminModule } from './topka-admin/topka-admin.module';
 import { CompaniesModule } from './companies/companies.module';
 import { PromocodesModule } from './promocodes/promocodes.module';
+import { CartModule } from './cart/cart.module';
+import { DiagnosticsModule } from './diagnostics/diagnostics.module';
+import { InfrastructureModule } from './infrastructure/infrastructure.module';
+import { SafetyModule } from './safety/safety.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -42,6 +47,10 @@ import { PromocodesModule } from './promocodes/promocodes.module';
           }
           return token || 'test-only-telegram-token';
         })(),
+        launchOptions:
+          configService.get<string>('TELEGRAM_UPDATES_ENABLED') === 'false'
+            ? false
+            : undefined,
       }),
       inject: [ConfigService],
     }),
@@ -68,6 +77,11 @@ import { PromocodesModule } from './promocodes/promocodes.module';
     TopkaAdminModule,
     CompaniesModule,
     PromocodesModule,
+    CartModule,
+    DiagnosticsModule,
+    InfrastructureModule,
+    SafetyModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

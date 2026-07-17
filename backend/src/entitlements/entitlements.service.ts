@@ -76,8 +76,8 @@ const PLAN_NAMES: Record<TierName, string> = {
 
 const PLAN_PRICES: Record<TierName, number> = {
   SILVER: 0,
-  GOLD: 4.99,
-  PLATINUM: 9.99,
+  GOLD: 59_880,
+  PLATINUM: 119_880,
 };
 
 const PLAN_LIMITS: Record<

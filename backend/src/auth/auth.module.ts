@@ -7,6 +7,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { TelegramLoginStore } from './telegram-login-store.service';
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -25,9 +27,15 @@ function getJwtSecret() {
       signOptions: { expiresIn: '1d' },
     }),
     forwardRef(() => AnalyticsModule),
+    forwardRef(() => NotificationsModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AuthRateLimitGuard],
+  providers: [
+    AuthService,
+    TelegramLoginStore,
+    JwtStrategy,
+    AuthRateLimitGuard,
+  ],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

@@ -19,6 +19,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthGuard } from '@nestjs/passport';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { normalizePagination } from '../common/pagination';
+import { assertAcceptableUserContent } from '../common/content-moderation';
 
 interface AuthRequest extends FastifyRequest {
   user: { userId: string; role?: string; tier?: string };
@@ -86,6 +87,24 @@ export class EventsController {
     });
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('saved')
+  saved(@Req() req: AuthRequest) {
+    return this.eventsService.listSaved(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/save')
+  save(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.eventsService.save(req.user.userId, id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/save')
+  unsave(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.eventsService.unsave(req.user.userId, id);
+  }
+
   @Get('topka-media')
   async topkaMedia(
     @Query('url') url?: string,
@@ -116,24 +135,47 @@ export class EventsController {
   }
 
   @Patch(':id')
-  update(
+  @UseGuards(AuthGuard('jwt'))
+  async update(
+    @Req() req: AuthRequest,
     @Param('id') id: string,
-    @Body() updateEventDto: Prisma.EventUpdateInput,
+    @Body() body: Record<string, unknown>,
   ): Promise<Event> {
+    await this.ensureEventOwnerOrAdmin(req.user, id);
     return this.eventsService.update({
       where: { id },
-      data: updateEventDto,
+      data: this.normalizeVendorEventUpdateBody(body),
     });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<Event> {
+  @UseGuards(AuthGuard('jwt'))
+  async remove(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+  ): Promise<Event> {
+    await this.ensureEventOwnerOrAdmin(req.user, id);
     return this.eventsService.remove({ id });
   }
 
   @Post('seed')
-  seed(@Query('organizerId') organizerId: string) {
+  @UseGuards(AuthGuard('jwt'))
+  seed(@Req() req: AuthRequest, @Query('organizerId') organizerId: string) {
+    if (req.user.role !== 'ADMIN') {
+      throw new ForbiddenException('Only administrators can seed events');
+    }
     return this.eventsService.seedEvents(organizerId);
+  }
+
+  private async ensureEventOwnerOrAdmin(
+    user: AuthRequest['user'],
+    eventId: string,
+  ) {
+    if (user.role === 'ADMIN') return;
+    const event = await this.eventsService.findOne(eventId);
+    if (!event || event.organizerId !== user.userId) {
+      throw new ForbiddenException('You cannot modify this event');
+    }
   }
 
   private async ensureTopkaPublisher(userId: string) {
@@ -151,6 +193,8 @@ export class EventsController {
   ): VendorEventCreateData {
     const title = this.requiredString(body, 'title');
     const description = this.requiredString(body, 'description');
+    assertAcceptableUserContent(title, 'Event title');
+    assertAcceptableUserContent(description, 'Event description');
     const category = this.optionalString(body, 'category') ?? 'Событие';
     const date = this.requiredDate(body, 'date');
     const startTime =
@@ -174,7 +218,10 @@ export class EventsController {
     };
 
     const fullDescription = this.optionalString(body, 'fullDescription');
-    if (fullDescription) payload.fullDescription = fullDescription;
+    if (fullDescription) {
+      assertAcceptableUserContent(fullDescription, 'Event fullDescription');
+      payload.fullDescription = fullDescription;
+    }
 
     const latitude = this.optionalNumber(body, 'latitude');
     if (latitude !== undefined) payload.latitude = latitude;
@@ -182,6 +229,52 @@ export class EventsController {
     const longitude = this.optionalNumber(body, 'longitude');
     if (longitude !== undefined) payload.longitude = longitude;
 
+    return payload;
+  }
+
+  private normalizeVendorEventUpdateBody(
+    body: Record<string, unknown>,
+  ): Prisma.EventUpdateInput {
+    const payload: Prisma.EventUpdateInput = {};
+    for (const field of [
+      'title',
+      'description',
+      'fullDescription',
+      'category',
+      'startTime',
+      'ageLimit',
+      'location',
+      'address',
+      'imageUrl',
+    ] as const) {
+      const value = this.optionalString(body, field);
+      if (value !== undefined) {
+        if (
+          field === 'title' ||
+          field === 'description' ||
+          field === 'fullDescription'
+        ) {
+          assertAcceptableUserContent(value, `Event ${field}`);
+        }
+        payload[field] = value;
+      }
+    }
+    if (body.date !== undefined) payload.date = this.requiredDate(body, 'date');
+    const latitude = this.optionalNumber(body, 'latitude');
+    const longitude = this.optionalNumber(body, 'longitude');
+    if (latitude !== undefined) {
+      if (latitude < -90 || latitude > 90)
+        throw new BadRequestException('Invalid latitude');
+      payload.latitude = latitude;
+    }
+    if (longitude !== undefined) {
+      if (longitude < -180 || longitude > 180)
+        throw new BadRequestException('Invalid longitude');
+      payload.longitude = longitude;
+    }
+    if (Object.keys(payload).length === 0) {
+      throw new BadRequestException('No supported event fields supplied');
+    }
     return payload;
   }
 

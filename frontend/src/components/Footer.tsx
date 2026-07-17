@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Instagram, Twitter, MessageCircle, Mail, MapPin } from 'lucide-react';
+import { MessageCircle, Mail, MapPin } from 'lucide-react';
 import { useTelegram } from '@/hooks/useTelegram';
 
 export function Footer() {
@@ -27,13 +27,6 @@ export function Footer() {
                         </p>
                         <div className="flex items-center gap-3">
                             <a 
-                                href="#" 
-                                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-white/5 text-white/60 hover:text-white"
-                                aria-label="Instagram"
-                            >
-                                <Instagram className="w-4 h-4" />
-                            </a>
-                            <a 
                                 href="https://t.me/perkly_support" 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
@@ -42,12 +35,12 @@ export function Footer() {
                             >
                                 <MessageCircle className="w-4 h-4" />
                             </a>
-                            <a 
-                                href="#" 
+                            <a
+                                href="mailto:support@perkly.com"
                                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-white/5 text-white/60 hover:text-white"
-                                aria-label="Twitter"
+                                aria-label="Email"
                             >
-                                <Twitter className="w-4 h-4" />
+                                <Mail className="w-4 h-4" />
                             </a>
                         </div>
                     </div>
@@ -68,9 +61,9 @@ export function Footer() {
                         <h4 className="text-white font-bold mb-5">Покупателям</h4>
                         <ul className="space-y-3 p-0 m-0 list-none">
                             <li><Link href="/wheel" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Колесо Фортуны</Link></li>
-                            <li><Link href="#" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Гарантии и Эскроу</Link></li>
-                            <li><Link href="#" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Как купить</Link></li>
-                            <li><Link href="#" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Частые вопросы</Link></li>
+                            <li><Link href="/terms" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Гарантии и эскроу</Link></li>
+                            <li><Link href="/support#purchases" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Как купить</Link></li>
+                            <li><Link href="/support#faq" className="text-sm text-white/40 hover:text-white transition-colors no-underline">Частые вопросы</Link></li>
                         </ul>
                     </div>
 
@@ -81,8 +74,8 @@ export function Footer() {
                             <li className="flex items-start gap-3">
                                 <Mail className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
                                 <div>
-                                    <div className="text-sm text-white mb-0.5">support@perkly.com</div>
-                                    <div className="text-xs text-white/40">Поддержка 24/7</div>
+                                    <a href="mailto:support@perkly.com" className="text-sm text-white mb-0.5 no-underline">support@perkly.com</a>
+                                    <div className="text-xs text-white/40">Ответим как можно скорее</div>
                                 </div>
                             </li>
                             <li className="flex items-start gap-3">
@@ -108,8 +101,9 @@ export function Footer() {
                         &copy; {new Date().getFullYear()} Perkly. Все права защищены.
                     </div>
                     <div className="flex items-center gap-6">
-                        <Link href="#" className="text-sm text-white/30 hover:text-white transition-colors no-underline">Политика конфиденциальности</Link>
-                        <Link href="#" className="text-sm text-white/30 hover:text-white transition-colors no-underline">Пользовательское соглашение</Link>
+                        <Link href="/privacy" className="text-sm text-white/30 hover:text-white transition-colors no-underline">Политика конфиденциальности</Link>
+                        <Link href="/terms" className="text-sm text-white/30 hover:text-white transition-colors no-underline">Пользовательское соглашение</Link>
+                        <Link href="/support" className="text-sm text-white/30 hover:text-white transition-colors no-underline">Поддержка</Link>
                     </div>
                 </div>
             </div>

@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Squad } from '@prisma/client';
 import { BotService } from '../bot/bot.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class SquadsService {
@@ -23,7 +24,11 @@ export class SquadsService {
     if (user.squadId)
       throw new BadRequestException('You are already in a squad');
 
-    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const inviteCode = randomBytes(6)
+      .toString('base64url')
+      .replace(/[-_]/g, '')
+      .slice(0, 8)
+      .toUpperCase();
 
     return this.prisma.squad.create({
       data: {

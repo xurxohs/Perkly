@@ -77,20 +77,13 @@ export class DisputesController {
     @Request() req: RequestWithUser,
     @Body() body: { status: DisputeStatus.RESOLVED | DisputeStatus.CLOSED },
   ) {
-    const dispute = await this.disputesService.findOne(id);
-    const userId = req.user.userId;
-    const userRole = req.user.role;
-
-    // Only Admin or Seller can resolve
-    if (
-      userRole !== Role.ADMIN &&
-      dispute.transaction?.offer?.sellerId !== userId
-    ) {
-      throw new ForbiddenException(
-        'Only admin or the seller can resolve the dispute',
-      );
+    if (req.user.role !== Role.ADMIN) {
+      throw new ForbiddenException('Only admins can resolve disputes');
     }
-
-    return this.disputesService.resolveDispute(id, userId, body.status);
+    return this.disputesService.resolveDispute(
+      id,
+      req.user.userId,
+      body.status,
+    );
   }
 }

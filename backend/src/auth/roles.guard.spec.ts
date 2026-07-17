@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesGuard } from './roles.guard';
 
-function contextFor(user?: { userId: string }): ExecutionContext {
+function contextFor(user?: { userId: string; role?: string }): ExecutionContext {
   return {
     getHandler: () => ({}),
     getClass: () => ({}),
@@ -59,6 +59,15 @@ describe('RolesGuard', () => {
       ).resolves.toBe(true);
     },
   );
+
+  it('replaces a stale JWT role with the fresh database role', async () => {
+    reflector.getAllAndOverride.mockReturnValue(['VENDOR', 'ADMIN']);
+    prisma.user.findUnique.mockResolvedValue({ role: 'VENDOR' });
+    const user = { userId: 'vendor-1', role: 'ADMIN' };
+
+    await expect(guard.canActivate(contextFor(user))).resolves.toBe(true);
+    expect(user.role).toBe('VENDOR');
+  });
 
   it('blocks role-protected routes when the user is missing', async () => {
     reflector.getAllAndOverride.mockReturnValue(['VENDOR', 'ADMIN']);

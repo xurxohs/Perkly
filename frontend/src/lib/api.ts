@@ -21,7 +21,10 @@ export interface Offer {
     price: number;
     discountPercent: number | null;
     vendorLogo: string | null;
+    imageUrl: string | null;
+    thumbnailUrl: string | null;
     category: string;
+    fulfillmentType: 'PROMOCODE' | 'DIGITAL_CODE' | 'LINK' | 'INSTRUCTIONS';
     isExclusive: boolean;
     isFlashDrop: boolean;
     expiresAt: string | null;
@@ -66,7 +69,7 @@ export interface Transaction {
     offerId: string;
     buyerId: string;
     price: number;
-    status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED' | 'ESCROW';
+    status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED' | 'ESCROW' | 'ACTIVATED';
     expiresAt?: string | null;
     isGift?: boolean;
     giftCode?: string | null;
@@ -79,6 +82,8 @@ export interface Transaction {
     buyer?: User;
 }
 
+export type TransactionStatus = Transaction['status'];
+
 export interface ChatMessage {
     id: string;
     content: string;
@@ -89,6 +94,41 @@ export interface ChatMessage {
     sender?: User;
 }
 
+export type ChatRealtimeEvent =
+    | {
+        type: 'message_created';
+        roomId: string;
+        participantIds: string[];
+        actorId?: string;
+        message: ChatMessage;
+        createdAt: string;
+    }
+    | {
+        type: 'messages_read';
+        roomId: string;
+        participantIds: string[];
+        actorId?: string;
+        readCount?: number;
+        createdAt: string;
+    }
+    | {
+        type: 'typing';
+        roomId: string;
+        participantIds: string[];
+        actorId?: string;
+        isTyping?: boolean;
+        expiresAt?: string;
+        createdAt: string;
+    }
+    | {
+        type: 'room_updated';
+        roomId: string;
+        participantIds: string[];
+        actorId?: string;
+        room?: ChatRoom;
+        createdAt: string;
+    };
+
 export interface ChatRoom {
     id: string;
     type: 'DIRECT' | 'SUPPORT' | 'SYSTEM' | 'DISPUTE';
@@ -98,6 +138,51 @@ export interface ChatRoom {
     unreadCount?: number;
     updatedAt: string;
     transaction?: Transaction;
+}
+
+export interface WheelStatus {
+    spinsUsed: number;
+    dailyLimit: number;
+    spinsRemaining: number;
+    canSpin: boolean;
+    resetAt: string;
+}
+
+export interface WheelSpinResponse {
+    success: boolean;
+    message: string;
+    reward: string;
+    points: number;
+    newRewardPoints: number;
+    newBalance: number;
+    dailyLimit: number;
+    spinsUsed: number;
+    spinsRemaining: number;
+    resetAt: string;
+}
+
+export interface DailyBonusReward {
+    day: number;
+    points: number;
+}
+
+export interface DailyBonusProgressDay {
+    day: string;
+    label: string;
+    claimed: boolean;
+    reward: DailyBonusReward;
+}
+
+export interface DailyBonusStatus {
+    currentStreak: number;
+    longestStreak: number;
+    canClaimToday: boolean;
+    claimedToday: boolean;
+    streakAtRisk: boolean;
+    todayReward: DailyBonusReward;
+    nextReward: DailyBonusReward;
+    weekProgress: DailyBonusProgressDay[];
+    resetAt: string;
 }
 
 export interface PaginationMeta {
@@ -115,6 +200,16 @@ export interface ChatRoomsResponse {
     pagination: PaginationMeta;
 }
 
+export interface ChatMessagesResponse {
+    data: ChatMessage[];
+    pagination?: PaginationMeta;
+    room?: Pick<ChatRoom, 'id' | 'type'> & {
+        roomType?: ChatRoom['type'];
+        roomStatus?: string;
+        transactionSummary?: unknown;
+    };
+}
+
 export interface Dispute {
     id: string;
     transactionId: string;
@@ -123,14 +218,69 @@ export interface Dispute {
     createdAt: string;
     transaction?: Transaction;
     resolution?: 'BUYER' | 'SELLER';
+    adminNote?: string | null;
+    resolvedBy?: string | null;
+    resolvedAt?: string | null;
     messages?: ChatMessage[];
+}
+
+export interface ModerationReport {
+    id: string;
+    reporterId: string;
+    targetType: 'OFFER' | 'SELLER' | 'EVENT' | 'MESSAGE' | 'USER';
+    targetId: string;
+    category: 'FRAUD' | 'MISLEADING' | 'INAPPROPRIATE' | 'HARASSMENT' | 'SPAM' | 'SAFETY' | 'OTHER';
+    description: string;
+    status: 'OPEN' | 'REVIEWING' | 'RESOLVED' | 'REJECTED';
+    resolution?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    reporter?: Pick<User, 'id' | 'email' | 'displayName' | 'role'>;
+}
+
+export interface ModerationAppeal {
+    id: string;
+    userId: string;
+    subjectType: 'ACCOUNT' | 'REPORT' | 'TRANSACTION' | 'CONTENT';
+    subjectId?: string | null;
+    reason: string;
+    status: 'OPEN' | 'REVIEWING' | 'RESOLVED' | 'REJECTED';
+    resolution?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    user?: Pick<User, 'id' | 'email' | 'displayName' | 'role'>;
 }
 
 export interface SellerStats {
     totalEarnings: number;
+    completedVolume: number;
     totalSales: number;
     activeOffers: number;
+    activeEvents: number;
+    eventViews: number;
+    eventParticipants: number;
     recentTransactions: Transaction[];
+}
+
+export interface PartnerCapabilities {
+    userId: string;
+    role: string;
+    tier: 'SILVER' | 'GOLD' | 'PLATINUM';
+    planName: string;
+    status: 'NONE' | 'ACTIVE' | 'EXPIRED' | 'CANCELED';
+    isActive: boolean;
+    daysRemaining: number | null;
+    capabilities: {
+        canCreateOffers: boolean;
+        canFeatureOffers: boolean;
+        canPublishTopka: boolean;
+        canViewBasicAnalytics: boolean;
+        canViewAdvancedAnalytics: boolean;
+        hasPrioritySupport: boolean;
+    };
+    limits: { offersLimit: number; topkaMonthlyLimit: number; featuredOffersPerMonth: number };
+    usage: { activeOffers: number; activeEvents: number; topkaPublishedThisMonth: number };
+    upgrade: { requiredTier: 'SILVER' | 'GOLD' | 'PLATINUM'; reason: string; ctaTitle: string } | null;
 }
 
 export type CompanyStatus = 'PENDING_MODERATION' | 'ACTIVE' | 'SUSPENDED';
@@ -270,8 +420,37 @@ export interface AdminStats {
     totalVolume: number;
     platformIncome: number;
     openDisputesCount: number;
+    pendingCompaniesCount: number;
+    openReportsCount: number;
+    openAppealsCount: number;
+    diagnosticOccurrences: number;
     recentTransactions: Transaction[];
     recentUsers: User[];
+}
+
+export interface AdminLog {
+    id: string;
+    adminId: string;
+    action: string;
+    targetId?: string | null;
+    details?: string | null;
+    createdAt: string;
+    admin?: Pick<User, 'id' | 'email' | 'displayName'> | null;
+}
+
+export interface DiagnosticIssue {
+    id: string;
+    fingerprint: string;
+    kind: string;
+    message: string;
+    appVersion?: string | null;
+    osVersion?: string | null;
+    deviceModel?: string | null;
+    userId?: string | null;
+    breadcrumbs?: string | null;
+    occurrences: number;
+    firstSeenAt: string;
+    lastSeenAt: string;
 }
 
 export interface Event {
@@ -362,12 +541,9 @@ function getToken(): string | null {
     return localStorage.getItem('perkly_token');
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+function getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
     const token = getToken();
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string> || {}),
-    };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
@@ -375,6 +551,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     if (sessionId) {
         headers['X-Session-Id'] = sessionId;
     }
+    return headers;
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string> || {}),
+        ...getAuthHeaders(),
+    };
 
     const res = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
@@ -437,6 +622,7 @@ export interface OfferFilters {
     skip?: number;
     take?: number;
     category?: string;
+    fulfillmentType?: Offer['fulfillmentType'];
     search?: string;
     sort?: string;
     isFlashDrop?: boolean;
@@ -465,6 +651,23 @@ export const offersApi = {
     createVendor: (data: unknown) =>
         request<Offer>('/offers/vendor', { method: 'POST', body: JSON.stringify(data) }),
 
+    uploadVendorImage: (dataUrl: string) =>
+        request<{ url: string }>('/offers/vendor/upload', {
+            method: 'POST',
+            body: JSON.stringify({ dataUrl }),
+        }),
+
+    updateVendorOffer: (id: string, data: unknown) =>
+        request<Offer>(`/offers/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+
+    deleteVendorOffer: (id: string) =>
+        request<Offer>(`/offers/${id}`, {
+            method: 'DELETE',
+        }),
+
     featureOffer: (id: string, days: number) =>
         request<{ featuredUntil: string }>(`/offers/${id}/feature`, {
             method: 'POST',
@@ -487,10 +690,10 @@ export const offersApi = {
 
 // ===== TRANSACTIONS =====
 export const transactionsApi = {
-    purchase: (offerId: string, isGift = false, promocodeActivationId?: string) =>
+    purchase: (offerId: string, isGift = false, promocodeActivationId?: string, idempotencyKey = crypto.randomUUID()) =>
         request<Transaction>('/transactions', {
             method: 'POST',
-            body: JSON.stringify({ offerId, isGift, promocodeActivationId }),
+            body: JSON.stringify({ offerId, isGift, promocodeActivationId, idempotencyKey }),
         }),
 
     validatePromocode: (data: { code: string; amount: number; offerId?: string }) =>
@@ -525,6 +728,9 @@ export const usersApi = {
     getMe: () =>
         request<User>('/users/me'),
 
+    exportPersonalData: () =>
+        request<Record<string, unknown>>('/users/me/export'),
+
     updateProfile: (data: { displayName?: string; avatarUrl?: string }) =>
         request<User>('/users/me', {
             method: 'PATCH',
@@ -537,10 +743,74 @@ export const usersApi = {
     getSavedOffers: () =>
         request<SavedOffer[]>('/users/me/saved-offers'),
 
+    getBlockedUsers: () =>
+        request<Array<{
+            id: string;
+            createdAt: string;
+            blocked: Pick<User, 'id' | 'displayName' | 'avatarUrl'>;
+        }>>('/users/me/blocked'),
+
+    blockUser: (userId: string) =>
+        request<{ id: string; blockerId: string; blockedId: string; createdAt: string }>(
+            `/users/${userId}/block`,
+            { method: 'POST' },
+        ),
+
+    unblockUser: (userId: string) =>
+        request<{ success: boolean; removed: boolean }>(`/users/${userId}/block`, {
+            method: 'DELETE',
+        }),
+
     subscribe: (tier: 'GOLD' | 'PLATINUM', months: number) =>
         request<{ subscription: unknown; tier: string; endDate: string; cost: number }>('/users/me/subscribe',
             { method: 'POST', body: JSON.stringify({ tier, months }) },
         ),
+
+    getWheelStatus: () =>
+        request<WheelStatus>('/users/me/wheel/status'),
+
+    spinWheel: () =>
+        request<WheelSpinResponse>('/users/me/wheel/spin', {
+            method: 'POST',
+        }),
+
+    getDailyBonusStatus: () =>
+        request<DailyBonusStatus>('/users/me/daily-bonus/status'),
+
+    claimDailyBonus: () =>
+        request<{ success: boolean; message: string; points: number; newStreak: number; newRewardPoints: number }>('/users/me/daily-bonus/claim', {
+            method: 'POST',
+        }),
+};
+
+// ===== SAFETY & APPEALS =====
+export const safetyApi = {
+    createReport: (data: Pick<ModerationReport, 'targetType' | 'targetId' | 'category' | 'description'>) =>
+        request<ModerationReport>('/safety/reports', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+    myReports: () => request<ModerationReport[]>('/safety/reports/me'),
+    createAppeal: (data: Pick<ModerationAppeal, 'subjectType' | 'reason'> & { subjectId?: string }) =>
+        request<ModerationAppeal>('/safety/appeals', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+    myAppeals: () => request<ModerationAppeal[]>('/safety/appeals/me'),
+    adminReports: (status = '') =>
+        request<ModerationReport[]>(`/safety/admin/reports${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+    adminAppeals: (status = '') =>
+        request<ModerationAppeal[]>(`/safety/admin/appeals${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+    resolveReport: (id: string, status: string, resolution: string) =>
+        request<ModerationReport>(`/safety/admin/reports/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, resolution }),
+        }),
+    resolveAppeal: (id: string, status: string, resolution: string) =>
+        request<ModerationAppeal>(`/safety/admin/appeals/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, resolution }),
+        }),
 };
 
 // ===== COMPANIES =====
@@ -608,10 +878,10 @@ export const promocodesApi = {
 
 // ===== PAYMENTS =====
 export const paymentsApi = {
-    topUp: (amount: number) =>
+    topUp: (amount: number, idempotencyKey = crypto.randomUUID()) =>
         request<{ deposit: { id: string }; paymentUrl: string }>('/payments/topup', {
             method: 'POST',
-            body: JSON.stringify({ amount }),
+            body: JSON.stringify({ amount, idempotencyKey }),
         }),
     mockWebhook: (depositId: string, success: boolean) =>
         request<unknown>('/payments/webhook/mock', {
@@ -670,8 +940,17 @@ export const chatApi = {
         return response;
     },
 
-    getMessages: (roomId: string) =>
-        request<{ data: ChatMessage[] }>(`/chat/rooms/${roomId}/messages`),
+    getMessages: (roomId: string, params?: { skip?: number; take?: number }) => {
+        const urlParams = new URLSearchParams();
+        if (params?.skip !== undefined) {
+            urlParams.append('skip', String(params.skip));
+        }
+        if (params?.take !== undefined) {
+            urlParams.append('take', String(params.take));
+        }
+        const query = urlParams.toString();
+        return request<ChatMessagesResponse>(`/chat/rooms/${roomId}/messages${query ? `?${query}` : ''}`);
+    },
 
     sendMessage: (roomId: string, content: string) =>
         request<ChatMessage>('/chat/messages', {
@@ -690,14 +969,90 @@ export const chatApi = {
             method: 'POST',
             body: JSON.stringify({ targetUserId }),
         }),
+
+    setTyping: (roomId: string, isTyping = true) =>
+        request<{ success: boolean; roomId: string; isTyping: boolean; expiresAt: string }>(`/chat/rooms/${roomId}/typing`, {
+            method: 'POST',
+            body: JSON.stringify({ isTyping }),
+        }),
+
+    subscribeToEvents: (
+        onEvent: (event: ChatRealtimeEvent) => void,
+        onError?: (error: unknown) => void,
+    ) => {
+        const controller = new AbortController();
+
+        const parseEventBlock = (block: string) => {
+            const data = block
+                .split('\n')
+                .filter((line) => line.startsWith('data:'))
+                .map((line) => line.slice(5).trimStart())
+                .join('\n');
+
+            if (!data) return;
+
+            try {
+                onEvent(JSON.parse(data) as ChatRealtimeEvent);
+            } catch (error) {
+                onError?.(error);
+            }
+        };
+
+        const connect = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/chat/events`, {
+                    headers: getAuthHeaders(),
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Chat events failed: ${response.status}`);
+                }
+                if (!response.body) {
+                    throw new Error('Chat events stream is not available');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (!controller.signal.aborted) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const blocks = buffer.split(/\r?\n\r?\n/);
+                    buffer = blocks.pop() ?? '';
+                    blocks.forEach(parseEventBlock);
+                }
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    onError?.(error);
+                }
+            }
+        };
+
+        void connect();
+
+        return () => controller.abort();
+    },
 };
 
 // ===== SELLER =====
 export const sellerApi = {
+    getCapabilities: () =>
+        request<PartnerCapabilities>('/seller/capabilities'),
     getStats: () =>
         request<SellerStats>('/seller/stats'),
     getOffers: () =>
         request<Offer[]>('/seller/offers'),
+    getTransactions: (skip = 0, take = 20, status?: TransactionStatus) => {
+        const params = new URLSearchParams({ skip: String(skip), take: String(take) });
+        if (status) params.set('status', status);
+        return request<{ data: Transaction[]; total: number }>(`/seller/transactions?${params.toString()}`);
+    },
+    getEvents: () =>
+        request<Event[]>('/seller/events'),
 };
 
 // ===== ADMIN =====
@@ -705,18 +1060,48 @@ export const adminApi = {
     getStats: () =>
         request<AdminStats>('/admin/stats'),
     getUsers: (search = '') =>
-        request<User[]>(`/admin/users?search=${search}`),
+        request<{ users: User[]; total: number; page: number; totalPages: number }>(
+            `/admin/users?search=${encodeURIComponent(search)}`,
+        ),
     updateUser: (id: string, data: Partial<User>) =>
         request<User>(`/admin/users/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
-    getDisputes: () =>
-        request<{ disputes: Dispute[] }>('/admin/disputes'),
-    getOffers: () =>
-        request<{ offers: Offer[] }>('/admin/offers'),
-    getTransactions: () =>
-        request<{ transactions: Transaction[] }>('/admin/transactions'),
+    getDisputes: (status = '') =>
+        request<{ disputes: Dispute[]; total: number }>(`/admin/disputes${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+    resolveDispute: (id: string, resolution: 'BUYER' | 'SELLER', adminNote = '') =>
+        request<{ message: string; dispute?: Dispute }>(`/admin/disputes/${id}/resolve`, {
+            method: 'PATCH',
+            body: JSON.stringify({ resolution, adminNote }),
+        }),
+    getOffers: (filters: { search?: string; status?: string } = {}) => {
+        const params = new URLSearchParams();
+        if (filters.search) params.set('search', filters.search);
+        if (filters.status) params.set('status', filters.status);
+        return request<{ offers: Offer[]; total: number }>(`/admin/offers?${params.toString()}`);
+    },
+    updateOffer: (id: string, data: Partial<Offer>) =>
+        request<Offer>(`/admin/offers/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+    archiveOffer: (id: string) =>
+        request<Offer>(`/admin/offers/${id}`, { method: 'DELETE' }),
+    getTransactions: (filters: { search?: string; status?: string } = {}) => {
+        const params = new URLSearchParams();
+        if (filters.search) params.set('search', filters.search);
+        if (filters.status) params.set('status', filters.status);
+        return request<{ transactions: Transaction[]; total: number }>(`/admin/transactions?${params.toString()}`);
+    },
+    refundTransaction: (id: string) =>
+        request<{ message: string }>(`/admin/transactions/${id}/refund`, {
+            method: 'PATCH',
+        }),
+    getLogs: (action = '') =>
+        request<{ logs: AdminLog[]; total: number }>(`/admin/logs${action ? `?action=${encodeURIComponent(action)}` : ''}`),
+    getDiagnostics: () =>
+        request<{ totalOccurrences: number; issues: DiagnosticIssue[] }>('/diagnostics/summary'),
     getTopkaPosts: (filters: { status?: string; postType?: string; category?: string; search?: string } = {}) => {
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, val]) => {
@@ -797,6 +1182,7 @@ const api = {
     analytics: analyticsApi,
     squads: squadsApi,
     events: eventsApi,
+    safety: safetyApi,
     // Add generic request methods
     get: <T = unknown>(url: string) => request<T>(url),
     post: <T = unknown>(url: string, body: unknown) => request<T>(url, { method: 'POST', body: JSON.stringify(body) }),

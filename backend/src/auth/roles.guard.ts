@@ -29,6 +29,9 @@ export class RolesGuard implements CanActivate {
 
     if (!freshUser) return false;
 
+    // Controllers must never make authorization decisions using a stale role
+    // embedded in an older JWT after an administrator changes the account.
+    user.role = freshUser.role;
     return requiredRoles.includes(freshUser.role);
   }
 }

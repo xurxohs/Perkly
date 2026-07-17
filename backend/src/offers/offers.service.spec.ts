@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { OffersService } from './offers.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 describe('OffersService', () => {
   let service: OffersService;
@@ -11,6 +12,7 @@ describe('OffersService', () => {
       count: jest.Mock;
       findUnique: jest.Mock;
       create: jest.Mock;
+      update: jest.Mock;
     };
     savedOffer: {
       upsert: jest.Mock;
@@ -19,6 +21,15 @@ describe('OffersService', () => {
     company: {
       findUnique: jest.Mock;
     };
+    user: {
+      updateMany: jest.Mock;
+      findUnique: jest.Mock;
+      findUniqueOrThrow: jest.Mock;
+    };
+    financialEntry: {
+      create: jest.Mock;
+    };
+    $transaction: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -28,6 +39,7 @@ describe('OffersService', () => {
         count: jest.fn(),
         findUnique: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
       },
       savedOffer: {
         upsert: jest.fn(),
@@ -36,10 +48,24 @@ describe('OffersService', () => {
       company: {
         findUnique: jest.fn(),
       },
+      user: {
+        updateMany: jest.fn(),
+        findUnique: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+      },
+      financialEntry: {
+        create: jest.fn(),
+      },
+      $transaction: jest.fn(),
     };
+    prisma.$transaction.mockImplementation((callback) => callback(prisma));
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OffersService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        OffersService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: StorageService, useValue: { put: jest.fn() } },
+      ],
     }).compile();
 
     service = module.get<OffersService>(OffersService);
@@ -85,6 +111,24 @@ describe('OffersService', () => {
       }),
     );
     expect(result).not.toHaveProperty('hiddenData');
+  });
+
+  it('filters public offers by fulfillment type', async () => {
+    prisma.offer.findMany.mockResolvedValue([]);
+    prisma.offer.count.mockResolvedValue(0);
+
+    await service.findAllFiltered({ fulfillmentType: 'DIGITAL_CODE' });
+
+    expect(prisma.offer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          fulfillmentType: {
+            equals: 'DIGITAL_CODE',
+            mode: 'insensitive',
+          },
+        }),
+      }),
+    );
   });
 
   it('clamps pagination and ignores NaN filters for public offer lists', async () => {
@@ -187,6 +231,32 @@ describe('OffersService', () => {
     });
   });
 
+  it('enforces offer moderation in the service layer', async () => {
+    await expect(
+      service.createVendorOffer(
+        'admin-1',
+        {
+          title: 'Clean title',
+          description: 'f.u.c.k',
+          category: 'SUBSCRIPTIONS',
+          hiddenData: 'CODE',
+          price: 1,
+        },
+        'ADMIN',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    await expect(
+      service.update({
+        where: { id: 'offer-1' },
+        data: { title: { set: 'n@zi offer' } },
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prisma.offer.create).not.toHaveBeenCalled();
+    expect(prisma.offer.update).not.toHaveBeenCalled();
+  });
+
   it('saves active offers without creating duplicates', async () => {
     prisma.offer.findUnique.mockResolvedValue({
       id: 'offer-1',
@@ -225,6 +295,36 @@ describe('OffersService', () => {
 
     expect(prisma.savedOffer.deleteMany).toHaveBeenCalledWith({
       where: { userId: 'user-1', offerId: 'offer-1' },
+    });
+  });
+
+  it('charges featured placement atomically and writes a ledger entry', async () => {
+    prisma.offer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      sellerId: 'seller-1',
+      featuredUntil: null,
+    });
+    prisma.user.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.findUniqueOrThrow.mockResolvedValue({ balance: 88_000 });
+    prisma.offer.update.mockResolvedValue({
+      id: 'offer-1',
+      featuredUntil: expect.any(Date),
+    });
+    prisma.financialEntry.create.mockResolvedValue({ id: 'entry-1' });
+
+    await service.featureOffer('offer-1', 'seller-1', 1);
+
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 'seller-1', balance: { gte: 12_000 } },
+      data: { balance: { decrement: 12_000 } },
+    });
+    expect(prisma.financialEntry.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'seller-1',
+        type: 'FEATURED_PLACEMENT',
+        amount: -12_000,
+        balanceAfter: 88_000,
+      }),
     });
   });
 });

@@ -93,6 +93,33 @@ export class AuthRateLimitGuard implements CanActivate {
       };
     }
 
+    if (path.includes('/password/forgot')) {
+      return {
+        name: 'password-forgot',
+        limit: 5,
+        windowMs: 60 * 60_000,
+        key: (req) => `${this.clientIp(req)}:${this.bodyValue(req, 'email')}`,
+      };
+    }
+
+    if (path.includes('/password/reset')) {
+      return {
+        name: 'password-reset',
+        limit: 10,
+        windowMs: 15 * 60_000,
+        key: (req) => `${this.clientIp(req)}:${this.bodyValue(req, 'email')}`,
+      };
+    }
+
+    if (path.includes('/apple')) {
+      return {
+        name: 'apple-auth',
+        limit: 15,
+        windowMs: 15 * 60_000,
+        key: (req) => this.clientIp(req),
+      };
+    }
+
     if (path.includes('/login')) {
       return {
         name: 'login',
