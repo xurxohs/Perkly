@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertAcceptableUserContent } from '../common/content-moderation';
 
 const TARGET_TYPES = new Set(['OFFER', 'SELLER', 'EVENT', 'MESSAGE', 'USER']);
 const REPORT_CATEGORIES = new Set([
@@ -22,6 +23,7 @@ const APPEAL_SUBJECTS = new Set([
   'CONTENT',
 ]);
 const REVIEW_STATUSES = new Set(['REVIEWING', 'RESOLVED', 'REJECTED']);
+const REPORT_ACTIONS = new Set(['NONE', 'HIDE_CONTENT']);
 
 @Injectable()
 export class SafetyService {
@@ -34,6 +36,7 @@ export class SafetyService {
       targetId?: string;
       category?: string;
       description?: string;
+      evidence?: string[];
     },
   ) {
     const targetType = input.targetType?.trim().toUpperCase() ?? '';
@@ -48,6 +51,24 @@ export class SafetyService {
         'Description must contain 10–2000 characters',
       );
     }
+    assertAcceptableUserContent(description, 'Report description');
+    const evidence = [...new Set((input.evidence ?? []).map((item) => item.trim()).filter(Boolean))];
+    if (evidence.length > 5 || evidence.some((item) => item.length > 500)) {
+      throw new BadRequestException('Evidence must contain at most 5 short references');
+    }
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const reportsToday = await this.prisma.moderationReport.count({
+      where: { reporterId, createdAt: { gte: since } },
+    });
+    if (reportsToday >= 10) {
+      throw new BadRequestException('Daily report limit reached');
+    }
+
+    const target = await this.resolveTarget(targetType, targetId);
+    if (!target) throw new NotFoundException('Reported content not found');
+    if (target.ownerId === reporterId) {
+      throw new BadRequestException('You cannot report your own content');
+    }
 
     const duplicate = await this.prisma.moderationReport.findFirst({
       where: {
@@ -59,7 +80,16 @@ export class SafetyService {
     });
     if (duplicate) return duplicate;
     return this.prisma.moderationReport.create({
-      data: { reporterId, targetType, targetId, category, description },
+      data: {
+        reporterId,
+        targetType,
+        targetId,
+        category,
+        description,
+        evidence,
+        targetSnapshot: target.snapshot,
+        priority: ['FRAUD', 'SAFETY', 'HARASSMENT'].includes(category) ? 2 : 1,
+      },
     });
   }
 
@@ -107,7 +137,7 @@ export class SafetyService {
   listReports(status?: string) {
     return this.prisma.moderationReport.findMany({
       where: status ? { status: status.toUpperCase() } : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       take: 200,
       include: {
         reporter: {
@@ -145,10 +175,16 @@ export class SafetyService {
     id: string,
     status?: string,
     resolution?: string,
+    action = 'NONE',
   ) {
     const normalizedStatus = status?.trim().toUpperCase() ?? '';
     if (!REVIEW_STATUSES.has(normalizedStatus))
       throw new BadRequestException('Invalid status');
+    const normalizedAction = action.trim().toUpperCase();
+    if (!REPORT_ACTIONS.has(normalizedAction))
+      throw new BadRequestException('Invalid moderation action');
+    if (normalizedStatus === 'RESOLVED' && (resolution?.trim().length ?? 0) < 3)
+      throw new BadRequestException('Resolution is required');
     const existing = await this.prisma.moderationReport.findUnique({
       where: { id },
     });
@@ -160,18 +196,59 @@ export class SafetyService {
           status: normalizedStatus,
           resolution: resolution?.trim() || null,
           resolvedBy: adminId,
+          actionTaken: normalizedAction,
         },
       });
+      if (normalizedStatus === 'RESOLVED' && normalizedAction === 'HIDE_CONTENT') {
+        if (existing.targetType === 'OFFER') {
+          await tx.offer.update({
+            where: { id: existing.targetId },
+            data: {
+              isActive: false,
+              moderationStatus: 'REJECTED',
+              moderationNote: resolution?.trim() || 'Скрыто по жалобе',
+              moderationAt: new Date(),
+              moderationBy: adminId,
+            },
+          });
+        } else if (existing.targetType === 'EVENT') {
+          await tx.event.delete({ where: { id: existing.targetId } });
+        } else if (existing.targetType === 'MESSAGE') {
+          await tx.message.delete({ where: { id: existing.targetId } });
+        } else {
+          throw new BadRequestException('This target cannot be hidden');
+        }
+      }
       await tx.adminLog.create({
         data: {
           adminId,
           action: 'MODERATION_REPORT_UPDATED',
           targetId: id,
-          details: JSON.stringify({ status: normalizedStatus }),
+          details: JSON.stringify({ status: normalizedStatus, action: normalizedAction, targetType: existing.targetType, targetId: existing.targetId }),
         },
       });
       return result;
     });
+  }
+
+  private async resolveTarget(targetType: string, targetId: string): Promise<{ ownerId: string | null; snapshot: object } | null> {
+    if (targetType === 'OFFER') {
+      const item = await this.prisma.offer.findUnique({ where: { id: targetId }, select: { id: true, title: true, description: true, imageUrl: true, sellerId: true, isActive: true, moderationStatus: true } });
+      return item ? { ownerId: item.sellerId, snapshot: item } : null;
+    }
+    if (targetType === 'EVENT') {
+      const item = await this.prisma.event.findUnique({ where: { id: targetId }, select: { id: true, title: true, description: true, imageUrl: true, organizerId: true } });
+      return item ? { ownerId: item.organizerId, snapshot: item } : null;
+    }
+    if (targetType === 'MESSAGE') {
+      const item = await this.prisma.message.findUnique({ where: { id: targetId }, select: { id: true, content: true, senderId: true, roomId: true, createdAt: true } });
+      return item ? { ownerId: item.senderId, snapshot: item } : null;
+    }
+    if (targetType === 'USER' || targetType === 'SELLER') {
+      const item = await this.prisma.user.findFirst({ where: { id: targetId, deletedAt: null }, select: { id: true, displayName: true, role: true, createdAt: true } });
+      return item ? { ownerId: item.id, snapshot: item } : null;
+    }
+    return null;
   }
 
   async resolveAppeal(

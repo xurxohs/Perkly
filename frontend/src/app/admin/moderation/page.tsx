@@ -35,7 +35,7 @@ export default function AdminModerationPage() {
 
     useEffect(() => { void load(); }, [load]);
 
-    const resolve = async (entry: QueueItem, status: 'RESOLVED' | 'REJECTED') => {
+    const resolve = async (entry: QueueItem, status: 'RESOLVED' | 'REJECTED', action: 'NONE' | 'HIDE_CONTENT' = 'NONE') => {
         const resolution = window.prompt(
             status === 'RESOLVED' ? 'Опишите принятое решение' : 'Укажите причину отклонения',
             '',
@@ -45,7 +45,7 @@ export default function AdminModerationPage() {
         setError(null);
         try {
             if (entry.kind === 'REPORT') {
-                await api.safety.resolveReport(entry.item.id, status, resolution.trim());
+                await api.safety.resolveReport(entry.item.id, status, resolution.trim(), action);
             } else {
                 await api.safety.resolveAppeal(entry.item.id, status, resolution.trim());
             }
@@ -91,12 +91,14 @@ export default function AdminModerationPage() {
                                     <div className="flex flex-wrap items-center gap-2 mb-2">
                                         <span className="text-xs font-bold text-orange-300">{isReport ? 'ЖАЛОБА' : 'АПЕЛЛЯЦИЯ'}</span>
                                         <span className="text-xs px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.item.status}</span>
+                                        {report && <span className={`text-xs px-2 py-1 rounded-lg ${report.priority === 2 ? 'bg-red-500/15 text-red-300' : 'bg-white/5 text-white/40'}`}>Приоритет {report.priority ?? 1}</span>}
                                         <span className="text-xs text-white/30">{new Date(entry.item.createdAt).toLocaleString('ru-RU')}</span>
                                     </div>
                                     <h2 className="text-white font-bold mb-2">
                                         {report ? `${report.targetType}: ${report.category}` : `${appeal?.subjectType} ${appeal?.subjectId ?? ''}`}
                                     </h2>
                                     <p className="text-sm text-white/60 whitespace-pre-wrap">{report?.description ?? appeal?.reason}</p>
+                                    {report?.targetSnapshot && <pre className="mt-3 max-h-32 overflow-auto rounded-xl bg-black/20 p-3 text-xs text-white/40">{JSON.stringify(report.targetSnapshot, null, 2)}</pre>}
                                     <p className="text-xs text-white/30 mt-3">{user?.displayName || user?.email || 'Пользователь не найден'}</p>
                                     {entry.item.resolution && <p className="text-sm text-emerald-300 mt-3">Решение: {entry.item.resolution}</p>}
                                 </div>
@@ -105,6 +107,7 @@ export default function AdminModerationPage() {
                                         <button disabled={busy} onClick={() => void resolve(entry, 'RESOLVED')} className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 disabled:opacity-40">
                                             <CheckCircle2 className="w-5 h-5" />
                                         </button>
+                                        {report && ['OFFER', 'EVENT', 'MESSAGE'].includes(report.targetType) && <button disabled={busy} onClick={() => void resolve(entry, 'RESOLVED', 'HIDE_CONTENT')} className="rounded-xl bg-orange-500/10 px-3 text-xs font-semibold text-orange-300 disabled:opacity-40">Скрыть</button>}
                                         <button disabled={busy} onClick={() => void resolve(entry, 'REJECTED')} className="p-3 rounded-xl bg-red-500/10 text-red-400 disabled:opacity-40">
                                             <XCircle className="w-5 h-5" />
                                         </button>

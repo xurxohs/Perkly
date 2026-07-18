@@ -40,8 +40,8 @@ export class SafetyController {
   @Patch('admin/reports/:id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  resolveReport(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: { status?: string; resolution?: string }) {
-    return this.safety.resolveReport(req.user.userId, id, body.status, body.resolution);
+  resolveReport(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: { status?: string; resolution?: string; action?: string }) {
+    return this.safety.resolveReport(req.user.userId, id, body.status, body.resolution, body.action);
   }
 
   @Patch('admin/appeals/:id')

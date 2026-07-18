@@ -7,6 +7,7 @@ import { Reviews } from '@/components/Reviews';
 import { Offer, User as UserType } from '@/lib/api';
 import OfferActions from '@/components/OfferActions';
 import { OfferGallery } from '@/components/OfferGallery';
+import { ReportOfferButton } from '@/components/ReportOfferButton';
 
 const CATEGORY_LABELS: Record<string, string> = {
     RESTAURANTS: 'Рестораны и Кафе',
@@ -142,6 +143,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
 
                     {/* Actions */}
                     <OfferActions offer={offer} />
+                    <ReportOfferButton offerId={offer.id} />
                 </div>
             </div>
 

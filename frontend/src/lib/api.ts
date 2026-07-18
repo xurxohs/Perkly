@@ -250,6 +250,10 @@ export interface ModerationReport {
     targetId: string;
     category: 'FRAUD' | 'MISLEADING' | 'INAPPROPRIATE' | 'HARASSMENT' | 'SPAM' | 'SAFETY' | 'OTHER';
     description: string;
+    evidence?: string[];
+    targetSnapshot?: Record<string, unknown> | null;
+    priority?: number;
+    actionTaken?: 'NONE' | 'HIDE_CONTENT' | null;
     status: 'OPEN' | 'REVIEWING' | 'RESOLVED' | 'REJECTED';
     resolution?: string | null;
     createdAt: string;
@@ -824,7 +828,7 @@ export const usersApi = {
 
 // ===== SAFETY & APPEALS =====
 export const safetyApi = {
-    createReport: (data: Pick<ModerationReport, 'targetType' | 'targetId' | 'category' | 'description'>) =>
+    createReport: (data: Pick<ModerationReport, 'targetType' | 'targetId' | 'category' | 'description'> & { evidence?: string[] }) =>
         request<ModerationReport>('/safety/reports', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -840,10 +844,10 @@ export const safetyApi = {
         request<ModerationReport[]>(`/safety/admin/reports${status ? `?status=${encodeURIComponent(status)}` : ''}`),
     adminAppeals: (status = '') =>
         request<ModerationAppeal[]>(`/safety/admin/appeals${status ? `?status=${encodeURIComponent(status)}` : ''}`),
-    resolveReport: (id: string, status: string, resolution: string) =>
+    resolveReport: (id: string, status: string, resolution: string, action: 'NONE' | 'HIDE_CONTENT' = 'NONE') =>
         request<ModerationReport>(`/safety/admin/reports/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ status, resolution }),
+            body: JSON.stringify({ status, resolution, action }),
         }),
     resolveAppeal: (id: string, status: string, resolution: string) =>
         request<ModerationAppeal>(`/safety/admin/appeals/${id}`, {

@@ -548,6 +548,10 @@ model ModerationReport {
   targetId    String
   category    String
   description String
+  evidence     Json?
+  targetSnapshot Json?
+  priority     Int      @default(0)
+  actionTaken String?
   status      String   @default("OPEN")
   resolution  String?
   resolvedBy  String?
@@ -557,6 +561,7 @@ model ModerationReport {
 
   @@index([reporterId, createdAt])
   @@index([status, createdAt])
+  @@index([status, priority, createdAt])
   @@index([targetType, targetId])
 }
 
