@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 import { ArrowLeft, Shield, Clock, User, Package, Flame, Crown } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Reviews } from '@/components/Reviews';
 import { Offer, User as UserType } from '@/lib/api';
 import OfferActions from '@/components/OfferActions';
+import { OfferGallery } from '@/components/OfferGallery';
 
 const CATEGORY_LABELS: Record<string, string> = {
     RESTAURANTS: 'Рестораны и Кафе',
@@ -78,21 +78,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
             <div className="grid md:grid-cols-2 gap-7 lg:gap-12 items-start">
                 {/* Left - Image */}
                 <div>
-                    <div className="rounded-[28px] overflow-hidden aspect-[4/3] md:aspect-square flex items-center justify-center p-8 bg-white/[0.025] border border-white/[0.07]">
-                        {(offer.images?.[0] || offer.imageUrl || offer.vendorLogo) ? (
-                            <div className="relative w-full h-full">
-                                <Image
-                                  src={offer.images?.[0] || offer.imageUrl || offer.vendorLogo || ''}
-                                  fill
-                                  className="object-contain"
-                                  alt={offer.title}
-                                />
-                            </div>
-                        ) : (
-                            <Package className="w-24 h-24 text-white/20" />
-                        )}
-                    </div>
-                    {(offer.images?.length ?? 0) > 1 && <div className="mt-3 grid grid-cols-4 gap-2">{offer.images!.slice(1, 5).map((source, index) => <div key={source} className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-white/[0.025] border border-white/[0.07]"><Image src={source} alt={`${offer.title}, фото ${index + 2}`} fill sizes="160px" className="object-cover" /></div>)}</div>}
+                    {(offer.images?.[0] || offer.imageUrl || offer.vendorLogo) ? <OfferGallery images={offer.images?.length ? offer.images : [offer.imageUrl || offer.vendorLogo || '']} title={offer.title} /> : <div className="flex aspect-[4/3] items-center justify-center rounded-[28px] border border-white/[0.07] bg-white/[0.025]"><Package className="w-24 h-24 text-white/20" /></div>}
 
                     {/* Seller info */}
                     {offer.seller && (

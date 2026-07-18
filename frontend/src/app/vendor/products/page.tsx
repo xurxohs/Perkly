@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import Image from 'next/image';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -101,6 +102,8 @@ export default function VendorProductsPage() {
     const [cropX, setCropX] = useState(0);
     const [cropY, setCropY] = useState(0);
     const [failedFiles, setFailedFiles] = useState<File[]>([]);
+    const [cropQueue, setCropQueue] = useState<Array<{ file: File; source: string }>>([]);
+    const [cropIndex, setCropIndex] = useState(0);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -177,6 +180,31 @@ export default function VendorProductsPage() {
         } finally { setUploading(false); setUploadProgress(null); }
     };
 
+    const beginCrop = async (files: File[]) => {
+        if (form.images.length + files.length > 8) { setError('Можно добавить не больше 8 фотографий.'); return; }
+        if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024)) { setError('Выберите JPG, PNG или WebP до 8 МБ.'); return; }
+        try {
+            const queue = await Promise.all(files.map(async (file) => ({ file, source: await fileToDataUrl(file) })));
+            setCropQueue(queue); setCropIndex(0); setCropZoom(1); setCropX(0); setCropY(0); setError(null);
+        } catch { setError('Не удалось открыть выбранное изображение'); }
+    };
+
+    const confirmCrop = async () => {
+        const current = cropQueue[cropIndex]; if (!current) return;
+        setUploading(true); setUploadProgress({ done: cropIndex, total: cropQueue.length }); setError(null);
+        try {
+            setImageSize(await getImageSize(current.source));
+            const cropped = await cropToProductRatio(current.source, cropZoom, cropX, cropY);
+            const uploaded = await offersApi.uploadVendorImage(cropped);
+            setForm((value) => { const images = [...value.images, uploaded.url]; return { ...value, images, imageUrl: images[0] || '' }; });
+            if (cropIndex + 1 < cropQueue.length) { setCropIndex(cropIndex + 1); setCropZoom(1); setCropX(0); setCropY(0); }
+            else { setCropQueue([]); setCropIndex(0); setUploadProgress(null); }
+        } catch (uploadError) {
+            setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение');
+            setFailedFiles([current.file]);
+        } finally { setUploading(false); }
+    };
+
     const saveOffer = async (event: FormEvent) => {
         event.preventDefault(); setSaving(true); setError(null);
         const payload = {
@@ -244,6 +272,8 @@ export default function VendorProductsPage() {
             <div className="p-5"><div className="mb-2 flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-bold text-white">{offer.title}</h2><p className="mt-1 text-xs text-white/35">{CATEGORY_NAMES[offer.category] ?? offer.category}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${offer.isActive ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-white/35'}`}>{offer.isActive ? 'Активен' : 'Архив'}</span></div><p className="line-clamp-2 min-h-10 text-sm leading-5 text-white/45">{offer.description}</p><div className="mt-5 flex items-end justify-between"><div><p className={`text-lg font-black ${offer.price === 0 ? 'text-emerald-300' : 'text-white'}`}>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</p><p className="mt-1 text-[10px] text-white/25">{offer._count?.transactions ?? 0} продаж</p></div><div className="flex gap-2"><button onClick={() => openEdit(offer)} className="rounded-xl bg-white/5 p-2.5 text-white/55 hover:bg-white/10 hover:text-white" aria-label="Редактировать"><Edit2 className="h-4 w-4" /></button>{offer.isActive && <button disabled={archivingId === offer.id} onClick={() => void archiveOffer(offer)} className="rounded-xl bg-white/5 p-2.5 text-white/35 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-30" aria-label="Архивировать"><Archive className="h-4 w-4" /></button>}</div></div></div>
         </article>)}</div>}
 
+        {cropQueue[cropIndex] && createPortal(<div className="fixed inset-0 z-[2600] flex items-center justify-center bg-black/85 p-4 backdrop-blur-xl"><div className="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-[#151925] p-5 shadow-2xl sm:p-7"><div className="mb-5 flex items-start justify-between"><div><h3 className="text-xl font-bold text-white">Настройте кадр</h3><p className="mt-1 text-sm text-white/40">Фото {cropIndex + 1} из {cropQueue.length} · результат 16:10</p></div><button type="button" onClick={() => { setCropQueue([]); setCropIndex(0); }} className="rounded-full bg-white/5 p-2 text-white/50"><X className="h-5 w-5" /></button></div><div className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-black"><img src={cropQueue[cropIndex].source} alt="Кадрирование" className="absolute inset-0 h-full w-full object-cover" style={{ transform: `translate(${cropX * 12}%, ${cropY * 12}%) scale(${cropZoom})` }} /></div><div className="mt-5 grid gap-4 sm:grid-cols-3"><label className="text-xs text-white/45">Масштаб<input type="range" min="1" max="2.2" step="0.05" value={cropZoom} onChange={(event) => setCropZoom(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><label className="text-xs text-white/45">Горизонталь<input type="range" min="-1" max="1" step="0.05" value={cropX} onChange={(event) => setCropX(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><label className="text-xs text-white/45">Вертикаль<input type="range" min="-1" max="1" step="0.05" value={cropY} onChange={(event) => setCropY(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label></div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setCropZoom(1); setCropX(0); setCropY(0); }} className="rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold text-white/60">Сбросить</button><button type="button" disabled={uploading} onClick={() => void confirmCrop()} className="rounded-xl bg-purple-500 px-5 py-3 text-sm font-bold text-white disabled:opacity-40">{uploading ? 'Загружаем…' : cropIndex + 1 < cropQueue.length ? 'Готово, следующее' : 'Готово'}</button></div></div></div>, document.body)}
+
         {isEditorOpen && createPortal(<div className="vendor-product-editor fixed inset-0 z-[2000] flex items-center justify-center bg-black/75 backdrop-blur-xl sm:p-5">
             <div className="h-full w-full max-w-6xl overflow-y-auto bg-[#111626] shadow-2xl sm:max-h-[94vh] sm:rounded-[2rem] sm:border sm:border-white/10">
                 <div className="sticky top-0 z-20 flex items-start justify-between border-b border-white/[0.07] bg-[#111626]/95 px-6 py-5 backdrop-blur-xl sm:px-8">
@@ -266,9 +296,8 @@ export default function VendorProductsPage() {
                                     </div>
                                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div><p className="text-sm font-semibold text-white/75">1600 × 1000 px — лучший результат</p><p className="mt-1 text-xs text-white/35">JPG, PNG или WebP до 8 МБ. Текст и важные детали держите ближе к центру.</p>{imageSize && <p className={`mt-1 text-xs ${imageRatioWarning ? 'text-amber-300' : 'text-emerald-300'}`}>{imageSize.width} × {imageSize.height} px · {imageRatioWarning ? 'края могут обрезаться' : 'формат подходит'}</p>}</div>
-                                        <label className="shrink-0 cursor-pointer rounded-xl bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/15">{form.images.length ? 'Добавить ещё' : 'Выбрать файлы'}<input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={uploading} className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void uploadImages(files); event.currentTarget.value = ''; }} /></label>
+                                        <label className="shrink-0 cursor-pointer rounded-xl bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/15">{form.images.length ? 'Добавить ещё' : 'Выбрать файлы'}<input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={uploading} className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void beginCrop(files); event.currentTarget.value = ''; }} /></label>
                                     </div>
-                                    <div className="grid gap-3 border-t border-white/10 px-4 py-3 sm:grid-cols-3"><label className="text-xs text-white/40">Масштаб кадра<input aria-label="Масштаб кадра" type="range" min="1" max="2.2" step="0.05" value={cropZoom} onChange={(event) => setCropZoom(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><label className="text-xs text-white/40">Сдвиг по горизонтали<input aria-label="Сдвиг по горизонтали" type="range" min="-1" max="1" step="0.05" value={cropX} onChange={(event) => setCropX(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><label className="text-xs text-white/40">Сдвиг по вертикали<input aria-label="Сдвиг по вертикали" type="range" min="-1" max="1" step="0.05" value={cropY} onChange={(event) => setCropY(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><p className="sm:col-span-3 text-xs text-white/25">Настройки применятся к следующим выбранным фотографиям. Для разных кадров загружайте их по очереди.</p></div>
                                     {form.images.length > 0 && <div className="grid grid-cols-2 gap-3 border-t border-white/10 p-4 sm:grid-cols-4">{form.images.map((url, index) => <div key={`${url}-${index}`} className="relative overflow-hidden rounded-2xl bg-black/30"><div className="relative aspect-[16/10]"><Image src={url} alt={`Фото ${index + 1}`} fill sizes="180px" className="object-cover" /></div><div className="flex items-center justify-between p-2 text-xs text-white/60"><button type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} className="px-2 disabled:opacity-20">←</button><span>{index === 0 ? 'Главное' : index + 1}</span><button type="button" onClick={() => removeImage(index)} className="px-2 text-red-300">×</button><button type="button" disabled={index === form.images.length - 1} onClick={() => moveImage(index, 1)} className="px-2 disabled:opacity-20">→</button></div></div>)}</div>}
                                 </div>
                             </Field>

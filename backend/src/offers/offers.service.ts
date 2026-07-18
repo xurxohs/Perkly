@@ -18,6 +18,7 @@ import {
 import { normalizePagination, parseFiniteNumber } from '../common/pagination';
 import { StorageService } from '../storage/storage.service';
 import { assertAcceptableUserContent } from '../common/content-moderation';
+import { Cron } from '@nestjs/schedule';
 
 export const FEATURE_PRICE_PER_DAY = 12000; // 12 000 UZS per day
 
@@ -430,7 +431,7 @@ export class OffersService {
   }): Promise<Offer> {
     const { where, data } = params;
     this.assertOfferContent(data);
-    return this.prisma.offer.update({
+    const offer = await this.prisma.offer.update({
       where,
       data: {
         ...data,
@@ -441,6 +442,8 @@ export class OffersService {
         moderationBy: null,
       },
     });
+    await this.claimMedia(data);
+    return offer;
   }
 
   async remove(where: Prisma.OfferWhereUniqueInput): Promise<Offer> {
@@ -496,7 +499,7 @@ export class OffersService {
         );
       }
 
-      return this.prisma.offer.create({
+      const offer = await this.prisma.offer.create({
         data: {
           ...data,
           isActive: false,
@@ -508,9 +511,11 @@ export class OffersService {
           company: { connect: { id: activeCompany.id } },
         },
       });
+      await this.claimMedia(data);
+      return offer;
     }
 
-    return this.prisma.offer.create({
+    const offer = await this.prisma.offer.create({
       data: {
         ...data,
         moderationStatus: 'APPROVED',
@@ -520,6 +525,8 @@ export class OffersService {
         seller: { connect: { id: sellerId } },
       },
     });
+    await this.claimMedia(data);
+    return offer;
   }
 
   async featureOffer(
@@ -709,6 +716,7 @@ export class OffersService {
 
   async saveVendorLogo(
     dataUrl: string,
+    ownerId: string,
   ): Promise<{ url: string; thumbnailUrl: string }> {
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) {
@@ -803,7 +811,31 @@ export class OffersService {
       this.storage.put(`vendor/${fileName}`, optimized, outputMime),
       this.storage.put(`vendor/${thumbnailName}`, thumbnail, outputMime),
     ]);
+    await this.prisma.mediaUpload.createMany({ data: [
+      { ownerId, url, objectKey: `vendor/${fileName}` },
+      { ownerId, url: thumbnailUrl, objectKey: `vendor/${thumbnailName}` },
+    ], skipDuplicates: true });
     return { url, thumbnailUrl };
+  }
+
+  private async claimMedia(data: { imageUrl?: unknown; images?: unknown }) {
+    const urls = new Set<string>();
+    if (typeof data.imageUrl === 'string') urls.add(data.imageUrl);
+    if (Array.isArray(data.images)) data.images.forEach((url) => typeof url === 'string' && urls.add(url));
+    if (!urls.size) return;
+    await this.prisma.mediaUpload.updateMany({ where: { url: { in: [...urls] } }, data: { claimedAt: new Date() } });
+  }
+
+  @Cron('0 4 * * *')
+  async cleanupUnclaimedMedia() {
+    const expired = await this.prisma.mediaUpload.findMany({
+      where: { claimedAt: null, createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      take: 200,
+    });
+    for (const asset of expired) {
+      await this.storage.delete(asset.objectKey);
+      await this.prisma.mediaUpload.delete({ where: { id: asset.id } });
+    }
   }
 
   private hasExpectedImageSignature(buffer: Buffer, mime: string) {

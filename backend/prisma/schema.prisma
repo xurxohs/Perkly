@@ -37,6 +37,7 @@ model User {
   messagesSent         Message[]             @relation("SenderMessages")
   offersAsSeller       Offer[]               @relation("SellerOffers")
   offerDraft           OfferDraft?
+  mediaUploads         MediaUpload[]
   reviewsWritten       Review[]              @relation("AuthorReviews")
   transactionsAsBuyer  Transaction[]         @relation("BuyerTransactions")
   chatRooms            ChatRoom[]            @relation("ChatParticipants")
@@ -295,6 +296,19 @@ model OfferDraft {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   seller    User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+}
+
+model MediaUpload {
+  id        String    @id @default(uuid())
+  ownerId   String
+  url       String    @unique
+  objectKey String
+  claimedAt DateTime?
+  createdAt DateTime  @default(now())
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([claimedAt, createdAt])
+  @@index([ownerId])
 }
 
 model Promocode {

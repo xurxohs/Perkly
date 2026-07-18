@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { mkdir, writeFile } from 'fs/promises';
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { mkdir, unlink, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
 
 @Injectable()
@@ -42,6 +42,18 @@ export class StorageService {
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, body);
     return `${this.publicApiUrl()}/uploads/${normalizedKey}`;
+  }
+
+  async delete(key: string): Promise<void> {
+    const normalizedKey = key.replace(/^\/+/, '').replace(/\.\.(\/|\\)/g, '');
+    if (this.driver === 's3') {
+      if (!this.s3 || !this.bucket) throw new ServiceUnavailableException('S3 storage is not fully configured');
+      await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: normalizedKey }));
+      return;
+    }
+    await unlink(join(process.cwd(), 'uploads', normalizedKey)).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== 'ENOENT') throw error;
+    });
   }
 
   private publicApiUrl() {

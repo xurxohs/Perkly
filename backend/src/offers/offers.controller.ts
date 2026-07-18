@@ -61,12 +61,13 @@ export class OffersController {
   @Roles('VENDOR', 'ADMIN')
   @Post('vendor/upload')
   async uploadVendorLogo(
+    @Req() req: AuthRequest,
     @Body() body: { dataUrl: string },
   ): Promise<{ url: string }> {
     if (!body.dataUrl) {
       throw new BadRequestException('dataUrl is required');
     }
-    return this.offersService.saveVendorLogo(body.dataUrl);
+    return this.offersService.saveVendorLogo(body.dataUrl, req.user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
