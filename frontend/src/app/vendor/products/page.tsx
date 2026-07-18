@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
     AlertCircle, Archive, CheckCircle2, Edit2, Eye, Flame, ImagePlus, Package, Plus, RefreshCw,
     Search, Sparkles, Tag, X,
@@ -168,11 +169,11 @@ export default function VendorProductsPage() {
             <div className="p-5"><div className="mb-2 flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-bold text-white">{offer.title}</h2><p className="mt-1 text-xs text-white/35">{CATEGORY_NAMES[offer.category] ?? offer.category}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${offer.isActive ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-white/35'}`}>{offer.isActive ? 'Активен' : 'Архив'}</span></div><p className="line-clamp-2 min-h-10 text-sm leading-5 text-white/45">{offer.description}</p><div className="mt-5 flex items-end justify-between"><div><p className={`text-lg font-black ${offer.price === 0 ? 'text-emerald-300' : 'text-white'}`}>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</p><p className="mt-1 text-[10px] text-white/25">{offer._count?.transactions ?? 0} продаж</p></div><div className="flex gap-2"><button onClick={() => openEdit(offer)} className="rounded-xl bg-white/5 p-2.5 text-white/55 hover:bg-white/10 hover:text-white" aria-label="Редактировать"><Edit2 className="h-4 w-4" /></button>{offer.isActive && <button disabled={archivingId === offer.id} onClick={() => void archiveOffer(offer)} className="rounded-xl bg-white/5 p-2.5 text-white/35 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-30" aria-label="Архивировать"><Archive className="h-4 w-4" /></button>}</div></div></div>
         </article>)}</div>}
 
-        {isEditorOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-xl sm:p-5">
-            <div className="max-h-[94vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] border border-white/10 bg-[#111626] shadow-2xl">
+        {isEditorOpen && createPortal(<div className="vendor-product-editor fixed inset-0 z-[2000] flex items-center justify-center bg-black/75 backdrop-blur-xl sm:p-5">
+            <div className="h-full w-full max-w-6xl overflow-y-auto bg-[#111626] shadow-2xl sm:max-h-[94vh] sm:rounded-[2rem] sm:border sm:border-white/10">
                 <div className="sticky top-0 z-20 flex items-start justify-between border-b border-white/[0.07] bg-[#111626]/95 px-6 py-5 backdrop-blur-xl sm:px-8">
                     <div><h2 className="text-2xl font-bold text-white">{editingOffer ? 'Редактировать товар' : 'Новый товар'}</h2><p className="mt-1 text-sm text-white/40">Заполните карточку слева — покупатель увидит результат справа.</p></div>
-                    <button disabled={saving} onClick={() => setIsEditorOpen(false)} className="rounded-full bg-white/5 p-2.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30" aria-label="Закрыть"><X className="h-5 w-5" /></button>
+                    <div className="flex items-center gap-2"><button type="button" onClick={() => document.getElementById('vendor-live-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-2.5 text-xs font-semibold text-white/60 lg:hidden"><Eye className="h-4 w-4" /> Вид карточки</button><button disabled={saving} onClick={() => setIsEditorOpen(false)} className="rounded-full bg-white/5 p-2.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30" aria-label="Закрыть"><X className="h-5 w-5" /></button></div>
                 </div>
                 <form onSubmit={saveOffer} className="grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,.75fr)]">
                     <div className="space-y-8 p-6 sm:p-8">
@@ -207,7 +208,7 @@ export default function VendorProductsPage() {
                         </EditorSection>
                     </div>
 
-                    <aside className="border-t border-white/[0.07] bg-black/15 p-6 lg:border-l lg:border-t-0 sm:p-8">
+                    <aside id="vendor-live-preview" className="scroll-mt-24 border-t border-white/[0.07] bg-black/15 p-6 lg:border-l lg:border-t-0 sm:p-8">
                         <div className="sticky top-28">
                             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/55"><Eye className="h-4 w-4" /> Так увидит покупатель</div>
                             <article className="overflow-hidden rounded-[1.75rem] border border-white/[0.09] bg-white/[0.035] shadow-2xl shadow-black/20">
@@ -224,7 +225,7 @@ export default function VendorProductsPage() {
                     </div>
                 </form>
             </div>
-        </div>}
+        </div>, document.body)}
         <style jsx global>{`.field{margin-top:.5rem;width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);padding:.75rem 1rem;color:white;outline:none}.field:focus{border-color:rgba(192,132,252,.55)}`}</style>
     </div>;
 }
