@@ -120,7 +120,7 @@ export function CatalogShowcase() {
                     {quickApps.map((app) => (
                         <Link key={app.label} href={app.href} className="group relative w-[72px] shrink-0 text-center no-underline sm:w-[82px]">
                             {app.badge && <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-500 px-2 py-0.5 text-[8px] font-black text-white shadow-lg">{app.badge}</span>}
-                            <span className="app-icon-squircle mx-auto block h-16 w-16 overflow-hidden bg-[#17171c] shadow-[0_10px_28px_rgba(0,0,0,.32)] transition duration-200 group-hover:-translate-y-1 sm:h-[70px] sm:w-[70px]">
+                            <span className="app-icon-squircle mx-auto block h-16 w-16 overflow-hidden bg-[#17171c] shadow-[0_10px_28px_rgba(0,0,0,.32)] transition-[filter,box-shadow] duration-200 group-hover:brightness-105 sm:h-[70px] sm:w-[70px]">
                                 <Image src={app.image} alt="" width={70} height={70} className="h-full w-full object-cover" />
                             </span>
                             <span className="mt-2 block truncate text-[11px] font-semibold text-white/55 group-hover:text-white">{app.label}</span>

@@ -300,7 +300,7 @@ function CatalogContent() {
                     className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold transition ${showFilters || activeFilterCount > 0 ? 'border-purple-400/30 bg-purple-500/12 text-white' : 'border-white/[0.07] bg-white/[0.04] text-white/60 hover:text-white'}`}
                 >
                     <SlidersHorizontal className="h-4 w-4" /> Фильтры
-                    {activeFilterCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-500 px-1.5 text-[10px] text-white">{activeFilterCount}</span>}
+                    {activeFilterCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-black text-[#1d1d1f] shadow-sm">{activeFilterCount}</span>}
                 </button>
                 </div>
 
