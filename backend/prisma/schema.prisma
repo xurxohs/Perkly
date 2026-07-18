@@ -36,6 +36,7 @@ model User {
   promocodeActivations PromocodeActivation[]
   messagesSent         Message[]             @relation("SenderMessages")
   offersAsSeller       Offer[]               @relation("SellerOffers")
+  offerDraft           OfferDraft?
   reviewsWritten       Review[]              @relation("AuthorReviews")
   transactionsAsBuyer  Transaction[]         @relation("BuyerTransactions")
   chatRooms            ChatRoom[]            @relation("ChatParticipants")
@@ -285,6 +286,15 @@ model Offer {
   @@index([featuredUntil])
   @@index([moderationStatus, isActive])
   @@index([createdAt])
+}
+
+model OfferDraft {
+  id        String   @id @default(uuid())
+  sellerId  String   @unique
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  seller    User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 }
 
 model Promocode {

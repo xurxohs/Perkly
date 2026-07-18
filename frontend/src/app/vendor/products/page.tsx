@@ -58,13 +58,17 @@ const getImageSize = (source: string) => new Promise<{ width: number; height: nu
     image.src = source;
 });
 
-const cropToProductRatio = (source: string) => new Promise<string>((resolve, reject) => {
+const cropToProductRatio = (source: string, zoom = 1, offsetX = 0, offsetY = 0) => new Promise<string>((resolve, reject) => {
     const image = new window.Image();
     image.onload = () => {
         const ratio = 16 / 10;
         let sx = 0, sy = 0, sw = image.naturalWidth, sh = image.naturalHeight;
         if (sw / sh > ratio) { sw = sh * ratio; sx = (image.naturalWidth - sw) / 2; }
         else { sh = sw / ratio; sy = (image.naturalHeight - sh) / 2; }
+        const baseWidth = sw, baseHeight = sh;
+        sw /= zoom; sh /= zoom;
+        sx += (baseWidth - sw) * ((offsetX + 1) / 2);
+        sy += (baseHeight - sh) * ((offsetY + 1) / 2);
         const canvas = document.createElement('canvas'); canvas.width = 1600; canvas.height = 1000;
         const context = canvas.getContext('2d'); if (!context) return reject(new Error('Не удалось подготовить изображение'));
         context.drawImage(image, sx, sy, sw, sh, 0, 0, 1600, 1000);
@@ -90,6 +94,13 @@ export default function VendorProductsPage() {
     const [form, setForm] = useState<OfferForm>(EMPTY_FORM);
     const [localPreview, setLocalPreview] = useState<string | null>(null);
     const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+    const [draftReady, setDraftReady] = useState(false);
+    const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'offline'>('idle');
+    const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+    const [cropZoom, setCropZoom] = useState(1);
+    const [cropX, setCropX] = useState(0);
+    const [cropY, setCropY] = useState(0);
+    const [failedFiles, setFailedFiles] = useState<File[]>([]);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -111,35 +122,49 @@ export default function VendorProductsPage() {
         });
     }, [offers, search, status]);
 
-    const openCreate = () => {
+    const openCreate = async () => {
         setEditingOffer(null);
-        const saved = localStorage.getItem(DRAFT_KEY);
-        try { setForm(saved ? { ...EMPTY_FORM, ...JSON.parse(saved) } : EMPTY_FORM); }
-        catch { setForm(EMPTY_FORM); }
+        setDraftReady(false); setDraftStatus('idle');
+        try {
+            const remote = await offersApi.getVendorDraft();
+            setForm(remote?.payload ? { ...EMPTY_FORM, ...(remote.payload as Partial<OfferForm>) } : EMPTY_FORM);
+        } catch {
+            const saved = localStorage.getItem(DRAFT_KEY);
+            try { setForm(saved ? { ...EMPTY_FORM, ...JSON.parse(saved) } : EMPTY_FORM); }
+            catch { setForm(EMPTY_FORM); }
+            setDraftStatus('offline');
+        }
+        setDraftReady(true);
         setLocalPreview(null); setImageSize(null); setError(null); setIsEditorOpen(true);
     };
     const openEdit = (offer: Offer) => { setEditingOffer(offer); setForm(formFromOffer(offer)); setLocalPreview(null); setImageSize(null); setError(null); setIsEditorOpen(true); };
 
     useEffect(() => {
-        if (!isEditorOpen || editingOffer) return;
-        const timer = window.setTimeout(() => localStorage.setItem(DRAFT_KEY, JSON.stringify(form)), 350);
+        if (!isEditorOpen || editingOffer || !draftReady) return;
+        const timer = window.setTimeout(async () => {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); setDraftStatus('saving');
+            try { await offersApi.saveVendorDraft(form); setDraftStatus('saved'); }
+            catch { setDraftStatus('offline'); }
+        }, 600);
         return () => window.clearTimeout(timer);
-    }, [form, isEditorOpen, editingOffer]);
+    }, [form, isEditorOpen, editingOffer, draftReady]);
 
     const uploadImages = async (files: File[]) => {
         if (form.images.length + files.length > 8) { setError('Можно добавить не больше 8 фотографий.'); return; }
         if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) { setError('Поддерживаются JPG, PNG и WebP.'); return; }
         if (files.some((file) => file.size > 8 * 1024 * 1024)) { setError('Каждое изображение должно быть меньше 8 МБ.'); return; }
-        setUploading(true); setError(null);
+        setUploading(true); setError(null); setFailedFiles([]);
+        setUploadProgress({ done: 0, total: files.length });
         try {
             const uploadedUrls: string[] = [];
             for (const file of files) {
                 const original = await fileToDataUrl(file);
                 setImageSize(await getImageSize(original));
-                const cropped = await cropToProductRatio(original);
+                const cropped = await cropToProductRatio(original, cropZoom, cropX, cropY);
                 setLocalPreview(cropped);
                 const uploaded = await offersApi.uploadVendorImage(cropped);
                 uploadedUrls.push(uploaded.url);
+                setUploadProgress({ done: uploadedUrls.length, total: files.length });
             }
             setForm((current) => {
                 const images = [...current.images, ...uploadedUrls];
@@ -148,7 +173,8 @@ export default function VendorProductsPage() {
             setLocalPreview(null);
         } catch (uploadError) {
             setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение');
-        } finally { setUploading(false); }
+            setFailedFiles(files);
+        } finally { setUploading(false); setUploadProgress(null); }
     };
 
     const saveOffer = async (event: FormEvent) => {
@@ -164,7 +190,7 @@ export default function VendorProductsPage() {
         try {
             if (editingOffer) await offersApi.updateVendorOffer(editingOffer.id, payload);
             else await offersApi.createVendor(payload);
-            localStorage.removeItem(DRAFT_KEY); setIsEditorOpen(false); setEditingOffer(null); setForm(EMPTY_FORM); await load();
+            localStorage.removeItem(DRAFT_KEY); await offersApi.deleteVendorDraft().catch(() => undefined); setIsEditorOpen(false); setEditingOffer(null); setForm(EMPTY_FORM); await load();
         } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'Не удалось сохранить товар'); }
         finally { setSaving(false); }
     };
@@ -205,7 +231,7 @@ export default function VendorProductsPage() {
             <div className="flex gap-2"><button onClick={() => void load()} disabled={loading} className="rounded-xl border border-white/10 bg-white/5 p-3 text-white/60 disabled:opacity-40" aria-label="Обновить"><RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} /></button><button onClick={openCreate} className="inline-flex items-center gap-2 rounded-xl bg-purple-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/20 hover:bg-purple-400"><Plus className="h-4 w-4" /> Добавить товар</button></div>
         </div>
 
-        {error && <div className="mb-5 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300"><AlertCircle className="h-5 w-5 shrink-0" />{error}</div>}
+        {error && <div className="mb-5 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300"><AlertCircle className="h-5 w-5 shrink-0" /><span className="flex-1">{error}</span>{failedFiles.length > 0 && <button type="button" disabled={uploading} onClick={() => void uploadImages(failedFiles)} className="shrink-0 rounded-xl bg-white/10 px-3 py-2 font-semibold text-white">Повторить</button>}</div>}
 
         <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">{[
             ['Всего', stats.all], ['Активные', stats.active], ['Flash Drop', stats.flash], ['Продажи', stats.sales],
@@ -221,7 +247,7 @@ export default function VendorProductsPage() {
         {isEditorOpen && createPortal(<div className="vendor-product-editor fixed inset-0 z-[2000] flex items-center justify-center bg-black/75 backdrop-blur-xl sm:p-5">
             <div className="h-full w-full max-w-6xl overflow-y-auto bg-[#111626] shadow-2xl sm:max-h-[94vh] sm:rounded-[2rem] sm:border sm:border-white/10">
                 <div className="sticky top-0 z-20 flex items-start justify-between border-b border-white/[0.07] bg-[#111626]/95 px-6 py-5 backdrop-blur-xl sm:px-8">
-                    <div><h2 className="text-2xl font-bold text-white">{editingOffer ? 'Редактировать товар' : 'Новый товар'}</h2><p className="mt-1 text-sm text-white/40">Заполните карточку слева — покупатель увидит результат справа.</p></div>
+                    <div><h2 className="text-2xl font-bold text-white">{editingOffer ? 'Редактировать товар' : 'Новый товар'}</h2><p className="mt-1 text-sm text-white/40">Заполните карточку слева — покупатель увидит результат справа.</p>{!editingOffer && <p className="mt-1 text-xs text-white/30">{draftStatus === 'saving' ? 'Сохраняем черновик…' : draftStatus === 'saved' ? 'Черновик сохранён на сервере' : draftStatus === 'offline' ? 'Нет сети — черновик сохранён на этом устройстве' : 'Черновик синхронизируется между устройствами'}</p>}</div>
                     <div className="flex items-center gap-2"><button type="button" onClick={() => document.getElementById('vendor-live-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-2.5 text-xs font-semibold text-white/60 lg:hidden"><Eye className="h-4 w-4" /> Вид карточки</button><button disabled={saving} onClick={() => setIsEditorOpen(false)} className="rounded-full bg-white/5 p-2.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30" aria-label="Закрыть"><X className="h-5 w-5" /></button></div>
                 </div>
                 <form onSubmit={saveOffer} className="grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,.75fr)]">
@@ -236,12 +262,13 @@ export default function VendorProductsPage() {
                                 <div className="mt-2 overflow-hidden rounded-3xl border border-white/10 bg-black/20">
                                     <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-white/[0.06] to-transparent">
                                         {previewImage ? <Image src={previewImage} fill sizes="640px" className="object-cover" alt="Предпросмотр обложки" /> : <div className="flex h-full flex-col items-center justify-center gap-3 text-white/25"><ImagePlus className="h-9 w-9" /><span className="text-sm">Добавьте обложку товара</span></div>}
-                                        {uploading && <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-semibold text-white backdrop-blur-sm"><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Загружаем</div>}
+                                        {uploading && <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-semibold text-white backdrop-blur-sm"><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> {uploadProgress ? `Загружаем ${uploadProgress.done + 1} из ${uploadProgress.total}` : 'Загружаем'}</div>}
                                     </div>
                                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div><p className="text-sm font-semibold text-white/75">1600 × 1000 px — лучший результат</p><p className="mt-1 text-xs text-white/35">JPG, PNG или WebP до 8 МБ. Текст и важные детали держите ближе к центру.</p>{imageSize && <p className={`mt-1 text-xs ${imageRatioWarning ? 'text-amber-300' : 'text-emerald-300'}`}>{imageSize.width} × {imageSize.height} px · {imageRatioWarning ? 'края могут обрезаться' : 'формат подходит'}</p>}</div>
                                         <label className="shrink-0 cursor-pointer rounded-xl bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/15">{form.images.length ? 'Добавить ещё' : 'Выбрать файлы'}<input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={uploading} className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void uploadImages(files); event.currentTarget.value = ''; }} /></label>
                                     </div>
+                                    <div className="grid gap-3 border-t border-white/10 px-4 py-3 sm:grid-cols-3"><label className="text-xs text-white/40">Масштаб кадра<input aria-label="Масштаб кадра" type="range" min="1" max="2.2" step="0.05" value={cropZoom} onChange={(event) => setCropZoom(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><label className="text-xs text-white/40">Сдвиг по горизонтали<input aria-label="Сдвиг по горизонтали" type="range" min="-1" max="1" step="0.05" value={cropX} onChange={(event) => setCropX(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><label className="text-xs text-white/40">Сдвиг по вертикали<input aria-label="Сдвиг по вертикали" type="range" min="-1" max="1" step="0.05" value={cropY} onChange={(event) => setCropY(Number(event.target.value))} className="mt-2 w-full accent-purple-400" /></label><p className="sm:col-span-3 text-xs text-white/25">Настройки применятся к следующим выбранным фотографиям. Для разных кадров загружайте их по очереди.</p></div>
                                     {form.images.length > 0 && <div className="grid grid-cols-2 gap-3 border-t border-white/10 p-4 sm:grid-cols-4">{form.images.map((url, index) => <div key={`${url}-${index}`} className="relative overflow-hidden rounded-2xl bg-black/30"><div className="relative aspect-[16/10]"><Image src={url} alt={`Фото ${index + 1}`} fill sizes="180px" className="object-cover" /></div><div className="flex items-center justify-between p-2 text-xs text-white/60"><button type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} className="px-2 disabled:opacity-20">←</button><span>{index === 0 ? 'Главное' : index + 1}</span><button type="button" onClick={() => removeImage(index)} className="px-2 text-red-300">×</button><button type="button" disabled={index === form.images.length - 1} onClick={() => moveImage(index, 1)} className="px-2 disabled:opacity-20">→</button></div></div>)}</div>}
                                 </div>
                             </Field>

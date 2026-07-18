@@ -69,6 +69,28 @@ export class OffersController {
     return this.offersService.saveVendorLogo(body.dataUrl);
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
+  @Get('vendor/draft')
+  getVendorDraft(@Req() req: AuthRequest) {
+    return this.offersService.getVendorDraft(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
+  @Patch('vendor/draft')
+  saveVendorDraft(@Req() req: AuthRequest, @Body() body: { payload?: unknown }) {
+    if (!body.payload || typeof body.payload !== 'object') throw new BadRequestException('payload is required');
+    return this.offersService.saveVendorDraft(req.user.userId, body.payload as Prisma.InputJsonValue);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('VENDOR', 'ADMIN')
+  @Delete('vendor/draft')
+  deleteVendorDraft(@Req() req: AuthRequest) {
+    return this.offersService.deleteVendorDraft(req.user.userId);
+  }
+
   // ======= FEATURED PLACEMENT =======
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)

@@ -676,6 +676,17 @@ export const offersApi = {
             body: JSON.stringify({ dataUrl }),
         }),
 
+    getVendorDraft: () =>
+        request<{ payload: unknown; updatedAt: string } | null>('/offers/vendor/draft'),
+
+    saveVendorDraft: (payload: unknown) =>
+        request<{ payload: unknown; updatedAt: string }>('/offers/vendor/draft', {
+            method: 'PATCH', body: JSON.stringify({ payload }),
+        }),
+
+    deleteVendorDraft: () =>
+        request<{ deleted: boolean }>('/offers/vendor/draft', { method: 'DELETE' }),
+
     updateVendorOffer: (id: string, data: unknown) =>
         request<Offer>(`/offers/${id}`, {
             method: 'PATCH',

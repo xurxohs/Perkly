@@ -459,6 +459,25 @@ export class OffersService {
     });
   }
 
+  getVendorDraft(sellerId: string) {
+    return this.prisma.offerDraft.findUnique({ where: { sellerId } });
+  }
+
+  saveVendorDraft(sellerId: string, payload: Prisma.InputJsonValue) {
+    const serialized = JSON.stringify(payload);
+    if (serialized.length > 100_000) throw new BadRequestException('Черновик слишком большой');
+    return this.prisma.offerDraft.upsert({
+      where: { sellerId },
+      create: { sellerId, payload },
+      update: { payload },
+    });
+  }
+
+  async deleteVendorDraft(sellerId: string) {
+    await this.prisma.offerDraft.deleteMany({ where: { sellerId } });
+    return { deleted: true };
+  }
+
   async createVendorOffer(
     sellerId: string,
     data: Omit<Prisma.OfferCreateInput, 'seller'>,
