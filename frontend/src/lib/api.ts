@@ -12,6 +12,11 @@ export interface User {
     rewardPoints: number;
     createdAt: string;
     updatedAt: string;
+    accountStatus?: 'ACTIVE' | 'SUSPENDED';
+    suspensionReason?: string | null;
+    suspendedAt?: string | null;
+    suspendedUntil?: string | null;
+    risk?: { score: number; openReports: number; confirmedReports: number; rejectedOffers: number };
 }
 
 export interface Offer {
@@ -849,10 +854,10 @@ export const safetyApi = {
             method: 'PATCH',
             body: JSON.stringify({ status, resolution, action }),
         }),
-    resolveAppeal: (id: string, status: string, resolution: string) =>
+    resolveAppeal: (id: string, status: string, resolution: string, action: 'NONE' | 'RESTORE_ACCOUNT' | 'RESTORE_CONTENT' = 'NONE') =>
         request<ModerationAppeal>(`/safety/admin/appeals/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ status, resolution }),
+            body: JSON.stringify({ status, resolution, action }),
         }),
 };
 

@@ -35,7 +35,7 @@ export default function AdminModerationPage() {
 
     useEffect(() => { void load(); }, [load]);
 
-    const resolve = async (entry: QueueItem, status: 'RESOLVED' | 'REJECTED', action: 'NONE' | 'HIDE_CONTENT' = 'NONE') => {
+    const resolve = async (entry: QueueItem, status: 'RESOLVED' | 'REJECTED', action: 'NONE' | 'HIDE_CONTENT' | 'RESTORE_ACCOUNT' | 'RESTORE_CONTENT' = 'NONE') => {
         const resolution = window.prompt(
             status === 'RESOLVED' ? 'Опишите принятое решение' : 'Укажите причину отклонения',
             '',
@@ -45,9 +45,9 @@ export default function AdminModerationPage() {
         setError(null);
         try {
             if (entry.kind === 'REPORT') {
-                await api.safety.resolveReport(entry.item.id, status, resolution.trim(), action);
+                await api.safety.resolveReport(entry.item.id, status, resolution.trim(), action as 'NONE' | 'HIDE_CONTENT');
             } else {
-                await api.safety.resolveAppeal(entry.item.id, status, resolution.trim());
+                await api.safety.resolveAppeal(entry.item.id, status, resolution.trim(), action as 'NONE' | 'RESTORE_ACCOUNT' | 'RESTORE_CONTENT');
             }
             await load();
         } catch (err) {
@@ -108,6 +108,8 @@ export default function AdminModerationPage() {
                                             <CheckCircle2 className="w-5 h-5" />
                                         </button>
                                         {report && ['OFFER', 'EVENT', 'MESSAGE'].includes(report.targetType) && <button disabled={busy} onClick={() => void resolve(entry, 'RESOLVED', 'HIDE_CONTENT')} className="rounded-xl bg-orange-500/10 px-3 text-xs font-semibold text-orange-300 disabled:opacity-40">Скрыть</button>}
+                                        {appeal?.subjectType === 'ACCOUNT' && <button disabled={busy} onClick={() => void resolve(entry, 'RESOLVED', 'RESTORE_ACCOUNT')} className="rounded-xl bg-blue-500/10 px-3 text-xs font-semibold text-blue-300 disabled:opacity-40">Восстановить аккаунт</button>}
+                                        {appeal?.subjectType === 'CONTENT' && <button disabled={busy} onClick={() => void resolve(entry, 'RESOLVED', 'RESTORE_CONTENT')} className="rounded-xl bg-blue-500/10 px-3 text-xs font-semibold text-blue-300 disabled:opacity-40">Вернуть товар</button>}
                                         <button disabled={busy} onClick={() => void resolve(entry, 'REJECTED')} className="p-3 rounded-xl bg-red-500/10 text-red-400 disabled:opacity-40">
                                             <XCircle className="w-5 h-5" />
                                         </button>

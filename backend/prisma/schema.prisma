@@ -22,6 +22,11 @@ model User {
   updatedAt            DateTime              @updatedAt
   deletedAt            DateTime?
   tokensValidAfter     DateTime?
+  accountStatus        String                @default("ACTIVE")
+  suspensionReason     String?
+  suspendedAt          DateTime?
+  suspendedUntil       DateTime?
+  suspendedBy          String?
   telegramId           String?               @unique
   appleSub             String?               @unique
   phone                String?
@@ -62,6 +67,7 @@ model User {
   @@index([phone])
   @@index([squadId])
   @@index([deletedAt])
+  @@index([accountStatus, suspendedUntil])
 }
 
 model PasswordResetCode {

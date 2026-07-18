@@ -47,7 +47,7 @@ export class SafetyController {
   @Patch('admin/appeals/:id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  resolveAppeal(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: { status?: string; resolution?: string }) {
-    return this.safety.resolveAppeal(req.user.userId, id, body.status, body.resolution);
+  resolveAppeal(@Req() req: AuthRequest, @Param('id') id: string, @Body() body: { status?: string; resolution?: string; action?: string }) {
+    return this.safety.resolveAppeal(req.user.userId, id, body.status, body.resolution, body.action);
   }
 }

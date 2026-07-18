@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, User as UserIcon, Edit2, Check, RefreshCw, MessageCircle } from 'lucide-react';
+import { Search, User as UserIcon, Edit2, Check, RefreshCw, MessageCircle, ShieldBan } from 'lucide-react';
 import api, { User } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -10,7 +10,8 @@ export default function AdminUsers() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [editForm, setEditForm] = useState<{ role: string; tier: string; balance: number }>({ role: '', tier: '', balance: 0 });
+    const [editForm, setEditForm] = useState<{ role: string; tier: string; balance: number; accountStatus: 'ACTIVE' | 'SUSPENDED'; suspensionReason: string; suspendedUntil: string }>({ role: '', tier: '', balance: 0, accountStatus: 'ACTIVE', suspensionReason: '', suspendedUntil: '' });
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
     const fetchUsers = async () => {
@@ -35,12 +36,13 @@ export default function AdminUsers() {
 
     const handleEditSave = async () => {
         if (!editingUser) return;
+        setError(null);
         try {
             await api.admin.updateUser(editingUser.id, editForm as Partial<User>);
             setEditingUser(null);
             fetchUsers();
         } catch (error) {
-            console.error('Update failed', error);
+            setError(error instanceof Error ? error.message : 'Не удалось сохранить изменения');
         }
     };
 
@@ -108,6 +110,8 @@ export default function AdminUsers() {
                                             <div>
                                                 <div className="font-medium text-white text-sm">{user.email}</div>
                                                 <div className="text-xs text-white/30">Рег: {new Date(user.createdAt).toLocaleDateString()}</div>
+                                                {user.accountStatus === 'SUSPENDED' && <div className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-red-400"><ShieldBan className="h-3 w-3" /> Аккаунт ограничен</div>}
+                                                {!!user.risk?.score && <div className={`mt-1 text-xs font-semibold ${user.risk.score >= 50 ? 'text-red-400' : 'text-amber-400'}`} title={`${user.risk.openReports} открытых жалоб · ${user.risk.confirmedReports} подтверждённых · ${user.risk.rejectedOffers} отклонённых товаров`}>Риск {user.risk.score}/100</div>}
                                             </div>
                                         </div>
                                     </td>
@@ -141,7 +145,8 @@ export default function AdminUsers() {
                                         <button
                                             onClick={() => {
                                                 setEditingUser(user);
-                                                setEditForm({ role: user.role, tier: user.tier, balance: user.balance });
+                                                setEditForm({ role: user.role, tier: user.tier, balance: user.balance, accountStatus: user.accountStatus ?? 'ACTIVE', suspensionReason: user.suspensionReason ?? '', suspendedUntil: user.suspendedUntil?.slice(0, 10) ?? '' });
+                                                setError(null);
                                             }}
                                             className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all border-0 cursor-pointer"
                                             title="Редактировать"
@@ -211,6 +216,18 @@ export default function AdminUsers() {
                                 />
                                 <p className="text-[10px] text-white/30 mt-1">Корректировка будет записана в финансовый журнал.</p>
                             </div>
+                            <div>
+                                <label className="block text-xs font-medium text-white/50 mb-1.5">Доступ к аккаунту</label>
+                                <select value={editForm.accountStatus} onChange={e => setEditForm(prev => ({ ...prev, accountStatus: e.target.value as 'ACTIVE' | 'SUSPENDED' }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none">
+                                    <option value="ACTIVE" className="bg-[#161b2e]">Активен</option>
+                                    <option value="SUSPENDED" className="bg-[#161b2e]">Ограничен</option>
+                                </select>
+                            </div>
+                            {editForm.accountStatus === 'SUSPENDED' && <>
+                                <div><label className="block text-xs font-medium text-white/50 mb-1.5">Причина</label><textarea value={editForm.suspensionReason} onChange={e => setEditForm(prev => ({ ...prev, suspensionReason: e.target.value }))} maxLength={1000} rows={3} placeholder="Конкретное нарушение правил" className="w-full resize-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none" /></div>
+                                <div><label className="block text-xs font-medium text-white/50 mb-1.5">До даты (необязательно)</label><input type="date" value={editForm.suspendedUntil} onChange={e => setEditForm(prev => ({ ...prev, suspendedUntil: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none" /><p className="mt-1 text-[10px] text-white/30">Без даты — до ручного восстановления. Все активные сеансы завершатся сразу.</p></div>
+                            </>}
+                            {error && <div className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
                         </div>
 
                         <div className="flex gap-3 mt-8">

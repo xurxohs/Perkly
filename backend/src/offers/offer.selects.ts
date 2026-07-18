@@ -19,6 +19,11 @@ export const USER_ADMIN_SELECT = {
   phone: true,
   squadId: true,
   hasSquadReward: true,
+  accountStatus: true,
+  suspensionReason: true,
+  suspendedAt: true,
+  suspendedUntil: true,
+  suspendedBy: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;

@@ -22,9 +22,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.prisma.user.findFirst({
       where: { id: payload.sub, deletedAt: null },
-      select: { id: true, tokensValidAfter: true },
+      select: { id: true, tokensValidAfter: true, accountStatus: true, suspendedUntil: true },
     });
     if (!user) throw new UnauthorizedException('Account unavailable');
+    if (user.accountStatus === 'SUSPENDED' && (!user.suspendedUntil || user.suspendedUntil > new Date())) {
+      throw new UnauthorizedException('Account suspended');
+    }
     if (
       user.tokensValidAfter &&
       (!payload.iat || payload.iat * 1000 < user.tokensValidAfter.getTime())

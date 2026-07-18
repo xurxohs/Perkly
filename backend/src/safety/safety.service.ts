@@ -24,6 +24,7 @@ const APPEAL_SUBJECTS = new Set([
 ]);
 const REVIEW_STATUSES = new Set(['REVIEWING', 'RESOLVED', 'REJECTED']);
 const REPORT_ACTIONS = new Set(['NONE', 'HIDE_CONTENT']);
+const APPEAL_ACTIONS = new Set(['NONE', 'RESTORE_ACCOUNT', 'RESTORE_CONTENT']);
 
 @Injectable()
 export class SafetyService {
@@ -112,6 +113,20 @@ export class SafetyService {
     }
     if (reason.length < 20 || reason.length > 3000) {
       throw new BadRequestException('Reason must contain 20–3000 characters');
+    }
+    assertAcceptableUserContent(reason, 'Appeal reason');
+    if (subjectType === 'ACCOUNT' && subjectId && subjectId !== userId) throw new BadRequestException('Invalid account appeal');
+    if (subjectType === 'REPORT') {
+      const report = subjectId ? await this.prisma.moderationReport.findFirst({ where: { id: subjectId, reporterId: userId }, select: { id: true } }) : null;
+      if (!report) throw new NotFoundException('Report not found');
+    }
+    if (subjectType === 'TRANSACTION') {
+      const transaction = subjectId ? await this.prisma.transaction.findFirst({ where: { id: subjectId, buyerId: userId }, select: { id: true } }) : null;
+      if (!transaction) throw new NotFoundException('Transaction not found');
+    }
+    if (subjectType === 'CONTENT') {
+      const offer = subjectId ? await this.prisma.offer.findFirst({ where: { id: subjectId, sellerId: userId }, select: { id: true } }) : null;
+      if (!offer) throw new NotFoundException('Content not found');
     }
     const duplicate = await this.prisma.moderationAppeal.findFirst({
       where: {
@@ -256,10 +271,13 @@ export class SafetyService {
     id: string,
     status?: string,
     resolution?: string,
+    action = 'NONE',
   ) {
     const normalizedStatus = status?.trim().toUpperCase() ?? '';
     if (!REVIEW_STATUSES.has(normalizedStatus))
       throw new BadRequestException('Invalid status');
+    const normalizedAction = action.trim().toUpperCase();
+    if (!APPEAL_ACTIONS.has(normalizedAction)) throw new BadRequestException('Invalid appeal action');
     const existing = await this.prisma.moderationAppeal.findUnique({
       where: { id },
     });
@@ -273,12 +291,20 @@ export class SafetyService {
           resolvedBy: adminId,
         },
       });
+      if (normalizedStatus === 'RESOLVED' && normalizedAction === 'RESTORE_ACCOUNT') {
+        if (existing.subjectType !== 'ACCOUNT') throw new BadRequestException('Action does not match appeal');
+        await tx.user.update({ where: { id: existing.userId }, data: { accountStatus: 'ACTIVE', suspensionReason: null, suspendedAt: null, suspendedUntil: null, suspendedBy: null } });
+      }
+      if (normalizedStatus === 'RESOLVED' && normalizedAction === 'RESTORE_CONTENT') {
+        if (existing.subjectType !== 'CONTENT' || !existing.subjectId) throw new BadRequestException('Action does not match appeal');
+        await tx.offer.update({ where: { id: existing.subjectId, sellerId: existing.userId }, data: { moderationStatus: 'APPROVED', moderationNote: resolution?.trim() || 'Восстановлено после апелляции', moderationAt: new Date(), moderationBy: adminId, isActive: true } });
+      }
       await tx.adminLog.create({
         data: {
           adminId,
           action: 'MODERATION_APPEAL_UPDATED',
           targetId: id,
-          details: JSON.stringify({ status: normalizedStatus }),
+          details: JSON.stringify({ status: normalizedStatus, action: normalizedAction, subjectType: existing.subjectType, subjectId: existing.subjectId }),
         },
       });
       return result;

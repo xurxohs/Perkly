@@ -117,16 +117,29 @@ export class AdminService {
       }),
       this.prisma.user.count({ where }),
     ]);
-    return { users, total, page, totalPages: Math.ceil(total / limit) };
+    const userIds = users.map((user) => user.id);
+    const [reports, rejectedOffers] = userIds.length ? await Promise.all([
+      this.prisma.moderationReport.groupBy({ by: ['targetId', 'status'], where: { targetType: { in: ['USER', 'SELLER'] }, targetId: { in: userIds } }, _count: { _all: true } }),
+      this.prisma.offer.groupBy({ by: ['sellerId'], where: { sellerId: { in: userIds }, moderationStatus: 'REJECTED' }, _count: { _all: true } }),
+    ]) : [[], []];
+    const enrichedUsers = users.map((user) => {
+      const userReports = reports.filter((item) => item.targetId === user.id);
+      const openReports = userReports.filter((item) => ['OPEN', 'REVIEWING'].includes(item.status)).reduce((sum, item) => sum + item._count._all, 0);
+      const confirmedReports = userReports.filter((item) => item.status === 'RESOLVED').reduce((sum, item) => sum + item._count._all, 0);
+      const rejected = rejectedOffers.find((item) => item.sellerId === user.id)?._count._all ?? 0;
+      return { ...user, risk: { score: Math.min(100, openReports * 15 + confirmedReports * 25 + rejected * 10), openReports, confirmedReports, rejectedOffers: rejected } };
+    });
+    return { users: enrichedUsers, total, page, totalPages: Math.ceil(total / limit) };
   }
 
   async updateUser(
     id: string,
-    data: { role?: unknown; tier?: unknown; balance?: unknown },
+    data: { role?: unknown; tier?: unknown; balance?: unknown; accountStatus?: unknown; suspensionReason?: unknown; suspendedUntil?: unknown },
     adminId: string,
   ) {
     const roles = new Set(['USER', 'VENDOR', 'ADMIN']);
     const tiers = new Set(['SILVER', 'GOLD', 'PLATINUM']);
+    const accountStatuses = new Set(['ACTIVE', 'SUSPENDED']);
     if (
       data.role !== undefined &&
       (typeof data.role !== 'string' || !roles.has(data.role))
@@ -151,9 +164,23 @@ export class AdminService {
       );
     }
     if (
+      data.accountStatus !== undefined &&
+      (typeof data.accountStatus !== 'string' || !accountStatuses.has(data.accountStatus))
+    ) throw new BadRequestException('Invalid account status');
+    if (data.accountStatus === 'SUSPENDED' && (typeof data.suspensionReason !== 'string' || data.suspensionReason.trim().length < 5 || data.suspensionReason.trim().length > 1000)) {
+      throw new BadRequestException('Suspension reason must contain 5–1000 characters');
+    }
+    if (data.suspendedUntil !== undefined && data.suspendedUntil !== null && Number.isNaN(Date.parse(String(data.suspendedUntil)))) {
+      throw new BadRequestException('Invalid suspension end date');
+    }
+    if (id === adminId && data.accountStatus === 'SUSPENDED') {
+      throw new BadRequestException('You cannot suspend your own account');
+    }
+    if (
       data.role === undefined &&
       data.tier === undefined &&
-      data.balance === undefined
+      data.balance === undefined &&
+      data.accountStatus === undefined
     ) {
       throw new BadRequestException('No supported user fields supplied');
     }
@@ -161,7 +188,7 @@ export class AdminService {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.user.findUnique({
         where: { id },
-        select: { balance: true },
+        select: { balance: true, accountStatus: true },
       });
       if (!current) throw new NotFoundException('User not found');
       const user = await tx.user.update({
@@ -172,9 +199,23 @@ export class AdminService {
           ...(data.balance !== undefined
             ? { balance: data.balance as number }
             : {}),
+          ...(data.accountStatus === 'SUSPENDED' ? {
+            accountStatus: 'SUSPENDED',
+            suspensionReason: (data.suspensionReason as string).trim(),
+            suspendedAt: new Date(),
+            suspendedUntil: data.suspendedUntil ? new Date(String(data.suspendedUntil)) : null,
+            suspendedBy: adminId,
+            tokensValidAfter: new Date(),
+          } : data.accountStatus === 'ACTIVE' ? {
+            accountStatus: 'ACTIVE', suspensionReason: null, suspendedAt: null, suspendedUntil: null, suspendedBy: null,
+          } : {}),
         },
         select: USER_ADMIN_SELECT,
       });
+      if (data.accountStatus === 'SUSPENDED') {
+        await tx.userSession.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } });
+        await tx.offer.updateMany({ where: { sellerId: id, isActive: true }, data: { isActive: false } });
+      }
       if (data.balance !== undefined && data.balance !== current.balance) {
         await tx.financialEntry.create({
           data: {
@@ -199,6 +240,10 @@ export class AdminService {
             role: data.role,
             tier: data.tier,
             balance: data.balance,
+            previousAccountStatus: current.accountStatus,
+            accountStatus: data.accountStatus,
+            suspensionReason: data.suspensionReason,
+            suspendedUntil: data.suspendedUntil,
           }),
         },
       });
