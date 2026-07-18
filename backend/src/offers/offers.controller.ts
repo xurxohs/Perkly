@@ -254,6 +254,10 @@ export class OffersController {
     const imageUrl = this.optionalString(body, 'imageUrl');
     if (imageUrl) payload.imageUrl = imageUrl;
 
+    const images = this.normalizeImages(body.images);
+    if (images) payload.images = images;
+    else if (imageUrl) payload.images = [imageUrl];
+
     const thumbnailUrl =
       this.optionalString(body, 'thumbnailUrl') ??
       (imageUrl?.includes('/uploads/vendor/')
@@ -330,6 +334,9 @@ export class OffersController {
       }
     }
 
+    if (body.images !== undefined) payload.images = this.normalizeImages(body.images) ?? [];
+    else if (typeof body.imageUrl === 'string' && body.imageUrl.trim()) payload.images = [body.imageUrl.trim()];
+
     const price = this.optionalInteger(body, 'price');
     if (price !== undefined) {
       if (!isValidOfferPriceUzs(price)) {
@@ -377,6 +384,17 @@ export class OffersController {
       throw new BadRequestException('No supported offer fields supplied');
     }
     return payload;
+  }
+
+  private normalizeImages(value: unknown): string[] | undefined {
+    if (value === undefined) return undefined;
+    if (!Array.isArray(value)) throw new BadRequestException('images must be an array');
+    const images = value
+      .map((item) => typeof item === 'string' ? item.trim() : '')
+      .filter((item) => item.startsWith('https://') || item.startsWith('/'));
+    if (images.length !== value.length) throw new BadRequestException('Некорректное изображение');
+    if (images.length > 8) throw new BadRequestException('Можно добавить не больше 8 изображений');
+    return [...new Set(images)];
   }
 
   private requiredString(body: Record<string, unknown>, field: string): string {

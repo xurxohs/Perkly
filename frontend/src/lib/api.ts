@@ -23,6 +23,7 @@ export interface Offer {
     vendorLogo: string | null;
     imageUrl: string | null;
     thumbnailUrl: string | null;
+    images?: string[] | null;
     category: string;
     fulfillmentType: 'PROMOCODE' | 'DIGITAL_CODE' | 'LINK' | 'INSTRUCTIONS';
     isExclusive: boolean;

@@ -26,13 +26,13 @@ const FULFILLMENT_TYPES: { id: Offer['fulfillmentType']; name: string; hint: str
 
 type OfferForm = {
     title: string; description: string; category: string; fulfillmentType: Offer['fulfillmentType'];
-    price: string; discountPercent: string; hiddenData: string; imageUrl: string;
+    price: string; discountPercent: string; hiddenData: string; imageUrl: string; images: string[];
     periodDays: string; isActive: boolean; isExclusive: boolean; isFlashDrop: boolean;
 };
 
 const EMPTY_FORM: OfferForm = {
     title: '', description: '', category: 'MARKETPLACES', fulfillmentType: 'INSTRUCTIONS',
-    price: '', discountPercent: '0', hiddenData: '', imageUrl: '', periodDays: '0',
+    price: '', discountPercent: '0', hiddenData: '', imageUrl: '', images: [], periodDays: '0',
     isActive: true, isExclusive: false, isFlashDrop: false,
 };
 
@@ -40,7 +40,7 @@ const formFromOffer = (offer: Offer): OfferForm => ({
     title: offer.title, description: offer.description, category: offer.category,
     fulfillmentType: offer.fulfillmentType ?? 'INSTRUCTIONS', price: String(offer.price),
     discountPercent: String(offer.discountPercent ?? 0), hiddenData: offer.hiddenData ?? '',
-    imageUrl: offer.imageUrl ?? offer.vendorLogo ?? '', periodDays: '0', isActive: offer.isActive,
+    imageUrl: offer.imageUrl ?? offer.vendorLogo ?? '', images: offer.images?.length ? offer.images : (offer.imageUrl ? [offer.imageUrl] : []), periodDays: '0', isActive: offer.isActive,
     isExclusive: offer.isExclusive, isFlashDrop: offer.isFlashDrop,
 });
 
@@ -57,6 +57,24 @@ const getImageSize = (source: string) => new Promise<{ width: number; height: nu
     image.onerror = () => reject(new Error('Не удалось определить размер изображения'));
     image.src = source;
 });
+
+const cropToProductRatio = (source: string) => new Promise<string>((resolve, reject) => {
+    const image = new window.Image();
+    image.onload = () => {
+        const ratio = 16 / 10;
+        let sx = 0, sy = 0, sw = image.naturalWidth, sh = image.naturalHeight;
+        if (sw / sh > ratio) { sw = sh * ratio; sx = (image.naturalWidth - sw) / 2; }
+        else { sh = sw / ratio; sy = (image.naturalHeight - sh) / 2; }
+        const canvas = document.createElement('canvas'); canvas.width = 1600; canvas.height = 1000;
+        const context = canvas.getContext('2d'); if (!context) return reject(new Error('Не удалось подготовить изображение'));
+        context.drawImage(image, sx, sy, sw, sh, 0, 0, 1600, 1000);
+        resolve(canvas.toDataURL('image/jpeg', 0.88));
+    };
+    image.onerror = () => reject(new Error('Не удалось открыть изображение'));
+    image.src = source;
+});
+
+const DRAFT_KEY = 'perkly_vendor_offer_draft_v2';
 
 export default function VendorProductsPage() {
     const [offers, setOffers] = useState<Offer[]>([]);
@@ -93,19 +111,41 @@ export default function VendorProductsPage() {
         });
     }, [offers, search, status]);
 
-    const openCreate = () => { setEditingOffer(null); setForm(EMPTY_FORM); setLocalPreview(null); setImageSize(null); setError(null); setIsEditorOpen(true); };
+    const openCreate = () => {
+        setEditingOffer(null);
+        const saved = localStorage.getItem(DRAFT_KEY);
+        try { setForm(saved ? { ...EMPTY_FORM, ...JSON.parse(saved) } : EMPTY_FORM); }
+        catch { setForm(EMPTY_FORM); }
+        setLocalPreview(null); setImageSize(null); setError(null); setIsEditorOpen(true);
+    };
     const openEdit = (offer: Offer) => { setEditingOffer(offer); setForm(formFromOffer(offer)); setLocalPreview(null); setImageSize(null); setError(null); setIsEditorOpen(true); };
 
-    const uploadImage = async (file: File) => {
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setError('Поддерживаются JPG, PNG и WebP.'); return; }
-        if (file.size > 8 * 1024 * 1024) { setError('Изображение должно быть меньше 8 МБ.'); return; }
+    useEffect(() => {
+        if (!isEditorOpen || editingOffer) return;
+        const timer = window.setTimeout(() => localStorage.setItem(DRAFT_KEY, JSON.stringify(form)), 350);
+        return () => window.clearTimeout(timer);
+    }, [form, isEditorOpen, editingOffer]);
+
+    const uploadImages = async (files: File[]) => {
+        if (form.images.length + files.length > 8) { setError('Можно добавить не больше 8 фотографий.'); return; }
+        if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) { setError('Поддерживаются JPG, PNG и WebP.'); return; }
+        if (files.some((file) => file.size > 8 * 1024 * 1024)) { setError('Каждое изображение должно быть меньше 8 МБ.'); return; }
         setUploading(true); setError(null);
         try {
-            const dataUrl = await fileToDataUrl(file);
-            setLocalPreview(dataUrl);
-            setImageSize(await getImageSize(dataUrl));
-            const uploaded = await offersApi.uploadVendorImage(dataUrl);
-            setForm((current) => ({ ...current, imageUrl: uploaded.url }));
+            const uploadedUrls: string[] = [];
+            for (const file of files) {
+                const original = await fileToDataUrl(file);
+                setImageSize(await getImageSize(original));
+                const cropped = await cropToProductRatio(original);
+                setLocalPreview(cropped);
+                const uploaded = await offersApi.uploadVendorImage(cropped);
+                uploadedUrls.push(uploaded.url);
+            }
+            setForm((current) => {
+                const images = [...current.images, ...uploadedUrls];
+                return { ...current, images, imageUrl: images[0] || '' };
+            });
+            setLocalPreview(null);
         } catch (uploadError) {
             setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение');
         } finally { setUploading(false); }
@@ -117,14 +157,14 @@ export default function VendorProductsPage() {
             title: form.title.trim(), description: form.description.trim(), category: form.category,
             fulfillmentType: form.fulfillmentType, price: Number(form.price),
             discountPercent: Number(form.discountPercent || 0), hiddenData: form.hiddenData.trim(),
-            vendorLogo: form.imageUrl || undefined, imageUrl: form.imageUrl || undefined,
+            vendorLogo: form.imageUrl || undefined, imageUrl: form.images[0] || form.imageUrl || undefined, images: form.images,
             periodDays: Number(form.periodDays || 0), isActive: form.isActive,
             isExclusive: form.isExclusive, isFlashDrop: form.isFlashDrop,
         };
         try {
             if (editingOffer) await offersApi.updateVendorOffer(editingOffer.id, payload);
             else await offersApi.createVendor(payload);
-            setIsEditorOpen(false); setEditingOffer(null); setForm(EMPTY_FORM); await load();
+            localStorage.removeItem(DRAFT_KEY); setIsEditorOpen(false); setEditingOffer(null); setForm(EMPTY_FORM); await load();
         } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'Не удалось сохранить товар'); }
         finally { setSaving(false); }
     };
@@ -146,6 +186,15 @@ export default function VendorProductsPage() {
     };
 
     const previewImage = localPreview || form.imageUrl;
+    const moveImage = (index: number, direction: -1 | 1) => setForm((current) => {
+        const target = index + direction; if (target < 0 || target >= current.images.length) return current;
+        const images = [...current.images]; [images[index], images[target]] = [images[target], images[index]];
+        return { ...current, images, imageUrl: images[0] || '' };
+    });
+    const removeImage = (index: number) => setForm((current) => {
+        const images = current.images.filter((_, itemIndex) => itemIndex !== index);
+        return { ...current, images, imageUrl: images[0] || '' };
+    });
     const numericPrice = Number(form.price || 0);
     const imageRatioWarning = imageSize && Math.abs(imageSize.width / imageSize.height - 1.6) > 0.08;
     const canSave = Boolean(form.title.trim() && form.description.trim() && form.hiddenData.trim() && form.price !== '' && !saving && !uploading);
@@ -191,8 +240,9 @@ export default function VendorProductsPage() {
                                     </div>
                                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div><p className="text-sm font-semibold text-white/75">1600 × 1000 px — лучший результат</p><p className="mt-1 text-xs text-white/35">JPG, PNG или WebP до 8 МБ. Текст и важные детали держите ближе к центру.</p>{imageSize && <p className={`mt-1 text-xs ${imageRatioWarning ? 'text-amber-300' : 'text-emerald-300'}`}>{imageSize.width} × {imageSize.height} px · {imageRatioWarning ? 'края могут обрезаться' : 'формат подходит'}</p>}</div>
-                                        <label className="shrink-0 cursor-pointer rounded-xl bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/15">{previewImage ? 'Заменить' : 'Выбрать файл'}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(file); event.currentTarget.value = ''; }} /></label>
+                                        <label className="shrink-0 cursor-pointer rounded-xl bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/15">{form.images.length ? 'Добавить ещё' : 'Выбрать файлы'}<input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={uploading} className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void uploadImages(files); event.currentTarget.value = ''; }} /></label>
                                     </div>
+                                    {form.images.length > 0 && <div className="grid grid-cols-2 gap-3 border-t border-white/10 p-4 sm:grid-cols-4">{form.images.map((url, index) => <div key={`${url}-${index}`} className="relative overflow-hidden rounded-2xl bg-black/30"><div className="relative aspect-[16/10]"><Image src={url} alt={`Фото ${index + 1}`} fill sizes="180px" className="object-cover" /></div><div className="flex items-center justify-between p-2 text-xs text-white/60"><button type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} className="px-2 disabled:opacity-20">←</button><span>{index === 0 ? 'Главное' : index + 1}</span><button type="button" onClick={() => removeImage(index)} className="px-2 text-red-300">×</button><button type="button" disabled={index === form.images.length - 1} onClick={() => moveImage(index, 1)} className="px-2 disabled:opacity-20">→</button></div></div>)}</div>}
                                 </div>
                             </Field>
                             <div className="grid gap-4 sm:grid-cols-3"><Field label="Цена, сум"><input type="number" min="0" max="100000000" required value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} className="field" placeholder="0" /></Field><Field label="Скидка, %"><input type="number" min="0" max="100" value={form.discountPercent} onChange={(event) => setForm({ ...form, discountPercent: event.target.value })} className="field" /></Field><Field label="Срок, дней"><input type="number" min="0" max="3650" value={form.periodDays} onChange={(event) => setForm({ ...form, periodDays: event.target.value })} className="field" /></Field></div>

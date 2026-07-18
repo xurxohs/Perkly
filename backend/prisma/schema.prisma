@@ -246,6 +246,7 @@ model Offer {
   vendorLogo        String?
   imageUrl          String?
   thumbnailUrl      String?
+  images            Json?
   usageInstructions String?
   category          String
   fulfillmentType   String                @default("INSTRUCTIONS")

@@ -79,10 +79,10 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                 {/* Left - Image */}
                 <div>
                     <div className="rounded-[28px] overflow-hidden aspect-[4/3] md:aspect-square flex items-center justify-center p-8 bg-white/[0.025] border border-white/[0.07]">
-                        {(offer.imageUrl || offer.vendorLogo) ? (
+                        {(offer.images?.[0] || offer.imageUrl || offer.vendorLogo) ? (
                             <div className="relative w-full h-full">
                                 <Image
-                                  src={offer.imageUrl || offer.vendorLogo || ''}
+                                  src={offer.images?.[0] || offer.imageUrl || offer.vendorLogo || ''}
                                   fill
                                   className="object-contain"
                                   alt={offer.title}
@@ -92,6 +92,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                             <Package className="w-24 h-24 text-white/20" />
                         )}
                     </div>
+                    {(offer.images?.length ?? 0) > 1 && <div className="mt-3 grid grid-cols-4 gap-2">{offer.images!.slice(1, 5).map((source, index) => <div key={source} className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-white/[0.025] border border-white/[0.07]"><Image src={source} alt={`${offer.title}, фото ${index + 2}`} fill sizes="160px" className="object-cover" /></div>)}</div>}
 
                     {/* Seller info */}
                     {offer.seller && (
