@@ -351,7 +351,7 @@ export default function ProfilePage() {
         <>
             <div className="profile-modern max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
                 <div className="mb-6 flex items-end justify-between">
-                    <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-white/30">Perkly ID</p><h1 className="mt-1 text-3xl font-black tracking-[-.045em] text-white sm:text-4xl">Профиль</h1></div>
+                    <h1 className="text-3xl font-black tracking-[-.045em] text-white sm:text-4xl">Профиль</h1>
                     <span className="profile-brand-mark" aria-hidden="true" />
                 </div>
                 {/* Profile card */}

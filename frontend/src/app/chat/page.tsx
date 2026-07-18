@@ -310,7 +310,6 @@ export default function ChatPage() {
                         </div>
                     </div>
 
-                    <span className="text-[10px] font-bold uppercase tracking-[.14em] text-white/25">Perkly Chat</span>
                 </div>
 
                 {rooms.length > 1 && (

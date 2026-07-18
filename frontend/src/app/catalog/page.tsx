@@ -219,9 +219,6 @@ function CatalogContent() {
             {/* Header */}
             <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                 <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-purple-400/15 bg-purple-400/[0.07] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-purple-300">
-                    <Sparkles className="h-3.5 w-3.5" /> Каталог Perkly
-                </div>
                 <h1 className="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">
                     {isFlashDrop ? (
                         <span className="text-gradient-fire flex items-center gap-2"><Flame className="w-8 h-8" /> Временные Акции</span>

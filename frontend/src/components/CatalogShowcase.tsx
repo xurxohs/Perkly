@@ -7,7 +7,6 @@ import { CatalogBanner, catalogBannersApi } from '@/lib/api';
 
 const slides = [
     {
-        eyebrow: 'Только в Perkly',
         title: 'Выгода для города',
         description: 'Промокоды заведений и сервисов Узбекистана — сразу после покупки.',
         href: '/catalog?fulfillmentType=PROMOCODE',
@@ -17,7 +16,6 @@ const slides = [
         mark: 'P',
     },
     {
-        eyebrow: 'Подписки без ожидания',
         title: 'Telegram и сервисы',
         description: 'Цифровой доступ с защищённой выдачей и оплатой только в сумах.',
         href: '/catalog?category=SUBSCRIPTIONS',
@@ -27,7 +25,6 @@ const slides = [
         mark: '↗',
     },
     {
-        eyebrow: 'Предложения рядом',
         title: 'Город становится выгоднее',
         description: 'Кофе, рестораны, события и локальные услуги в одном каталоге.',
         href: '/catalog?category=RESTAURANTS&near=true',
@@ -103,8 +100,7 @@ export function CatalogShowcase() {
                 <div className="pointer-events-none absolute right-[8%] top-1/2 hidden -translate-y-1/2 text-[170px] font-black leading-none text-white/[0.13] sm:block">{slide.mark}</div>
 
                 <div className="relative z-10 max-w-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-[.22em] text-white/70">{slide.eyebrow}</p>
-                    <h2 className="mt-3 text-3xl font-black leading-[.98] tracking-[-.05em] text-white sm:text-5xl">{slide.title}</h2>
+                    <h2 className="text-3xl font-black leading-[.98] tracking-[-.05em] text-white sm:text-5xl">{slide.title}</h2>
                     <p className="mt-4 max-w-xl text-sm leading-6 text-white/72 sm:text-base">{slide.description}</p>
                     <Link href={slide.href} className="mt-6 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-black text-black no-underline transition hover:scale-[1.02]">{slide.action}</Link>
                 </div>
