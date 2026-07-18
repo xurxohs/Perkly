@@ -58,6 +58,7 @@ export class TransactionsService {
 
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => SquadsService))
     private squadsService: SquadsService,
