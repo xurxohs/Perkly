@@ -299,27 +299,49 @@ export class UsersService {
       throw new BadRequestException('Avatar must be between 1 byte and 6 MB');
     }
 
-    let body: Buffer;
+    let body: Buffer = source;
+    let outputMime = mime === 'image/jpg' ? 'image/jpeg' : mime;
+    let extension = outputMime === 'image/png' ? 'png' : outputMime === 'image/webp' ? 'webp' : 'jpg';
+    let sharpFactory: typeof import('sharp') | undefined;
     try {
       const sharpModule = await import('sharp');
-      const sharpFactory = ((sharpModule as unknown as { default?: typeof import('sharp') }).default
+      sharpFactory = ((sharpModule as unknown as { default?: typeof import('sharp') }).default
         ?? sharpModule) as unknown as typeof import('sharp');
-      body = await sharpFactory(source, { limitInputPixels: 25_000_000 })
+    } catch {
+      // Older production CPUs cannot load recent sharp binaries. The iOS and
+      // web clients already resize avatars, so keep a validated original.
+    }
+
+    if (sharpFactory) {
+      try {
+        body = await sharpFactory(source, { limitInputPixels: 25_000_000 })
         .rotate()
         .resize(768, 768, { fit: 'cover', position: 'centre' })
         .webp({ quality: 84, effort: 4 })
         .toBuffer();
-    } catch {
+        outputMime = 'image/webp';
+        extension = 'webp';
+      } catch {
+        throw new BadRequestException('Invalid or corrupted image');
+      }
+    } else if (!this.hasExpectedImageSignature(source, outputMime)) {
       throw new BadRequestException('Invalid or corrupted image');
     }
 
-    const key = `avatars/${userId}/${Date.now()}-${randomUUID()}.webp`;
-    const avatarUrl = await this.storage.put(key, body, 'image/webp');
+    const key = `avatars/${userId}/${Date.now()}-${randomUUID()}.${extension}`;
+    const avatarUrl = await this.storage.put(key, body, outputMime);
     return this.prisma.user.update({
       where: { id: userId },
       data: { avatarUrl },
       select: USER_SELECT,
     });
+  }
+
+  private hasExpectedImageSignature(buffer: Buffer, mime: string) {
+    if (mime === 'image/jpeg') return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    if (mime === 'image/png') return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    if (mime === 'image/webp') return buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+    return false;
   }
 
   removeAvatar(userId: string) {
