@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CatalogBanner, catalogBannersApi } from '@/lib/api';
 
 const slides = [
     {
@@ -50,22 +51,44 @@ const quickApps = [
 
 export function CatalogShowcase() {
     const [active, setActive] = useState(0);
+    const [banners, setBanners] = useState<CatalogBanner[]>([]);
     const touchStart = useRef<number | null>(null);
-
-    const select = useCallback((index: number) => {
-        setActive((index + slides.length) % slides.length);
-    }, []);
+    const count = banners.length || slides.length;
 
     useEffect(() => {
-        const timer = window.setInterval(() => setActive((current) => (current + 1) % slides.length), 5500);
-        return () => window.clearInterval(timer);
+        let alive = true;
+        void catalogBannersApi.list().then((items) => { if (alive) { setBanners(items); setActive(0); } }).catch(() => undefined);
+        return () => { alive = false; };
     }, []);
 
+    const select = useCallback((index: number) => {
+        setActive((index + count) % count);
+    }, [count]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setActive((current) => (current + 1) % count), 5500);
+        return () => window.clearInterval(timer);
+    }, [count]);
+
     const slide = slides[active];
+    const banner = banners[active];
 
     return (
         <section className="catalog-showcase mb-7" aria-label="Рекомендуем в каталоге">
-            <div
+            {banner ? <div
+                className="catalog-showcase-banner group relative overflow-hidden rounded-[30px] bg-black"
+                style={{ aspectRatio: `${banner.width} / ${banner.height}` }}
+                onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
+                onTouchEnd={(event) => {
+                    if (touchStart.current === null) return;
+                    const delta = (event.changedTouches[0]?.clientX ?? touchStart.current) - touchStart.current;
+                    if (Math.abs(delta) > 45) select(active + (delta < 0 ? 1 : -1));
+                    touchStart.current = null;
+                }}
+            >
+                <Link href={banner.href} className="absolute inset-0 block no-underline"><Image src={banner.imageUrl} alt={banner.altText} fill priority={active === 0} sizes="(max-width: 1280px) 100vw, 1280px" className="object-contain" /></Link>
+                {banners.length > 1 && <><button type="button" onClick={() => select(active - 1)} className="pointer-events-none absolute left-5 top-1/2 hidden -translate-y-1/2 border-0 bg-transparent p-3 text-5xl font-light leading-none text-white/90 opacity-0 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 sm:block" aria-label="Предыдущий баннер">‹</button><button type="button" onClick={() => select(active + 1)} className="pointer-events-none absolute right-5 top-1/2 hidden -translate-y-1/2 border-0 bg-transparent p-3 text-5xl font-light leading-none text-white/90 opacity-0 drop-shadow-[0_2px_10px_rgba(0,0,0,.35)] transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100 sm:block" aria-label="Следующий баннер">›</button><div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">{banners.map((item, index) => <button key={item.id} type="button" onClick={() => select(index)} aria-label={`Баннер ${index + 1}`} className={`h-1.5 rounded-full border-0 transition-all ${index === active ? 'w-8 bg-white' : 'w-2 bg-white/35'}`} />)}</div></>}
+            </div> : <div
                 className={`catalog-showcase-banner group relative min-h-[230px] overflow-hidden rounded-[30px] bg-gradient-to-br ${slide.accent} p-6 sm:min-h-[280px] sm:p-9`}
                 onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
                 onTouchEnd={(event) => {
@@ -94,7 +117,7 @@ export function CatalogShowcase() {
                         <button key={item.title} type="button" onClick={() => select(index)} aria-label={`Баннер ${index + 1}`} className={`h-1.5 rounded-full border-0 transition-all ${index === active ? 'w-8 bg-white' : 'w-2 bg-white/35'}`} />
                     ))}
                 </div>
-            </div>
+            </div>}
 
             <div className="-mx-6 overflow-x-auto px-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max gap-3 pb-1">

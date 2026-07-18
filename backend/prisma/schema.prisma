@@ -590,3 +590,18 @@ model DiagnosticIssue {
   @@index([kind, lastSeenAt])
   @@index([occurrences, lastSeenAt])
 }
+
+model CatalogBanner {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  href      String   @default("/catalog")
+  altText   String   @default("Баннер Perkly")
+  width     Int      @default(1600)
+  height    Int      @default(600)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}

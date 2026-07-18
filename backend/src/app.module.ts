@@ -31,6 +31,7 @@ import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { SafetyModule } from './safety/safety.module';
 import { StorageModule } from './storage/storage.module';
+import { CatalogBannersModule } from './catalog-banners/catalog-banners.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { StorageModule } from './storage/storage.module';
     InfrastructureModule,
     SafetyModule,
     StorageModule,
+    CatalogBannersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

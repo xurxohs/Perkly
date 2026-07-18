@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
-import { LayoutDashboard, Users, ShoppingBag, CreditCard, Scale, ShieldAlert, ScrollText, LogOut, MessageCircle, Activity, Sparkles, Flame, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, CreditCard, Scale, ShieldAlert, ScrollText, LogOut, MessageCircle, Activity, Sparkles, Flame, Building2, Images } from 'lucide-react';
 
 const ADMIN_LINKS = [
     { name: 'Обзор', href: '/admin', icon: LayoutDashboard },
@@ -13,6 +13,7 @@ const ADMIN_LINKS = [
     { name: 'Пользователи', href: '/admin/users', icon: Users },
     { name: 'Компании', href: '/admin/companies', icon: Building2 },
     { name: 'Товары', href: '/admin/offers', icon: ShoppingBag },
+    { name: 'Баннеры', href: '/admin/banners', icon: Images },
     { name: 'Транзакции', href: '/admin/transactions', icon: CreditCard },
     { name: 'Споры', href: '/admin/disputes', icon: Scale },
     { name: 'Модерация', href: '/admin/moderation', icon: ShieldAlert },

@@ -40,6 +40,19 @@ export interface Offer {
     };
 }
 
+export interface CatalogBanner {
+    id: string;
+    imageUrl: string;
+    href: string;
+    altText: string;
+    width: number;
+    height: number;
+    sortOrder: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface SavedOffer {
     id: string;
     userId: string;
@@ -1136,6 +1149,14 @@ export const adminApi = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+    getCatalogBanners: () => request<CatalogBanner[]>('/catalog-banners/admin/all'),
+    createCatalogBanner: (data: Partial<CatalogBanner>) => request<CatalogBanner>('/catalog-banners/admin', { method: 'POST', body: JSON.stringify(data) }),
+    updateCatalogBanner: (id: string, data: Partial<CatalogBanner>) => request<CatalogBanner>(`/catalog-banners/admin/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    deleteCatalogBanner: (id: string) => request<CatalogBanner>(`/catalog-banners/admin/${id}`, { method: 'DELETE' }),
+};
+
+export const catalogBannersApi = {
+    list: () => request<CatalogBanner[]>('/catalog-banners', { cache: 'no-store' }),
 };
 
 // ===== SQUADS =====
