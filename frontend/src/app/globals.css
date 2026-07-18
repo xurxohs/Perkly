@@ -1091,7 +1091,7 @@
 }
 
 /* Search and filter surface */
-.catalog-apple-light > div:nth-of-type(4) {
+.catalog-apple-light .catalog-search-surface {
   background: #fff !important;
   border: 0 !important;
   box-shadow: 0 8px 30px rgba(0,0,0,.055);
@@ -1206,7 +1206,7 @@
   background: rgba(168,85,247,.18) !important;
   border-color: rgba(192,132,252,.3) !important;
 }
-.site-dark-commerce .catalog-apple-light > div:nth-of-type(4) {
+.site-dark-commerce .catalog-apple-light .catalog-search-surface {
   background: rgba(255,255,255,.028) !important;
   border: 1px solid rgba(255,255,255,.07) !important;
   box-shadow: none;

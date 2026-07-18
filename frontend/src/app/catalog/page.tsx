@@ -267,7 +267,7 @@ function CatalogContent() {
             </div>
 
             {/* Search and filters */}
-            <div className="mb-6 rounded-[28px] border border-white/[0.07] bg-white/[0.025] p-3 backdrop-blur-2xl">
+            <div className="catalog-search-surface mb-6 rounded-[28px] border border-white/[0.07] bg-white/[0.025] p-3 backdrop-blur-2xl">
                 <div className="flex flex-col gap-3 lg:flex-row">
                 <form onSubmit={handleSearch} className="min-w-0 flex-1">
                     <div className="relative">
@@ -363,7 +363,7 @@ function CatalogContent() {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+                <div className="catalog-offers-grid grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {offers.map((offer) => (
                         <div key={offer.id} className="catalog-offer-card relative overflow-hidden group bg-white/[0.03] border border-white/[0.08] transition-[border-color,box-shadow] duration-200 hover:border-white/[0.14]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
