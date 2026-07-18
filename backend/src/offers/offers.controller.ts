@@ -85,8 +85,11 @@ export class OffersController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @Post()
-  create(@Body() createOfferDto: Prisma.OfferCreateInput): Promise<Offer> {
-    return this.offersService.create(createOfferDto);
+  create(
+    @Body() createOfferDto: Prisma.OfferCreateInput,
+    @Req() req: AuthRequest,
+  ): Promise<Offer> {
+    return this.offersService.create(createOfferDto, req.user.userId);
   }
 
   @Get()
@@ -188,10 +191,13 @@ export class OffersController {
         throw new ForbiddenException('You can only update your own offers');
       }
     }
-    return this.offersService.update({
+    const update = {
       where: { id },
       data: this.normalizeVendorOfferUpdateBody(body),
-    });
+    };
+    return req.user.role === 'VENDOR'
+      ? this.offersService.updateVendorOffer(update)
+      : this.offersService.update(update);
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)

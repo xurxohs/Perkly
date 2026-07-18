@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { ArrowRight, Flame, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { Offer } from '@/lib/api';
+import { Event, Offer } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 
@@ -41,20 +41,39 @@ async function getOffers() {
   }
 }
 
+async function hasUpcomingEvents() {
+  try {
+    const response = await fetch(`${API_BASE}/events?take=20`, {
+      cache: 'no-store',
+    });
+    if (!response.ok) return false;
+    const payload = (await response.json()) as { data?: Event[] };
+    return (payload.data ?? []).some((event) => {
+      const timestamp = new Date(event.date).getTime();
+      return Number.isFinite(timestamp) && timestamp + 86_400_000 >= Date.now();
+    });
+  } catch {
+    return false;
+  }
+}
+
 const actionLabel = (offer: Offer) => offer.price === 0 ? 'Получить' : offer.fulfillmentType === 'LINK' ? 'Открыть' : 'Купить';
 
 export default async function Home() {
-  const { popularOffers, flashOffers } = await getOffers();
+  const [{ popularOffers, flashOffers }, showTopka] = await Promise.all([
+    getOffers(),
+    hasUpcomingEvents(),
+  ]);
 
   return <div className="mx-auto flex w-full max-w-[1200px] flex-col px-4 pb-16 sm:px-6">
     <section className="relative flex min-h-[520px] items-center overflow-hidden py-16 text-center sm:min-h-[600px] sm:py-20">
       <div className="pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[720px] max-w-[95vw] -translate-x-1/2 rounded-full bg-purple-600/[0.12] blur-[110px]" />
       <div className="relative mx-auto max-w-4xl">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/[0.08] px-4 py-2 text-xs font-bold text-purple-200"><Sparkles className="h-3.5 w-3.5" /> Выгода рядом — оплата в сумах</div>
-        <h1 className="text-balance text-4xl font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">Покупайте выгоднее.<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Получайте сразу.</span></h1>
-        <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Промокоды, подписки и локальные предложения Узбекистана. Деньги защищены до получения покупки.</p>
+        <h1 className="text-balance text-4xl font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">Покупайте понятнее.<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Условия — до оплаты.</span></h1>
+        <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Промокоды, подписки и локальные предложения Узбекистана. Цена, ограничения и способ получения видны в карточке.</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/catalog" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-bold text-black no-underline transition hover:scale-[1.02]">Смотреть предложения <ArrowRight className="h-4 w-4" /></Link><Link href="/sell" className="inline-flex h-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-7 font-semibold text-white/75 no-underline hover:bg-white/[0.07]">Стать продавцом</Link></div>
-        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> Безопасная сделка</span><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="catalog" className="h-4 w-4 text-purple-300" /> Моментальная выдача</span><span>Цены только в UZS</span></div>
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> История операции и споры</span><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="catalog" className="h-4 w-4 text-purple-300" /> Способ выдачи указан заранее</span><span>Цены только в UZS</span></div>
       </div>
     </section>
 
@@ -63,7 +82,7 @@ export default async function Home() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{categories.map((category) => <Link key={category.title} href={category.href} className="group rounded-3xl border border-white/[0.07] bg-white/[0.025] p-4 no-underline transition hover:-translate-y-0.5 hover:border-purple-400/25 hover:bg-purple-500/[0.06]"><div className="mb-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/55 transition group-hover:bg-purple-500/15 group-hover:text-purple-200"><PerklyGlyph name={category.icon} className="h-5 w-5" /></div><h3 className="text-sm font-bold text-white">{category.title}</h3><p className="mt-1 text-xs leading-4 text-white/30">{category.detail}</p></Link>)}</div>
     </section>
 
-    <section className="mb-14"><Link href="/feed" className="group relative block overflow-hidden rounded-[2rem] border border-orange-400/10 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.025] to-purple-500/[0.06] p-6 no-underline sm:p-8"><div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div><span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-300"><Flame className="h-3.5 w-3.5" /> Topka</span><h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Что происходит сегодня</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/40">События, места и предложения города в вертикальной ленте.</p></div><span className="inline-flex h-12 w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 text-sm font-bold text-white/70 transition group-hover:bg-white/10 group-hover:text-white">Открыть Topka <ArrowRight className="h-4 w-4" /></span></div></Link></section>
+    {showTopka && <section className="mb-14"><Link href="/feed" className="group relative block overflow-hidden rounded-[2rem] border border-orange-400/10 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.025] to-purple-500/[0.06] p-6 no-underline sm:p-8"><div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div><span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-300"><Flame className="h-3.5 w-3.5" /> Topka</span><h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Что происходит сегодня</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/40">Актуальные события и места города в вертикальной ленте.</p></div><span className="inline-flex h-12 w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 text-sm font-bold text-white/70 transition group-hover:bg-white/10 group-hover:text-white">Открыть Topka <ArrowRight className="h-4 w-4" /></span></div></Link></section>}
 
     {flashOffers.length > 0 && <section className="mb-14"><div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Успейте забрать</h2><Link href="/catalog?isFlashDrop=true" className="text-sm font-semibold text-white/45 no-underline">Все акции →</Link></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{flashOffers.map((offer) => <OfferCard key={offer.id} offer={offer} urgent />)}</div></section>}
 

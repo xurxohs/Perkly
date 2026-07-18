@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Eye,
-  Users,
   ChevronLeft,
   FileText,
   Bell,
@@ -19,127 +17,9 @@ import { PerklyGlyph } from '@/components/PerklyGlyph';
 
 export type FeedEvent = Event;
 
-// ===== Demo Data (fallback when API has no events) =====
-const DEMO_EVENTS: FeedEvent[] = [
-  {
-    id: 'demo-1',
-    title: 'Electric Nights',
-    category: 'Фестиваль',
-    description: 'Крупнейший музыкальный фестиваль этого лета! Хедлайнеры, световое шоу и незабываемая атмосфера под открытым небом. Более 30 артистов на 3 сценах.',
-    fullDescription: null,
-    date: '2026-08-15T00:00:00Z',
-    startTime: '19:00',
-    ageLimit: '18+',
-    location: 'Центральный Парк',
-    address: 'ул. Паркова 42',
-    latitude: null,
-    longitude: null,
-    imageUrl: '/demo-events/festival.png',
-    viewersCount: 247,
-    participantsCount: 3200,
-    organizerId: 'demo',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'demo-2',
-    title: 'Skyline Gala',
-    category: 'Вечеринка',
-    description: 'Эксклюзивная вечеринка на крыше с панорамным видом на ночной город. Коктейли, живая музыка и networking в атмосфере роскоши.',
-    fullDescription: null,
-    date: '2026-07-20T00:00:00Z',
-    startTime: '21:00',
-    ageLimit: '21+',
-    location: 'Sky Lounge',
-    address: 'пр. Амира Темура 88, 32 этаж',
-    latitude: null,
-    longitude: null,
-    imageUrl: '/demo-events/party.png',
-    viewersCount: 124,
-    participantsCount: 1200,
-    organizerId: 'demo',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'demo-3',
-    title: 'Abstract Voices',
-    category: 'Выставка',
-    description: 'Иммерсивная выставка современного искусства. 50+ работ от молодых художников, интерактивные инсталляции и аудио-гид в приложении.',
-    fullDescription: null,
-    date: '2026-06-10T00:00:00Z',
-    startTime: '11:00',
-    ageLimit: '0+',
-    location: 'Галерея Modern',
-    address: 'ул. Навои 15',
-    latitude: null,
-    longitude: null,
-    imageUrl: '/demo-events/exhibition.png',
-    viewersCount: 89,
-    participantsCount: 2400,
-    organizerId: 'demo',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'demo-4',
-    title: 'Night Bites',
-    category: 'Фуд-Фест',
-    description: 'Ночной фуд-маркет с лучшей уличной едой города! Более 40 стендов, мастер-классы от шеф-поваров и живая музыка до утра.',
-    fullDescription: null,
-    date: '2026-09-05T00:00:00Z',
-    startTime: '18:00',
-    ageLimit: '0+',
-    location: 'Magic City',
-    address: 'ул. Буюк Ипак Йули 154',
-    latitude: null,
-    longitude: null,
-    imageUrl: '/demo-events/food.png',
-    viewersCount: 312,
-    participantsCount: 5100,
-    organizerId: 'demo',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'demo-5',
-    title: 'Вечер Стендапа',
-    category: 'Стендап',
-    description: 'Лучшие комики города собираются на одной сцене! Два часа нон-стоп юмора, сюрприз-гости и afterparty для всех зрителей.',
-    fullDescription: null,
-    date: '2026-07-28T00:00:00Z',
-    startTime: '20:00',
-    ageLimit: '16+',
-    location: 'Comedy Club',
-    address: 'ул. Шота Руставели 26',
-    latitude: null,
-    longitude: null,
-    imageUrl: '/demo-events/comedy.png',
-    viewersCount: 156,
-    participantsCount: 800,
-    organizerId: 'demo',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-// ===== Animated Viewer Count Hook =====
-function useAnimatedCount(target: number) {
-  const [count, setCount] = useState(target);
-
-  useEffect(() => {
-    // Simulate live fluctuation
-    const interval = setInterval(() => {
-      setCount(prev => {
-        const delta = Math.floor(Math.random() * 7) - 3; // -3 to +3
-        return Math.max(1, prev + delta);
-      });
-    }, 3000 + Math.random() * 2000);
-
-    return () => clearInterval(interval);
-  }, [target]);
-
-  return count;
+function isUpcomingEvent(event: FeedEvent) {
+  const timestamp = new Date(event.date).getTime();
+  return Number.isFinite(timestamp) && timestamp + 86_400_000 >= Date.now();
 }
 
 // ===== Category Color Map =====
@@ -157,29 +37,18 @@ function getCategoryColor(category: string): string {
   return map[category] || '#a855f7';
 }
 
-// ===== Format participants count =====
-function formatParticipants(count: number): string {
-  if (count >= 1000) {
-    return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  }
-  return count.toString();
-}
-
 // ===== Single Event Card =====
 function EventCard({
   event,
   index,
   total,
-  isActive,
 }: {
   event: FeedEvent;
   index: number;
   total: number;
-  isActive: boolean;
 }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const liveViewers = useAnimatedCount(event.viewersCount);
   const categoryColor = getCategoryColor(event.category);
 
   // Formatting date
@@ -229,14 +98,6 @@ function EventCard({
           <span className="bell-pulse-indicator" />
         </Link>
 
-        {/* Live Badge (top center) */}
-        {isActive && (
-          <div className="event-live-badge absolute top-[env(safe-area-inset-top,16px)] left-1/2 -translate-x-1/2 mt-3 z-20">
-            <span className="live-pulse-dot" />
-            <Eye className="w-3.5 h-3.5" />
-            <span>{liveViewers}</span>
-          </div>
-        )}
       </div>
 
       {/* 2. Content Section (over gradient) */}
@@ -254,20 +115,6 @@ function EventCard({
             {event.category}
           </span>
           <h1 className="event-title">{event.title}</h1>
-        </div>
-
-        {/* 3. Social Proof & Info */}
-        <div className="event-metrics">
-          <div className="metric-item live">
-            <span className="metric-live-dot" />
-            <Eye className="w-3.5 h-3.5" />
-            <span>{liveViewers} смотрят</span>
-          </div>
-          <div className="metric-divider" />
-          <div className="metric-item participants">
-            <Users className="w-3.5 h-3.5" />
-            <span>{formatParticipants(event.participantsCount)} пойдут</span>
-          </div>
         </div>
 
         <div className="event-meta">
@@ -353,10 +200,8 @@ function EventCard({
 
 // ===== Main Feed Component =====
 export default function FeedPage({ events }: { events: FeedEvent[] }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [feedEvents, setFeedEvents] = useState<FeedEvent[]>(() =>
-    events.length > 0 || process.env.NODE_ENV === 'production' ? events : DEMO_EVENTS
+    events.filter(isUpcomingEvent)
   );
 
   useEffect(() => {
@@ -364,7 +209,7 @@ export default function FeedPage({ events }: { events: FeedEvent[] }) {
       if (document.visibilityState !== 'visible') return;
       try {
         const response = await eventsApi.list({ take: 20 });
-        setFeedEvents(response.data ?? []);
+        setFeedEvents((response.data ?? []).filter(isUpcomingEvent));
       } catch (error) {
         console.error('Topka refresh failed:', error);
       }
@@ -380,39 +225,33 @@ export default function FeedPage({ events }: { events: FeedEvent[] }) {
     };
   }, []);
 
-  // Track which card is currently in view
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-    const { scrollTop, clientHeight } = containerRef.current;
-    const newIndex = Math.round(scrollTop / clientHeight);
-    setActiveIndex(newIndex);
-  }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
   if (!feedEvents || feedEvents.length === 0) {
     return (
-      <div className="feed-empty">
-        <Sparkles className="w-12 h-12 text-white/10 mb-4" />
-        <h2 className="text-xl font-bold text-white/60 mb-2">Мероприятий пока нет</h2>
-        <p className="text-white/30 text-sm">Следите за обновлениями — скоро здесь будет жарко!</p>
+      <div className="feed-empty px-6 text-center">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/[0.04]">
+          <Sparkles className="h-7 w-7 text-white/20" />
+        </div>
+        <h1 className="mb-2 text-2xl font-bold text-white/75">Сейчас нет актуальных событий</h1>
+        <p className="max-w-sm text-sm leading-6 text-white/35">
+          Новые мероприятия появятся здесь после публикации организаторами.
+        </p>
+        <Link
+          href="/catalog"
+          className="mt-7 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-bold text-black no-underline"
+        >
+          Перейти в каталог
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="feed-container" ref={containerRef}>
+    <div className="feed-container">
       <header className="feed-app-header">
         <div>
           <h1>Топка</h1>
           <p>События Ташкента</p>
         </div>
-        <Link href="/admin/topka/posts/new" className="feed-create-button" aria-label="Добавить событие">+</Link>
       </header>
       {feedEvents.map((event, i) => (
         <EventCard
@@ -420,7 +259,6 @@ export default function FeedPage({ events }: { events: FeedEvent[] }) {
           event={event}
           index={i}
           total={feedEvents.length}
-          isActive={i === activeIndex}
         />
       ))}
     </div>

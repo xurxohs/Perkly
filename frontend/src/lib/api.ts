@@ -33,6 +33,10 @@ export interface Offer {
     sellerId: string;
     seller?: User;
     isActive: boolean;
+    moderationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+    moderationNote?: string | null;
+    moderationAt?: string | null;
+    moderationBy?: string | null;
     usageInstructions?: string;
     hiddenData?: string;
     _count?: {
@@ -1099,6 +1103,11 @@ export const adminApi = {
         request<Offer>(`/admin/offers/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
+        }),
+    moderateOffer: (id: string, status: 'APPROVED' | 'REJECTED', note = '') =>
+        request<Offer>(`/admin/offers/${id}/moderation`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, note }),
         }),
     archiveOffer: (id: string) =>
         request<Offer>(`/admin/offers/${id}`, { method: 'DELETE' }),

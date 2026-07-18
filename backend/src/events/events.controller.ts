@@ -158,15 +158,6 @@ export class EventsController {
     return this.eventsService.remove({ id });
   }
 
-  @Post('seed')
-  @UseGuards(AuthGuard('jwt'))
-  seed(@Req() req: AuthRequest, @Query('organizerId') organizerId: string) {
-    if (req.user.role !== 'ADMIN') {
-      throw new ForbiddenException('Only administrators can seed events');
-    }
-    return this.eventsService.seedEvents(organizerId);
-  }
-
   private async ensureEventOwnerOrAdmin(
     user: AuthRequest['user'],
     eventId: string,

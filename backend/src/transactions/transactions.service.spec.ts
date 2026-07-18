@@ -35,6 +35,7 @@ describe('TransactionsService', () => {
     price: 100,
     companyId: 'company-1',
     isActive: true,
+    moderationStatus: 'APPROVED',
     sellerId: 'seller-1',
     hiddenData: 'secret',
     periodDays: 0,
@@ -73,7 +74,11 @@ describe('TransactionsService', () => {
       status: 'ACTIVE',
       createdAt: new Date(),
       updatedAt: new Date(),
-      offer: { id: 'offer-1', isActive: true },
+      offer: {
+        id: 'offer-1',
+        isActive: true,
+        moderationStatus: 'APPROVED',
+      },
     },
   };
 

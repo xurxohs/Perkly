@@ -19,7 +19,7 @@ const topics = [
   {
     id: 'account',
     title: 'Аккаунт и персональные данные',
-    text: 'В профиле доступны выгрузка данных и удаление аккаунта. Если войти не получается, напишите с email, привязанного к аккаунту.',
+    text: 'Выгрузку данных или удаление аккаунта можно запросить через поддержку с email, привязанного к аккаунту. Если войти не получается, укажите это в обращении.',
   },
 ];
 
@@ -42,12 +42,12 @@ export default function SupportPage() {
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           <a
-            href="mailto:support@perkly.com"
+            href="mailto:support@perkly.uz"
             className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 no-underline transition-colors hover:bg-white/[0.07]"
           >
             <p className="text-sm text-white/45">Email</p>
             <p className="mt-2 text-lg font-semibold text-white">
-              support@perkly.com
+              support@perkly.uz
             </p>
           </a>
           <a
@@ -78,12 +78,12 @@ export default function SupportPage() {
         >
           <h2 className="text-xl font-semibold">O‘zbekcha / English</h2>
           <p className="mt-3 leading-7 text-white/60">
-            Yordam uchun support@perkly.com manziliga yoki @perkly_support
+            Yordam uchun support@perkly.uz manziliga yoki @perkly_support
             Telegram akkauntiga yozing. Parol, SMS kodi yoki bank kartasining
             to‘liq raqamini yubormang.
           </p>
           <p className="mt-3 leading-7 text-white/60">
-            For help, email support@perkly.com or contact @perkly_support on
+            For help, email support@perkly.uz or contact @perkly_support on
             Telegram. Never send your password, SMS code, or full card number.
           </p>
         </section>

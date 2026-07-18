@@ -69,6 +69,15 @@ export class AdminController {
     return this.adminService.updateOffer(id, data, req.user.userId);
   }
 
+  @Patch('offers/:id/moderation')
+  async moderateOffer(
+    @Param('id') id: string,
+    @Body() data: { status?: unknown; note?: unknown },
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
+    return this.adminService.moderateOffer(id, data, req.user.userId);
+  }
+
   @Delete('offers/:id')
   async deleteOffer(
     @Param('id') id: string,

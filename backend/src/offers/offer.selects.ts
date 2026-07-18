@@ -80,6 +80,10 @@ export const VENDOR_OFFER_SELECT = {
   longitude: true,
   sellerId: true,
   featuredUntil: true,
+  moderationStatus: true,
+  moderationNote: true,
+  moderationAt: true,
+  moderationBy: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.OfferSelect;

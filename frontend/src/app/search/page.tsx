@@ -1,114 +1,189 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Search, X, TrendingUp, Clock, Flame, ArrowUpRight, Sparkles, Calendar, Users } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowUpRight,
+  Calendar,
+  MapPin,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
+import SafeImage from '@/components/SafeImage';
+import {
+  eventsApi,
+  offersApi,
+  type Event,
+  type Offer,
+} from '@/lib/api';
 
-const TRENDING_TAGS = [
-  { label: 'Вечеринки', count: '120+', color: '#f59e0b' },
-  { label: 'Фестивали', count: '45', color: '#a855f7' },
-  { label: 'Стендап', count: '30+', color: '#ec4899' },
-  { label: 'Фуд-маркеты', count: '55', color: '#f97316' },
-  { label: 'Выставки', count: '25', color: '#06b6d4' },
-  { label: 'Концерты', count: '80+', color: '#8b5cf6' },
-  { label: 'Спорт', count: '40', color: '#22c55e' },
-  { label: 'Мастер-классы', count: '35', color: '#14b8a6' },
-];
+const CATEGORY_LABELS: Record<string, string> = {
+  RESTAURANTS: 'Рестораны и кафе',
+  MARKETPLACES: 'Маркетплейсы',
+  SUBSCRIPTIONS: 'Подписки',
+  GAMES: 'Игры',
+  COURSES: 'Обучение',
+  TOURISM: 'Туризм',
+  FITNESS: 'Фитнес',
+  OTHER: 'Другое',
+};
 
-const RECENT_SEARCHES = [
-  'Electric Nights',
-  'Вечеринка на крыше',
-  'Comedy Club',
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  RESTAURANTS: '#f97316',
+  MARKETPLACES: '#a855f7',
+  SUBSCRIPTIONS: '#06b6d4',
+  GAMES: '#3b82f6',
+  COURSES: '#14b8a6',
+  TOURISM: '#22c55e',
+  FITNESS: '#ec4899',
+};
 
-const POPULAR_EVENTS = [
-  {
-    id: '1',
-    title: 'Electric Nights Festival',
-    category: 'Фестиваль',
-    date: '15 Авг',
-    attendees: '3.2K',
-    imageUrl: '/demo-events/festival.png',
-    color: '#a855f7',
-    hot: true,
-  },
-  {
-    id: '2',
-    title: 'Skyline Gala Party',
-    category: 'Вечеринка',
-    date: '20 Июл',
-    attendees: '1.2K',
-    imageUrl: '/demo-events/party.png',
-    color: '#f59e0b',
-    hot: true,
-  },
-  {
-    id: '3',
-    title: 'Abstract Voices',
-    category: 'Выставка',
-    date: '10 Июн',
-    attendees: '2.4K',
-    imageUrl: '/demo-events/exhibition.png',
-    color: '#06b6d4',
-    hot: false,
-  },
-  {
-    id: '4',
-    title: 'Night Bites Фуд-Маркет',
-    category: 'Фуд-Фест',
-    date: '5 Сен',
-    attendees: '5.1K',
-    imageUrl: '/demo-events/food.png',
+type SearchResult = {
+  id: string;
+  type: 'offer' | 'event';
+  title: string;
+  searchableText: string;
+  category: string;
+  color: string;
+  imageUrl: string;
+  href: string;
+  meta: string;
+};
+
+function isUpcoming(event: Event) {
+  const timestamp = new Date(event.date).getTime();
+  return Number.isFinite(timestamp) && timestamp + 86_400_000 >= Date.now();
+}
+
+function formatPrice(price: number) {
+  return price === 0 ? 'Бесплатно' : `${price.toLocaleString('ru-RU')} сум`;
+}
+
+function offerToResult(offer: Offer): SearchResult {
+  const category = CATEGORY_LABELS[offer.category] || 'Предложение';
+  return {
+    id: offer.id,
+    type: 'offer',
+    title: offer.title,
+    searchableText: `${offer.title} ${offer.description} ${category}`.toLowerCase(),
+    category,
+    color: CATEGORY_COLORS[offer.category] || '#a855f7',
+    imageUrl: offer.imageUrl || offer.thumbnailUrl || offer.vendorLogo || '',
+    href: `/offer?id=${offer.id}`,
+    meta: formatPrice(offer.price),
+  };
+}
+
+function eventToResult(event: Event): SearchResult {
+  const date = new Date(event.date).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+  });
+  return {
+    id: event.id,
+    type: 'event',
+    title: event.title,
+    searchableText:
+      `${event.title} ${event.description} ${event.category} ${event.location} ${event.address}`.toLowerCase(),
+    category: event.category || 'Событие',
     color: '#f97316',
-    hot: true,
-  },
-  {
-    id: '5',
-    title: 'Вечер Стендапа',
-    category: 'Стендап',
-    date: '28 Июл',
-    attendees: '800',
-    imageUrl: '/demo-events/comedy.png',
-    color: '#ec4899',
-    hot: false,
-  },
-];
+    imageUrl: event.imageUrl,
+    href: '/feed',
+    meta: [date, event.startTime].filter(Boolean).join(' · '),
+  };
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filteredEvents = query.trim()
-    ? POPULAR_EVENTS.filter(e =>
-        e.title.toLowerCase().includes(query.toLowerCase()) ||
-        e.category.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
-
-  const showResults = query.trim().length > 0;
-
   useEffect(() => {
-    // Auto-focus the search input
     inputRef.current?.focus();
+
+    let cancelled = false;
+    const loadSearchData = async () => {
+      setLoading(true);
+      setLoadError(false);
+      const [offersResult, eventsResult] = await Promise.allSettled([
+        offersApi.list({ take: 60, sort: 'newest' }),
+        eventsApi.list({ take: 60 }),
+      ]);
+      if (cancelled) return;
+
+      if (offersResult.status === 'fulfilled') {
+        setOffers(offersResult.value.data ?? []);
+      }
+      if (eventsResult.status === 'fulfilled') {
+        setEvents((eventsResult.value.data ?? []).filter(isUpcoming));
+      }
+      setLoadError(
+        offersResult.status === 'rejected' && eventsResult.status === 'rejected',
+      );
+      setLoading(false);
+    };
+
+    void loadSearchData();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const allResults = useMemo(
+    () => [
+      ...offers.map(offerToResult),
+      ...events.map(eventToResult),
+    ],
+    [events, offers],
+  );
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredResults = useMemo(
+    () =>
+      normalizedQuery
+        ? allResults.filter((result) =>
+            result.searchableText.includes(normalizedQuery),
+          )
+        : [],
+    [allResults, normalizedQuery],
+  );
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    offers.forEach((offer) => {
+      const label = CATEGORY_LABELS[offer.category] || 'Другое';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    });
+    events.forEach((event) => {
+      const label = event.category || 'События';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [events, offers]);
+
+  const showResults = normalizedQuery.length > 0;
+  const hasData = allResults.length > 0;
 
   return (
     <div className="search-page">
-      {/* Search Header */}
       <div className="search-header">
         <div className={`search-input-wrapper ${isFocused ? 'focused' : ''}`}>
-          <Search className="w-5 h-5 text-white/30" />
+          <Search className="h-5 w-5 text-white/30" />
           <input
             ref={inputRef}
-            type="text"
-            placeholder="Найти мероприятие, место..."
+            type="search"
+            placeholder="Товар, промокод или мероприятие"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             className="search-input"
-            id="search-events-input"
+            id="search-marketplace-input"
+            aria-label="Поиск по Perkly"
           />
           {query && (
             <button
@@ -117,122 +192,162 @@ export default function SearchPage() {
               aria-label="Очистить поиск"
               title="Очистить поиск"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Search Results */}
-      {showResults ? (
+      {loading ? (
+        <div className="search-no-results min-h-[55vh]">
+          <div className="mb-5 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/50" />
+          <h1 className="text-lg font-extrabold text-white/50">Обновляем данные</h1>
+          <p>Получаем актуальные предложения и события</p>
+        </div>
+      ) : loadError ? (
+        <div className="search-no-results min-h-[55vh]">
+          <Sparkles className="mb-3 h-10 w-10 text-white/10" />
+          <h1 className="text-lg font-extrabold text-white/50">Поиск временно недоступен</h1>
+          <p>Проверьте соединение и попробуйте открыть страницу снова</p>
+        </div>
+      ) : showResults ? (
         <div className="search-results">
-          {filteredEvents.length > 0 ? (
+          {filteredResults.length > 0 ? (
             <>
-              <h3 className="search-section-title">
-                Результаты <span className="result-count">{filteredEvents.length}</span>
-              </h3>
+              <h2 className="search-section-title">
+                Результаты
+                <span className="result-count">{filteredResults.length}</span>
+              </h2>
               <div className="search-results-list">
-                {filteredEvents.map(event => (
-                  <Link href="/feed" key={event.id} className="search-result-card">
-                    <div className="result-card-image">
-                      <img src={event.imageUrl} alt={event.title} />
+                {filteredResults.map((result) => (
+                  <Link
+                    href={result.href}
+                    key={`${result.type}-${result.id}`}
+                    className="search-result-card"
+                  >
+                    <div className="result-card-image relative bg-white/[0.035]">
+                      <SafeImage
+                        src={result.imageUrl}
+                        alt={result.title}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                        fallbackIcon={
+                          result.type === 'offer' ? (
+                            <ShoppingBag className="h-6 w-6 text-white/15" />
+                          ) : (
+                            <Calendar className="h-6 w-6 text-white/15" />
+                          )
+                        }
+                      />
                     </div>
                     <div className="result-card-info">
-                      <span className="result-category" style={{ color: event.color }}>
-                        {event.category}
+                      <span
+                        className="result-category"
+                        style={{ color: result.color }}
+                      >
+                        {result.category}
                       </span>
-                      <h4 className="result-title">{event.title}</h4>
+                      <h3 className="result-title">{result.title}</h3>
                       <div className="result-meta">
-                        <span><Calendar className="w-3 h-3" /> {event.date}</span>
-                        <span><Users className="w-3 h-3" /> {event.attendees}</span>
+                        <span>
+                          {result.type === 'offer' ? (
+                            <ShoppingBag className="h-3 w-3" />
+                          ) : (
+                            <MapPin className="h-3 w-3" />
+                          )}
+                          {result.meta}
+                        </span>
                       </div>
                     </div>
-                    <ArrowUpRight className="w-4 h-4 text-white/20 result-arrow" />
+                    <ArrowUpRight className="result-arrow h-4 w-4 text-white/20" />
                   </Link>
                 ))}
               </div>
             </>
           ) : (
-            <div className="search-no-results">
-              <Sparkles className="w-10 h-10 text-white/10 mb-3" />
-              <h3>Ничего не нашлось</h3>
-              <p>Попробуйте другой запрос или выберите из популярных</p>
+            <div className="search-no-results min-h-[50vh]">
+              <Search className="mb-3 h-10 w-10 text-white/10" />
+              <h2>Ничего не найдено</h2>
+              <p>Проверьте запрос или выберите доступную категорию</p>
             </div>
           )}
         </div>
-      ) : (
+      ) : hasData ? (
         <>
-          {/* Recent Searches */}
-          {RECENT_SEARCHES.length > 0 && (
+          {categoryCounts.length > 0 && (
             <div className="search-section">
-              <h3 className="search-section-title">
-                <Clock className="w-4 h-4 text-white/30" />
-                Недавние
-              </h3>
-              <div className="recent-searches">
-                {RECENT_SEARCHES.map((term, i) => (
+              <h2 className="search-section-title">Доступные категории</h2>
+              <div className="trending-tags">
+                {categoryCounts.map(([label, count]) => (
                   <button
-                    key={i}
-                    className="recent-search-item"
-                    onClick={() => setQuery(term)}
+                    key={label}
+                    className="trending-tag"
+                    onClick={() => setQuery(label)}
                   >
-                    <Clock className="w-3.5 h-3.5 text-white/20" />
-                    <span>{term}</span>
+                    <span className="tag-label">{label}</span>
+                    <span className="tag-count">{count}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Trending Tags */}
-          <div className="search-section">
-            <h3 className="search-section-title">
-              <TrendingUp className="w-4 h-4 text-white/30" />
-              Популярные категории
-            </h3>
-            <div className="trending-tags">
-              {TRENDING_TAGS.map((tag, i) => (
-                <button
-                  key={i}
-                  className="trending-tag"
-                  onClick={() => setQuery(tag.label)}
-                  style={{ '--tag-color': tag.color } as React.CSSProperties}
-                >
-                  <span className="tag-label">{tag.label}</span>
-                  <span className="tag-count">{tag.count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Popular Right Now */}
-          <div className="search-section">
-            <h3 className="search-section-title">
-              <Flame className="w-4 h-4 text-orange-400" />
-              Сейчас популярно
-            </h3>
-            <div className="popular-events-grid">
-              {POPULAR_EVENTS.slice(0, 4).map(event => (
-                <Link href="/feed" key={event.id} className="popular-event-card">
-                  <div className="popular-event-image">
-                    <img src={event.imageUrl} alt={event.title} />
-                    <div className="popular-event-overlay" />
-                    {event.hot && (
-                      <span className="popular-hot-badge">
-                        <Flame className="w-3 h-3" />
+          {offers.length > 0 && (
+            <div className="search-section">
+              <h2 className="search-section-title">
+                <ShoppingBag className="h-4 w-4 text-purple-300" />
+                Новые предложения
+              </h2>
+              <div className="popular-events-grid">
+                {offers.slice(0, 4).map((offer) => (
+                  <Link
+                    href={`/offer?id=${offer.id}`}
+                    key={offer.id}
+                    className="popular-event-card"
+                  >
+                    <div className="popular-event-image bg-white/[0.035]">
+                      <SafeImage
+                        src={offer.imageUrl || offer.thumbnailUrl || offer.vendorLogo || ''}
+                        alt={offer.title}
+                        fill
+                        sizes="(max-width: 600px) 50vw, 240px"
+                        className="object-cover"
+                        fallbackIcon={<ShoppingBag className="h-8 w-8 text-white/15" />}
+                      />
+                    </div>
+                    <div className="popular-event-info">
+                      <span
+                        className="popular-category"
+                        style={{
+                          color: CATEGORY_COLORS[offer.category] || '#a855f7',
+                        }}
+                      >
+                        {CATEGORY_LABELS[offer.category] || 'Предложение'}
                       </span>
-                    )}
-                  </div>
-                  <div className="popular-event-info">
-                    <span className="popular-category" style={{ color: event.color }}>{event.category}</span>
-                    <h4 className="popular-title">{event.title}</h4>
-                    <span className="popular-meta">{event.date} · {event.attendees} чел.</span>
-                  </div>
-                </Link>
-              ))}
+                      <h3 className="popular-title">{offer.title}</h3>
+                      <span className="popular-meta">
+                        {formatPrice(offer.price)}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </>
+      ) : (
+        <div className="search-no-results min-h-[55vh]">
+          <Search className="mb-3 h-10 w-10 text-white/10" />
+          <h1 className="text-lg font-extrabold text-white/50">Пока нечего искать</h1>
+          <p>Предложения появятся после публикации и проверки Perkly</p>
+          <Link
+            href="/catalog"
+            className="mt-6 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-bold text-black no-underline"
+          >
+            Открыть каталог
+          </Link>
+        </div>
       )}
     </div>
   );

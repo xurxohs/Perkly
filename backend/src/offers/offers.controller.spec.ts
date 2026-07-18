@@ -12,6 +12,7 @@ describe('OffersController', () => {
     unsaveOffer: jest.Mock;
     findRaw: jest.Mock;
     update: jest.Mock;
+    updateVendorOffer: jest.Mock;
     createVendorOffer: jest.Mock;
   };
 
@@ -23,6 +24,7 @@ describe('OffersController', () => {
       unsaveOffer: jest.fn().mockResolvedValue({ deleted: true }),
       findRaw: jest.fn(),
       update: jest.fn().mockResolvedValue({ id: 'offer-1' }),
+      updateVendorOffer: jest.fn().mockResolvedValue({ id: 'offer-1' }),
       createVendorOffer: jest.fn().mockResolvedValue({ id: 'offer-1' }),
     };
 
@@ -187,7 +189,7 @@ describe('OffersController', () => {
       { category: 'marketplaces' },
     );
 
-    expect(offersService.update).toHaveBeenCalledWith({
+    expect(offersService.updateVendorOffer).toHaveBeenCalledWith({
       where: { id: 'offer-1' },
       data: { category: 'MARKETPLACES' },
     });

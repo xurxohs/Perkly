@@ -4,7 +4,7 @@ import { Tag, Coffee, Gamepad2, KeyRound, ShoppingBag, Sparkles, Zap, Star } fro
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { offersApi } from '@/lib/api';
+import { offersApi, type Offer } from '@/lib/api';
 
 const categoryFilters = [
     { key: 'ALL', label: 'Все', icon: Sparkles },
@@ -21,19 +21,6 @@ const couponImages: Record<string, string> = {
     'MARKETPLACES': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=400&auto=format&fit=crop',
     'DEFAULT': 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=400&auto=format&fit=crop',
 };
-
-interface Offer {
-    id: string;
-    title: string;
-    description: string;
-    price: number;
-    category: string;
-    isExclusive: boolean;
-    isFlashDrop: boolean;
-    isActive: boolean;
-    expiresAt: string | null;
-    seller: { displayName: string; avatarUrl: string | null };
-}
 
 export default function CouponsPage() {
     const [activeCategory, setActiveCategory] = useState('ALL');
@@ -57,13 +44,6 @@ export default function CouponsPage() {
         ? offers
         : offers.filter(o => o.category === activeCategory);
 
-    const getDiscount = (price: number) => {
-        if (price === 0) return 100;
-        if (price < 2) return Math.floor(70 + Math.random() * 20);
-        if (price < 10) return Math.floor(40 + Math.random() * 30);
-        return Math.floor(20 + Math.random() * 30);
-    };
-
     return (
         <div className="flex flex-col items-center px-6 pb-24 max-w-[1200px] mx-auto w-full">
             {/* Header */}
@@ -72,7 +52,7 @@ export default function CouponsPage() {
 
                 <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-6 bg-pink-500/[0.08] border border-pink-500/[0.15]">
                     <Tag className="w-4 h-4 text-pink-400" />
-                    <span className="text-sm font-medium text-pink-300">Лучшие предложения</span>
+                    <span className="text-sm font-medium text-pink-300">Актуальные предложения</span>
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
@@ -118,8 +98,10 @@ export default function CouponsPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filtered.map((offer) => {
-                            const discount = getDiscount(offer.price);
-                            const originalPrice = offer.price > 0 ? Math.round(offer.price / (1 - discount / 100)) : null;
+                            const discount = Math.max(0, Math.min(100, offer.discountPercent ?? 0));
+                            const originalPrice = offer.price > 0 && discount > 0 && discount < 100
+                                ? Math.round(offer.price / (1 - discount / 100))
+                                : null;
                             const imgUrl = couponImages[offer.category] || couponImages['DEFAULT'];
 
                             return (
@@ -130,9 +112,11 @@ export default function CouponsPage() {
                                             <Image src={imgUrl} fill className="object-cover transition-transform duration-500 group-hover:scale-105" alt={offer.title} />
 
                                             {/* Discount badge */}
-                                            <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold text-white z-10 bg-gradient-to-br from-red-500 to-orange-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]">
-                                                -{discount}%
-                                            </div>
+                                            {discount > 0 && (
+                                                <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold text-white z-10 bg-gradient-to-br from-red-500 to-orange-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                                                    -{discount}%
+                                                </div>
+                                            )}
 
                                             {/* Flash Drop badge */}
                                             {offer.isFlashDrop && (
@@ -171,7 +155,7 @@ export default function CouponsPage() {
 
                                                 <div className="flex items-center gap-1 text-xs text-white/30">
                                                     <Zap className="w-3 h-3 text-green-400" />
-                                                    Автовыдача
+                                                    {offer.fulfillmentType === 'INSTRUCTIONS' ? 'По инструкции' : 'Цифровая выдача'}
                                                 </div>
                                             </div>
 

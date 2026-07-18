@@ -40,7 +40,9 @@ export class AdminService {
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { createdAt: { gte: today } } }),
-      this.prisma.offer.count({ where: { isActive: true } }),
+      this.prisma.offer.count({
+        where: { isActive: true, moderationStatus: 'APPROVED' },
+      }),
       this.prisma.transaction.aggregate({
         _sum: { price: true },
         where: { status: { in: ['COMPLETED', 'PAID'] } },
@@ -247,8 +249,12 @@ export class AdminService {
         },
       ];
     }
-    if (status === 'ACTIVE') where.isActive = true;
-    if (status === 'INACTIVE') where.isActive = false;
+    const normalizedStatus = status.trim().toUpperCase();
+    if (normalizedStatus === 'ACTIVE') where.isActive = true;
+    if (normalizedStatus === 'INACTIVE') where.isActive = false;
+    if (['PENDING', 'APPROVED', 'REJECTED'].includes(normalizedStatus)) {
+      where.moderationStatus = normalizedStatus;
+    }
     const [offers, total] = await Promise.all([
       this.prisma.offer.findMany({
         where,
@@ -329,6 +335,18 @@ export class AdminService {
         update[field] = data[field];
       }
     }
+    if (data.isActive === true) {
+      const current = await this.prisma.offer.findUnique({
+        where: { id },
+        select: { moderationStatus: true },
+      });
+      if (!current) throw new NotFoundException('Offer not found');
+      if (current.moderationStatus !== 'APPROVED') {
+        throw new BadRequestException(
+          'Only approved offers can be activated',
+        );
+      }
+    }
     if (Object.keys(update).length === 0) {
       throw new BadRequestException('No supported offer fields supplied');
     }
@@ -357,6 +375,55 @@ export class AdminService {
       data: { adminId, action: 'ARCHIVE_OFFER', targetId: id },
     });
     return offer;
+  }
+
+  async moderateOffer(
+    id: string,
+    data: { status?: unknown; note?: unknown },
+    adminId: string,
+  ) {
+    const status =
+      typeof data.status === 'string' ? data.status.trim().toUpperCase() : '';
+    if (status !== 'APPROVED' && status !== 'REJECTED') {
+      throw new BadRequestException(
+        'Moderation status must be APPROVED or REJECTED',
+      );
+    }
+    if (data.note !== undefined && typeof data.note !== 'string') {
+      throw new BadRequestException('Moderation note must be a string');
+    }
+    const note = typeof data.note === 'string' ? data.note.trim() : '';
+    if (note.length > 2_000) {
+      throw new BadRequestException(
+        'Moderation note must not exceed 2000 characters',
+      );
+    }
+    if (status === 'REJECTED' && !note) {
+      throw new BadRequestException('A rejection reason is required');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const offer = await tx.offer.update({
+        where: { id },
+        data: {
+          moderationStatus: status,
+          moderationNote: note || null,
+          moderationAt: new Date(),
+          moderationBy: adminId,
+          isActive: status === 'APPROVED',
+        },
+        select: ADMIN_OFFER_SELECT,
+      });
+      await tx.adminLog.create({
+        data: {
+          adminId,
+          action: status === 'APPROVED' ? 'APPROVE_OFFER' : 'REJECT_OFFER',
+          targetId: id,
+          details: JSON.stringify({ status, note: note || null }),
+        },
+      });
+      return offer;
+    });
   }
 
   // Transactions

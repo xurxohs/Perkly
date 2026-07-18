@@ -544,7 +544,10 @@ export class UsersService {
 
   listSavedOffers(userId: string): Promise<SavedOffer[]> {
     return this.prisma.savedOffer.findMany({
-      where: { userId },
+      where: {
+        userId,
+        offer: { isActive: true, moderationStatus: 'APPROVED' },
+      },
       orderBy: { createdAt: 'desc' },
       select: SAVED_OFFER_SELECT,
     });

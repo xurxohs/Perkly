@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Eye, EyeOff, Archive, RefreshCw, Pencil, Search, X } from 'lucide-react';
+import { ShoppingBag, Eye, EyeOff, Archive, RefreshCw, Pencil, Search, X, CheckCircle2, XCircle } from 'lucide-react';
 import api, { Offer } from '@/lib/api';
 
 export default function AdminOffers() {
@@ -10,6 +10,7 @@ export default function AdminOffers() {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
+    const [moderatingId, setModeratingId] = useState<string | null>(null);
     const [editing, setEditing] = useState<Offer | null>(null);
     const [form, setForm] = useState({ title: '', description: '', price: 0, discountPercent: 0, category: '', isActive: true });
 
@@ -48,6 +49,29 @@ export default function AdminOffers() {
             await fetchOffers();
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Не удалось архивировать оффер');
+        }
+    };
+
+    const moderateOffer = async (offer: Offer, nextStatus: 'APPROVED' | 'REJECTED') => {
+        let note = '';
+        if (nextStatus === 'REJECTED') {
+            const reason = window.prompt('Укажите причину отказа. Она будет видна продавцу:', offer.moderationNote || '');
+            if (reason === null) return;
+            note = reason.trim();
+            if (!note) {
+                setError('Для отказа необходимо указать причину');
+                return;
+            }
+        }
+        setModeratingId(offer.id);
+        setError(null);
+        try {
+            await api.admin.moderateOffer(offer.id, nextStatus, note);
+            await fetchOffers();
+        } catch (error) {
+            setError(error instanceof Error ? error.message : 'Не удалось сохранить решение модерации');
+        } finally {
+            setModeratingId(null);
         }
     };
 
@@ -98,6 +122,9 @@ export default function AdminOffers() {
                         <option value="">Все статусы</option>
                         <option value="ACTIVE">Активные</option>
                         <option value="INACTIVE">Скрытые</option>
+                        <option value="PENDING">Ожидают проверки</option>
+                        <option value="APPROVED">Одобренные</option>
+                        <option value="REJECTED">Отклонённые</option>
                     </select>
                     <button onClick={fetchOffers} title="Обновить список" className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white cursor-pointer border-0">
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -144,13 +171,36 @@ export default function AdminOffers() {
                                         {offer.price.toLocaleString('ru-RU')} сум
                                     </td>
                                     <td className="py-4 px-6">
-                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${offer.isActive ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                            }`}>
-                                            {offer.isActive ? 'Активен' : 'Заблокирован'}
-                                        </span>
+                                        <div className="flex flex-col items-start gap-1.5">
+                                            <ModerationBadge status={offer.moderationStatus} />
+                                            <span className={`text-[11px] ${offer.isActive ? 'text-emerald-400/70' : 'text-white/30'}`}>
+                                                {offer.isActive ? 'В каталоге' : 'Не опубликован'}
+                                            </span>
+                                            {offer.moderationNote && <span className="max-w-56 text-[11px] leading-4 text-red-300/70" title={offer.moderationNote}>{offer.moderationNote}</span>}
+                                        </div>
                                     </td>
                                     <td className="py-4 px-6 text-right">
                                         <div className="flex items-center justify-end gap-2">
+                                            {offer.moderationStatus !== 'APPROVED' && (
+                                                <button
+                                                    disabled={moderatingId === offer.id}
+                                                    onClick={() => void moderateOffer(offer, 'APPROVED')}
+                                                    title="Одобрить и опубликовать"
+                                                    className="p-2 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-all border-0 cursor-pointer disabled:opacity-40"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {offer.moderationStatus !== 'REJECTED' && (
+                                                <button
+                                                    disabled={moderatingId === offer.id}
+                                                    onClick={() => void moderateOffer(offer, 'REJECTED')}
+                                                    title="Отклонить с причиной"
+                                                    className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all border-0 cursor-pointer disabled:opacity-40"
+                                                >
+                                                    <XCircle className="w-4 h-4" />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => openEdit(offer)}
                                                 title="Редактировать"
@@ -158,14 +208,16 @@ export default function AdminOffers() {
                                             >
                                                 <Pencil className="w-4 h-4" />
                                             </button>
-                                            <button
-                                                onClick={() => toggleOfferStatus(offer.id, offer.isActive)}
-                                                title={offer.isActive ? 'Заблокировать' : 'Активировать'}
-                                                className={`p-2 rounded-xl transition-all border-0 cursor-pointer ${offer.isActive ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                                                    }`}
-                                            >
-                                                {offer.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
+                                            {offer.moderationStatus === 'APPROVED' && (
+                                                <button
+                                                    onClick={() => toggleOfferStatus(offer.id, offer.isActive)}
+                                                    title={offer.isActive ? 'Скрыть из каталога' : 'Вернуть в каталог'}
+                                                    className={`p-2 rounded-xl transition-all border-0 cursor-pointer ${offer.isActive ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
+                                                        }`}
+                                                >
+                                                    {offer.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => deleteOffer(offer.id)}
                                                 title="Архивировать"
@@ -219,4 +271,13 @@ export default function AdminOffers() {
             )}
         </div>
     );
+}
+
+function ModerationBadge({ status }: { status?: Offer['moderationStatus'] }) {
+    const meta = status === 'PENDING'
+        ? { label: 'На проверке', className: 'bg-amber-500/10 text-amber-300 border-amber-500/20' }
+        : status === 'REJECTED'
+            ? { label: 'Отклонён', className: 'bg-red-500/10 text-red-300 border-red-500/20' }
+            : { label: 'Одобрен', className: 'bg-green-500/10 text-green-300 border-green-500/20' };
+    return <span className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>;
 }

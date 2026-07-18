@@ -4,7 +4,7 @@ import { eventsApi } from '@/lib/api';
 
 export const metadata = {
   title: 'Топка | Perkly — Мероприятия и События',
-  description: 'Найди лучшие мероприятия, концерты и вечеринки в новом формате кинокарточек.',
+  description: 'Актуальные мероприятия, концерты и события, опубликованные в Perkly.',
 };
 
 async function getEvents() {

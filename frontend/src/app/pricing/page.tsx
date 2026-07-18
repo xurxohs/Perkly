@@ -58,7 +58,7 @@ const tiers = [
         price: '119 880 сум',
         priceNum: 119_880,
         period: '/мес',
-        description: 'Максимальные привилегии — лучшие цены',
+        description: 'Максимальный набор доступных привилегий',
         badge: 'Макс. выгода',
         gradient: 'from-purple-400 to-fuchsia-500',
         borderColor: 'rgba(168,85,247,0.2)',
@@ -69,7 +69,7 @@ const tiers = [
             { text: '5% кэшбек Perkly Points', included: true },
             { text: '5 бесплатных спинов в день', included: true },
             { text: 'VIP Flash Drops', included: true },
-            { text: 'Мгновенная поддержка 24/7', included: true },
+            { text: 'Приоритетная очередь поддержки', included: true },
             { text: <><span className="inline-flex items-center gap-1"><Gem className="w-4 h-4 text-purple-400" /> Platinum</span> бейдж профиля</>, included: true },
             { text: 'Секретные промокоды', included: true },
             { text: 'Приоритет при покупке', included: true },
@@ -78,10 +78,10 @@ const tiers = [
 ];
 
 const stats = [
-    { icon: Star, value: '50K+', label: 'Активных пользователей' },
-    { icon: Gift, value: '10K+', label: 'Купонов и офферов' },
-    { icon: Clock, value: '<1 мин', label: 'Моментальная доставка' },
-    { icon: Shield, value: '100%', label: 'Безопасные сделки' },
+    { icon: Star, value: 'UZS', label: 'Цены без конвертации' },
+    { icon: Gift, value: '3', label: 'Уровня аккаунта' },
+    { icon: Clock, value: '1', label: 'Единая история покупок' },
+    { icon: Shield, value: '24/7', label: 'Доступ к статусу операции' },
 ];
 
 export default function PricingPage() {

@@ -17,7 +17,7 @@ const slides = [
     },
     {
         title: 'Telegram и сервисы',
-        description: 'Цифровой доступ с защищённой выдачей и оплатой только в сумах.',
+        description: 'Цифровой доступ с выдачей внутри покупки и оплатой только в сумах.',
         href: '/catalog?category=SUBSCRIPTIONS',
         action: 'Выбрать подписку',
         accent: 'from-[#0e65c7] via-[#1ba9e8] to-[#5be5ff]',

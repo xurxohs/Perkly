@@ -325,7 +325,11 @@ describe('PromocodesService', () => {
       validTo,
       maxActivations: null,
       perUserLimit: 1,
-      offer: { id: 'offer-1', isActive: true },
+      offer: {
+        id: 'offer-1',
+        isActive: true,
+        moderationStatus: 'APPROVED',
+      },
     });
     prisma.promocodeActivation.findFirst.mockResolvedValueOnce(null);
     prisma.promocodeActivation.count

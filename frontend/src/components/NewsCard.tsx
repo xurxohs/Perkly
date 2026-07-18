@@ -105,6 +105,8 @@ export default function NewsCard({
         }}
       >
         {/* Layer 1: Image (base, not absolute) */}
+        {/* Event media can be proxied from approved API sources with dynamic hosts. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.imageUrl}
           alt={item.title}

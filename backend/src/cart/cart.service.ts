@@ -8,7 +8,10 @@ export class CartService {
 
   list(userId: string) {
     return this.prisma.cartItem.findMany({
-      where: { userId, offer: { isActive: true } },
+      where: {
+        userId,
+        offer: { isActive: true, moderationStatus: 'APPROVED' },
+      },
       orderBy: { createdAt: 'asc' },
       select: {
         id: true,
@@ -23,7 +26,11 @@ export class CartService {
 
   async upsert(userId: string, offerId: string, isGift = false) {
     const offer = await this.prisma.offer.findFirst({
-      where: { id: offerId, isActive: true },
+      where: {
+        id: offerId,
+        isActive: true,
+        moderationStatus: 'APPROVED',
+      },
       select: { id: true },
     });
     if (!offer) throw new NotFoundException('Offer not found');

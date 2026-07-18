@@ -29,6 +29,7 @@ type PurchaseOffer = {
   price: number;
   companyId: string | null;
   isActive: boolean;
+  moderationStatus: string;
   sellerId: string;
   title: string;
   hiddenData: string;
@@ -46,7 +47,7 @@ type AppliedPromocode = {
 
 type ActivationWithPromocode = PromocodeActivation & {
   promocode: Promocode & {
-    offer?: Pick<PurchaseOffer, 'id' | 'isActive'> | null;
+    offer?: Pick<PurchaseOffer, 'id' | 'isActive' | 'moderationStatus'> | null;
   };
 };
 
@@ -86,7 +87,7 @@ export class TransactionsService {
       where: { id: offerId },
     });
     if (!offer) throw new NotFoundException('Offer not found');
-    if (!offer.isActive) {
+    if (!offer.isActive || offer.moderationStatus !== 'APPROVED') {
       throw new BadRequestException('Offer is no longer active');
     }
 
@@ -321,7 +322,13 @@ export class TransactionsService {
       include: {
         promocode: {
           include: {
-            offer: { select: { id: true, isActive: true } },
+            offer: {
+              select: {
+                id: true,
+                isActive: true,
+                moderationStatus: true,
+              },
+            },
           },
         },
       },
@@ -340,6 +347,7 @@ export class TransactionsService {
             price: true,
             companyId: true,
             isActive: true,
+            moderationStatus: true,
             sellerId: true,
             title: true,
             hiddenData: true,
@@ -376,7 +384,13 @@ export class TransactionsService {
       include: {
         promocode: {
           include: {
-            offer: { select: { id: true, isActive: true } },
+            offer: {
+              select: {
+                id: true,
+                isActive: true,
+                moderationStatus: true,
+              },
+            },
           },
         },
       },
@@ -401,6 +415,9 @@ export class TransactionsService {
     offer: PurchaseOffer,
     amount: number,
   ): AppliedPromocode {
+    if (!offer.isActive || offer.moderationStatus !== 'APPROVED') {
+      throw new BadRequestException('Offer is no longer active');
+    }
     this.ensureActivationUsableForPurchase(activation);
 
     if (activation.offerId && activation.offerId !== offer.id) {
@@ -438,7 +455,11 @@ export class TransactionsService {
     if (activation.promocode.status !== 'ACTIVE') {
       throw new BadRequestException('Promocode is not active');
     }
-    if (activation.promocode.offer && !activation.promocode.offer.isActive) {
+    if (
+      activation.promocode.offer &&
+      (!activation.promocode.offer.isActive ||
+        activation.promocode.offer.moderationStatus !== 'APPROVED')
+    ) {
       throw new BadRequestException('Promocode offer is not active');
     }
 

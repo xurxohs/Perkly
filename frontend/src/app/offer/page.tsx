@@ -3,6 +3,7 @@ import { ArrowLeft, Shield, Clock, User, Package, Flame, Crown } from 'lucide-re
 import Link from 'next/link';
 import Image from 'next/image';
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { Reviews } from '@/components/Reviews';
 import { Offer, User as UserType } from '@/lib/api';
 import OfferActions from '@/components/OfferActions';
@@ -23,27 +24,36 @@ const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBL
 async function getOffer(id: string): Promise<Offer | null> {
     try {
         const res = await fetch(`${API_BASE}/offers/${id}`, { cache: 'no-store' });
-        if (!res.ok) return null;
+        if (res.status === 400 || res.status === 404) return null;
+        if (!res.ok) throw new Error(`Offer API returned ${res.status}`);
         return res.json();
     } catch (err) {
         console.error('Fetch offer failed:', err);
-        return null;
+        throw err;
     }
 }
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ id?: string }> }): Promise<Metadata> {
     const { id } = await searchParams;
-    if (!id) return { title: 'Товар не найден | Perkly' };
+    if (!id) return { title: 'Товар не найден', robots: { index: false, follow: false } };
 
     const offer = await getOffer(id);
-    if (!offer) return { title: 'Товар не найден | Perkly' };
+    if (!offer) return { title: 'Товар не найден', robots: { index: false, follow: false } };
 
     return {
-        title: `${offer.title} | Купить на Perkly`,
+        title: `Купить ${offer.title}`,
         description: offer.description,
+        alternates: {
+            canonical: `/offer?id=${encodeURIComponent(id)}`,
+        },
+        robots: {
+            index: false,
+            follow: false,
+        },
         openGraph: {
             title: offer.title,
             description: offer.description,
+            url: `/offer?id=${encodeURIComponent(id)}`,
             images: offer.imageUrl ? [offer.imageUrl] : offer.vendorLogo ? [offer.vendorLogo] : [],
         },
     };
@@ -52,25 +62,11 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 export default async function OfferDetailPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
     const { id } = await searchParams;
 
-    if (!id) {
-        return (
-            <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-                <p className="text-white/40 text-lg mb-4">ID товара не указан</p>
-                <Link href="/catalog" className="text-purple-400 no-underline">← Вернуться в каталог</Link>
-            </div>
-        );
-    }
+    if (!id) notFound();
 
     const offer = await getOffer(id);
 
-    if (!offer) {
-        return (
-            <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-                <p className="text-white/40 text-lg mb-4">Товар не найден</p>
-                <Link href="/catalog" className="text-purple-400 no-underline">← Вернуться в каталог</Link>
-            </div>
-        );
-    }
+    if (!offer) notFound();
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -105,7 +101,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                             </div>
                             <div>
                                 <div className="text-sm font-semibold text-white">{(offer.seller as UserType).displayName || 'Продавец'}</div>
-                                <div className="text-xs text-white/30">Проверенный продавец</div>
+                                <div className="text-xs text-white/30">Продавец на Perkly</div>
                             </div>
                         </div>
                     )}
@@ -153,7 +149,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         </div>
                         <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50">
                             <Clock className="w-4 h-4 text-blue-400" />
-                            Мгновенная доставка
+                            {offer.fulfillmentType === 'PROMOCODE' ? 'Код после оплаты' : 'Способ указан в карточке'}
                         </div>
                     </div>
 

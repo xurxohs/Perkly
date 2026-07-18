@@ -268,7 +268,7 @@ export class HomeService {
 
   private loadTrendingOffers(take = 8) {
     return this.prisma.offer.findMany({
-      where: { isActive: true },
+      where: { isActive: true, moderationStatus: 'APPROVED' },
       orderBy: [{ featuredUntil: 'desc' }, { createdAt: 'desc' }],
       take,
       select: PUBLIC_OFFER_SELECT,
@@ -279,6 +279,7 @@ export class HomeService {
     return this.prisma.offer.findMany({
       where: {
         isActive: true,
+        moderationStatus: 'APPROVED',
         isFlashDrop: true,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
@@ -306,6 +307,7 @@ export class HomeService {
     const offers = await this.prisma.offer.findMany({
       where: {
         isActive: true,
+        moderationStatus: 'APPROVED',
         latitude: { gte: lat - dy, lte: lat + dy },
         longitude: { gte: lng - dx, lte: lng + dx },
       },
@@ -628,7 +630,11 @@ export class HomeService {
     const [activeOffers, salesToday, revenueToday, unreadBuyerChats] =
       await Promise.all([
         this.prisma.offer.count({
-          where: { sellerId: userId, isActive: true },
+          where: {
+            sellerId: userId,
+            isActive: true,
+            moderationStatus: 'APPROVED',
+          },
         }),
         this.prisma.transaction.count({
           where: {

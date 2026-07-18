@@ -248,7 +248,7 @@ export default function CartPage() {
                         >
                             {purchasing ? 'Оформление...' : `Оформить покупку — ${checkoutTotal.toLocaleString('ru-RU')} сум`}
                         </button>
-                        <p className="mt-3 text-center text-xs leading-relaxed text-white/30">Оплата защищена. Доступ появится в профиле после покупки.</p>
+                        <p className="mt-3 text-center text-xs leading-relaxed text-white/30">Статус оплаты и способ получения появятся в истории покупки.</p>
                     </div>
                 </div>
             )}

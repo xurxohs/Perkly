@@ -1,14 +1,12 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RateLimitService } from './rate-limit.service';
-import { MetricsService } from './metrics.service';
 
 @Controller('health')
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly limits: RateLimitService,
-    private readonly metrics: MetricsService,
   ) {}
 
   @Get('live')
@@ -37,7 +35,9 @@ export class HealthController {
   }
 
   @Get('metrics')
-  metricsSnapshot() {
-    return this.metrics.snapshot();
+  metricsStatus() {
+    // Detailed process memory, route names and traffic counters are internal
+    // operational data. The public health surface exposes no such details.
+    return { status: 'ok' };
   }
 }

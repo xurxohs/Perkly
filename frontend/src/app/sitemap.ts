@@ -1,12 +1,19 @@
 import type { MetadataRoute } from 'next';
 
+import { guideArticles } from '@/content/trust-pages';
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ['', '/catalog', '/feed', '/news', '/map', '/sell', '/pricing', '/support', '/privacy', '/terms'];
-  const now = new Date();
+  const pages = [
+    '', '/catalog', '/sell', '/pricing', '/about', '/how-it-works', '/safety',
+    '/seller-rules', '/content-policy', '/refunds', '/contacts', '/guides',
+    '/support', '/privacy', '/terms',
+    ...guideArticles.map(({ slug }) => `/guides/${slug}`),
+  ];
+  const editorialUpdate = new Date('2026-07-18T00:00:00+05:00');
   return pages.map((path) => ({
     url: `https://perkly.uz${path}`,
-    lastModified: now,
-    changeFrequency: path === '' || path === '/catalog' ? 'daily' : 'weekly',
-    priority: path === '' ? 1 : path === '/catalog' ? 0.9 : 0.6,
+    lastModified: editorialUpdate,
+    changeFrequency: path === '' || path === '/catalog' ? 'daily' : path.startsWith('/guides') ? 'monthly' : 'weekly',
+    priority: path === '' ? 1 : path === '/catalog' ? 0.9 : path === '/guides' ? 0.8 : 0.7,
   }));
 }

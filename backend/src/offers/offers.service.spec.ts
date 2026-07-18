@@ -11,6 +11,7 @@ describe('OffersService', () => {
       findMany: jest.Mock;
       count: jest.Mock;
       findUnique: jest.Mock;
+      findFirst: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
     };
@@ -38,6 +39,7 @@ describe('OffersService', () => {
         findMany: jest.fn(),
         count: jest.fn(),
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
       },
@@ -90,6 +92,10 @@ describe('OffersService', () => {
 
     expect(prisma.offer.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: expect.objectContaining({
+          isActive: true,
+          moderationStatus: 'APPROVED',
+        }),
         select: expect.not.objectContaining({ hiddenData: true }),
       }),
     );
@@ -97,7 +103,7 @@ describe('OffersService', () => {
   });
 
   it('does not select hiddenData for public offer details', async () => {
-    prisma.offer.findUnique.mockResolvedValue({
+    prisma.offer.findFirst.mockResolvedValue({
       id: 'offer-1',
       title: 'Public offer',
       seller: { id: 'seller-1', displayName: 'Seller', avatarUrl: null },
@@ -105,8 +111,13 @@ describe('OffersService', () => {
 
     const result = await service.findOne({ id: 'offer-1' });
 
-    expect(prisma.offer.findUnique).toHaveBeenCalledWith(
+    expect(prisma.offer.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: {
+          id: 'offer-1',
+          isActive: true,
+          moderationStatus: 'APPROVED',
+        },
         select: expect.not.objectContaining({ hiddenData: true }),
       }),
     );
@@ -202,6 +213,11 @@ describe('OffersService', () => {
 
     expect(prisma.offer.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        isActive: false,
+        moderationStatus: 'PENDING',
+        moderationNote: null,
+        moderationAt: null,
+        moderationBy: null,
         seller: { connect: { id: 'seller-1' } },
         company: { connect: { id: 'company-1' } },
       }),
@@ -226,6 +242,10 @@ describe('OffersService', () => {
     expect(prisma.company.findUnique).not.toHaveBeenCalled();
     expect(prisma.offer.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        moderationStatus: 'APPROVED',
+        moderationNote: null,
+        moderationAt: expect.any(Date),
+        moderationBy: 'admin-1',
         seller: { connect: { id: 'admin-1' } },
       }),
     });
@@ -257,10 +277,57 @@ describe('OffersService', () => {
     expect(prisma.offer.update).not.toHaveBeenCalled();
   });
 
+  it('returns a vendor edit to pending moderation and hides it', async () => {
+    prisma.offer.update.mockResolvedValue({ id: 'offer-1' });
+
+    await service.updateVendorOffer({
+      where: { id: 'offer-1' },
+      data: { title: 'Новое название' },
+    });
+
+    expect(prisma.offer.update).toHaveBeenCalledWith({
+      where: { id: 'offer-1' },
+      data: {
+        title: 'Новое название',
+        isActive: false,
+        moderationStatus: 'PENDING',
+        moderationNote: null,
+        moderationAt: null,
+        moderationBy: null,
+      },
+    });
+  });
+
+  it('marks offers created by the admin API as approved', async () => {
+    prisma.offer.create.mockResolvedValue({ id: 'offer-1' });
+
+    await service.create(
+      {
+        title: 'Offer',
+        description: 'Description',
+        category: 'SUBSCRIPTIONS',
+        hiddenData: 'CODE',
+        price: 1,
+        seller: { connect: { id: 'admin-1' } },
+      },
+      'admin-1',
+    );
+
+    expect(prisma.offer.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        moderationStatus: 'APPROVED',
+        moderationNote: null,
+        moderationAt: expect.any(Date),
+        moderationBy: 'admin-1',
+      }),
+    });
+  });
+
   it('saves active offers without creating duplicates', async () => {
     prisma.offer.findUnique.mockResolvedValue({
       id: 'offer-1',
       isActive: true,
+      moderationStatus: 'APPROVED',
     });
     prisma.savedOffer.upsert.mockResolvedValue({
       id: 'saved-1',
@@ -303,6 +370,8 @@ describe('OffersService', () => {
       id: 'offer-1',
       sellerId: 'seller-1',
       featuredUntil: null,
+      isActive: true,
+      moderationStatus: 'APPROVED',
     });
     prisma.user.updateMany.mockResolvedValue({ count: 1 });
     prisma.user.findUniqueOrThrow.mockResolvedValue({ balance: 88_000 });

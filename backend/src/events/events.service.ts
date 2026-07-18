@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomInt } from 'crypto';
 import { Event, Prisma, TopkaPost } from '@prisma/client';
 import { TtlCache } from '../common/ttl-cache';
 import {
@@ -271,46 +270,6 @@ export class EventsService {
     };
   }
 
-  // Helper for mock data generation or seeding
-  async seedEvents(organizerId: string) {
-    const categories = [
-      'Фестиваль',
-      'Выставка',
-      'Вечеринка',
-      'Концерт',
-      'Мастер-класс',
-    ];
-    const titles = [
-      'Neon Summer Fest',
-      'Art & Tech Exhibition',
-      'Underground Techno Night',
-      'Digital Marketing Summit',
-      'Wine & Jazz Evening',
-    ];
-
-    for (let i = 0; i < titles.length; i++) {
-      await this.prisma.event.create({
-        data: {
-          title: titles[i],
-          category: categories[i % categories.length],
-          description:
-            'Присоединяйтесь к нам для незабываемого вечера, полного эмоций, новых знакомств и ярких впечатлений. Самое ожидаемое событие этого сезона!',
-          fullDescription:
-            'Это мероприятие объединяет лучших представителей индустрии. Тебя ждет эксклюзивная программа, живое общение и специальные гости. Будь в центре событий вместе с Perkly.',
-          date: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
-          startTime: '19:00',
-          ageLimit: i % 2 === 0 ? '18+' : '12+',
-          location: 'Tashkent Hall',
-          address: 'улица Амира Темура, 107',
-          imageUrl: `https://picsum.photos/seed/${i + 20}/800/1200`,
-          viewersCount: randomInt(50, 250),
-          participantsCount: randomInt(200, 1700),
-          organizerId,
-        },
-      });
-    }
-  }
-
   private async fetchTopkaEvents(): Promise<EventFeedItem[]> {
     const parserUrl = this.getTopkaParserUrl();
 
@@ -402,7 +361,7 @@ export class EventsService {
       post.poster3x4Url ||
       post.originalUrl ||
       post.preview16x9Url ||
-      'https://perkly.uz/demo-events/festival.png';
+      'https://perkly.uz/icon-512.png';
 
     return {
       id: `topka-post-${post.id}`,
@@ -483,12 +442,12 @@ export class EventsService {
 
   private buildTopkaImageUrl(imageUrl?: string): string {
     if (!imageUrl) {
-      return 'https://perkly.uz/demo-events/festival.png';
+      return 'https://perkly.uz/icon-512.png';
     }
 
     const trimmed = imageUrl.trim();
     if (!trimmed || this.isTopkaPlaceholderImage(trimmed)) {
-      return 'https://perkly.uz/demo-events/festival.png';
+      return 'https://perkly.uz/icon-512.png';
     }
 
     const apiBase = this.getPublicApiBaseUrl();

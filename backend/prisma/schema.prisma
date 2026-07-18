@@ -260,6 +260,10 @@ model Offer {
   sellerId          String
   companyId         String?
   featuredUntil     DateTime?
+  moderationStatus  String                @default("APPROVED")
+  moderationNote    String?
+  moderationAt      DateTime?
+  moderationBy      String?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
   seller            User                  @relation("SellerOffers", fields: [sellerId], references: [id])
@@ -278,6 +282,7 @@ model Offer {
   @@index([category])
   @@index([latitude, longitude])
   @@index([featuredUntil])
+  @@index([moderationStatus, isActive])
   @@index([createdAt])
 }
 

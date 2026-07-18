@@ -4,13 +4,14 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('AdminService', () => {
   const offerUpdate = jest.fn();
+  const offerFindUnique = jest.fn();
   const adminLogCreate = jest.fn();
   const transactionFindUnique = jest.fn();
   const disputeFindUnique = jest.fn();
   const transactionRunner = jest.fn();
 
   const prisma = {
-    offer: { update: offerUpdate },
+    offer: { update: offerUpdate, findUnique: offerFindUnique },
     adminLog: { create: adminLogCreate },
     transaction: { findUnique: transactionFindUnique },
     dispute: { findUnique: disputeFindUnique },
@@ -21,6 +22,11 @@ describe('AdminService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    offerFindUnique.mockResolvedValue({ moderationStatus: 'APPROVED' });
+    transactionRunner.mockImplementation(
+      async (callback: (client: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
+    );
     service = new AdminService(prisma);
   });
 
@@ -72,6 +78,94 @@ describe('AdminService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(offerUpdate).not.toHaveBeenCalled();
+  });
+
+  it('does not activate an offer before moderation approval', async () => {
+    offerFindUnique.mockResolvedValue({ moderationStatus: 'PENDING' });
+
+    await expect(
+      service.updateOffer('offer-1', { isActive: true }, 'admin-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(offerUpdate).not.toHaveBeenCalled();
+  });
+
+  it('approves and publishes an offer while recording the moderator', async () => {
+    const approved = { id: 'offer-1', moderationStatus: 'APPROVED' };
+    offerUpdate.mockResolvedValue(approved);
+    adminLogCreate.mockResolvedValue({ id: 'log-1' });
+
+    await expect(
+      service.moderateOffer(
+        'offer-1',
+        { status: 'approved', note: '  Проверено  ' },
+        'admin-1',
+      ),
+    ).resolves.toEqual(approved);
+
+    expect(offerUpdate).toHaveBeenCalledWith({
+      where: { id: 'offer-1' },
+      data: {
+        moderationStatus: 'APPROVED',
+        moderationNote: 'Проверено',
+        moderationAt: expect.any(Date),
+        moderationBy: 'admin-1',
+        isActive: true,
+      },
+      select: expect.any(Object),
+    });
+    expect(adminLogCreate).toHaveBeenCalledWith({
+      data: {
+        adminId: 'admin-1',
+        action: 'APPROVE_OFFER',
+        targetId: 'offer-1',
+        details: JSON.stringify({
+          status: 'APPROVED',
+          note: 'Проверено',
+        }),
+      },
+    });
+  });
+
+  it('requires a reason when rejecting an offer', async () => {
+    await expect(
+      service.moderateOffer(
+        'offer-1',
+        { status: 'REJECTED', note: '   ' },
+        'admin-1',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(offerUpdate).not.toHaveBeenCalled();
+    expect(adminLogCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects and unpublishes an offer with the moderator note', async () => {
+    offerUpdate.mockResolvedValue({
+      id: 'offer-1',
+      moderationStatus: 'REJECTED',
+    });
+    adminLogCreate.mockResolvedValue({ id: 'log-1' });
+
+    await service.moderateOffer(
+      'offer-1',
+      { status: 'REJECTED', note: 'Нарушает правила площадки' },
+      'admin-1',
+    );
+
+    expect(offerUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          moderationStatus: 'REJECTED',
+          moderationNote: 'Нарушает правила площадки',
+          moderationBy: 'admin-1',
+          isActive: false,
+        }),
+      }),
+    );
+    expect(adminLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ action: 'REJECT_OFFER' }),
+    });
   });
 
   it('refunds an escrow transaction exactly once and writes the ledger', async () => {

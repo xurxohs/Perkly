@@ -1,4 +1,5 @@
 const SESSION_KEY = 'perkly_session_id';
+const CONSENT_KEY = 'perkly-consent-v1';
 
 function generateUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -14,10 +15,20 @@ function generateUUID(): string {
  */
 export function getSessionId(): string | null {
     if (typeof window === 'undefined') return null;
-    let id = localStorage.getItem(SESSION_KEY);
+    try {
+        const consent = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null') as {
+            version?: number;
+            analytics?: boolean;
+        } | null;
+        if (consent?.version !== 1 || consent.analytics !== true) return null;
+    } catch {
+        return null;
+    }
+
+    let id = sessionStorage.getItem(SESSION_KEY);
     if (!id) {
-        id = generateUUID();
-        localStorage.setItem(SESSION_KEY, id);
+        id = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : generateUUID();
+        sessionStorage.setItem(SESSION_KEY, id);
     }
     return id;
 }

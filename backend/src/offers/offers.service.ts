@@ -35,9 +35,17 @@ export class OffersService {
     'COMPLETED',
   ];
 
-  async create(data: Prisma.OfferCreateInput): Promise<Offer> {
+  async create(data: Prisma.OfferCreateInput, adminId: string): Promise<Offer> {
     this.assertOfferContent(data);
-    return this.prisma.offer.create({ data });
+    return this.prisma.offer.create({
+      data: {
+        ...data,
+        moderationStatus: 'APPROVED',
+        moderationNote: null,
+        moderationAt: new Date(),
+        moderationBy: adminId,
+      },
+    });
   }
 
   async findAllFiltered(params: {
@@ -67,7 +75,10 @@ export class OffersService {
       params.radiusKm,
     );
 
-    const where: Prisma.OfferWhereInput = { isActive: true };
+    const where: Prisma.OfferWhereInput = {
+      isActive: true,
+      moderationStatus: 'APPROVED',
+    };
 
     if (category) {
       where.category = {
@@ -167,8 +178,12 @@ export class OffersService {
   async findOne(
     offerWhereUniqueInput: Prisma.OfferWhereUniqueInput,
   ): Promise<PublicOffer | null> {
-    return this.prisma.offer.findUnique({
-      where: offerWhereUniqueInput,
+    return this.prisma.offer.findFirst({
+      where: {
+        ...offerWhereUniqueInput,
+        isActive: true,
+        moderationStatus: 'APPROVED',
+      },
       select: PUBLIC_OFFER_SELECT,
     });
   }
@@ -176,11 +191,11 @@ export class OffersService {
   async saveOffer(userId: string, offerId: string): Promise<SavedOffer> {
     const offer = await this.prisma.offer.findUnique({
       where: { id: offerId },
-      select: { id: true, isActive: true },
+      select: { id: true, isActive: true, moderationStatus: true },
     });
 
     if (!offer) throw new NotFoundException('Offer not found');
-    if (!offer.isActive) {
+    if (!offer.isActive || offer.moderationStatus !== 'APPROVED') {
       throw new BadRequestException('Offer is no longer active');
     }
 
@@ -212,8 +227,8 @@ export class OffersService {
     take = 6,
   ): Promise<{ data: PublicOffer[]; total: number }> {
     const normalizedTake = Math.min(Math.max(take, 1), 12);
-    const offer = await this.prisma.offer.findUnique({
-      where: { id },
+    const offer = await this.prisma.offer.findFirst({
+      where: { id, isActive: true, moderationStatus: 'APPROVED' },
       select: { id: true, category: true },
     });
 
@@ -302,7 +317,7 @@ export class OffersService {
         },
       }),
       this.prisma.offer.findMany({
-        where: { isActive: true },
+        where: { isActive: true, moderationStatus: 'APPROVED' },
         orderBy: [{ featuredUntil: 'desc' }, { createdAt: 'desc' }],
         take: 120,
         select: PUBLIC_OFFER_SELECT,
@@ -409,6 +424,25 @@ export class OffersService {
     return this.prisma.offer.update({ data, where });
   }
 
+  async updateVendorOffer(params: {
+    where: Prisma.OfferWhereUniqueInput;
+    data: Prisma.OfferUpdateInput;
+  }): Promise<Offer> {
+    const { where, data } = params;
+    this.assertOfferContent(data);
+    return this.prisma.offer.update({
+      where,
+      data: {
+        ...data,
+        isActive: false,
+        moderationStatus: 'PENDING',
+        moderationNote: null,
+        moderationAt: null,
+        moderationBy: null,
+      },
+    });
+  }
+
   async remove(where: Prisma.OfferWhereUniqueInput): Promise<Offer> {
     // Preserve purchase history and financial references.
     return this.prisma.offer.update({
@@ -446,6 +480,11 @@ export class OffersService {
       return this.prisma.offer.create({
         data: {
           ...data,
+          isActive: false,
+          moderationStatus: 'PENDING',
+          moderationNote: null,
+          moderationAt: null,
+          moderationBy: null,
           seller: { connect: { id: sellerId } },
           company: { connect: { id: activeCompany.id } },
         },
@@ -453,7 +492,14 @@ export class OffersService {
     }
 
     return this.prisma.offer.create({
-      data: { ...data, seller: { connect: { id: sellerId } } },
+      data: {
+        ...data,
+        moderationStatus: 'APPROVED',
+        moderationNote: null,
+        moderationAt: new Date(),
+        moderationBy: sellerId,
+        seller: { connect: { id: sellerId } },
+      },
     });
   }
 
@@ -471,6 +517,9 @@ export class OffersService {
       where: { id: offerId },
     });
     if (!offer) throw new NotFoundException('Offer not found');
+    if (!offer.isActive || offer.moderationStatus !== 'APPROVED') {
+      throw new BadRequestException('Only approved active offers can be featured');
+    }
     if (offer.sellerId !== sellerId) {
       throw new BadRequestException('You do not own this offer');
     }
@@ -565,6 +614,7 @@ export class OffersService {
       where: {
         id: { in: offerIds },
         isActive: true,
+        moderationStatus: 'APPROVED',
       },
       select: PUBLIC_OFFER_SELECT,
     });
@@ -598,6 +648,7 @@ export class OffersService {
         id: { notIn: [excludedOfferId, ...Array.from(excludedIds)] },
         category,
         isActive: true,
+        moderationStatus: 'APPROVED',
       },
       orderBy: [{ featuredUntil: 'desc' }, { createdAt: 'desc' }],
       take,

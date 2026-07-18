@@ -208,10 +208,19 @@ export class PromocodesService {
   async listPublicForOffer(offerId: string) {
     const offer = await this.prisma.offer.findUnique({
       where: { id: offerId },
-      select: { id: true, companyId: true, isActive: true },
+      select: {
+        id: true,
+        companyId: true,
+        isActive: true,
+        moderationStatus: true,
+      },
     });
 
-    if (!offer || !offer.isActive) {
+    if (
+      !offer ||
+      !offer.isActive ||
+      offer.moderationStatus !== 'APPROVED'
+    ) {
       throw new NotFoundException('Offer not found');
     }
 
@@ -354,7 +363,9 @@ export class PromocodesService {
     const promocode = await this.prisma.promocode.findUnique({
       where: { id: promocodeId },
       include: {
-        offer: { select: { id: true, isActive: true } },
+        offer: {
+          select: { id: true, isActive: true, moderationStatus: true },
+        },
       },
     });
 
@@ -608,12 +619,22 @@ export class PromocodesService {
   }
 
   private ensurePromocodeUsable(
-    promocode: Promocode & { offer?: { id: string; isActive: boolean } | null },
+    promocode: Promocode & {
+      offer?: {
+        id: string;
+        isActive: boolean;
+        moderationStatus: string;
+      } | null;
+    },
   ) {
     if (promocode.status !== 'ACTIVE') {
       throw new BadRequestException('Promocode is not active');
     }
-    if (promocode.offer && !promocode.offer.isActive) {
+    if (
+      promocode.offer &&
+      (!promocode.offer.isActive ||
+        promocode.offer.moderationStatus !== 'APPROVED')
+    ) {
       throw new BadRequestException('Promocode offer is not active');
     }
 

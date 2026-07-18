@@ -256,6 +256,53 @@
   50% { transform: translateY(-8px); }
 }
 
+/* ===== PUBLIC TRUST & EDITORIAL PAGES ===== */
+.public-info-page {
+  background: #060609;
+  color: #f5f5f7;
+}
+
+.public-info-hero {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(168, 85, 247, 0.18), transparent 38%),
+    radial-gradient(circle at 92% 100%, rgba(236, 72, 153, 0.12), transparent 38%),
+    #101014;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.public-info-panel {
+  background: #101014;
+  color: #f5f5f7;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.public-info-muted { color: rgba(245, 245, 247, 0.6); }
+.public-info-link { color: #d8a4ff; }
+
+.site-light-commerce .public-info-page {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.site-light-commerce .public-info-hero {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(168, 85, 247, 0.13), transparent 38%),
+    radial-gradient(circle at 92% 100%, rgba(236, 72, 153, 0.08), transparent 38%),
+    #ffffff;
+  border-color: rgba(29, 29, 31, 0.06);
+  box-shadow: 0 18px 50px rgba(29, 29, 31, 0.06);
+}
+
+.site-light-commerce .public-info-panel {
+  background: #ffffff;
+  color: #1d1d1f;
+  border-color: rgba(29, 29, 31, 0.06);
+  box-shadow: 0 12px 35px rgba(29, 29, 31, 0.045);
+}
+
+.site-light-commerce .public-info-muted { color: rgba(29, 29, 31, 0.62); }
+.site-light-commerce .public-info-link { color: #7b2cbf; }
+
 /* ===== PAGE OFFERS EXTRACTION ===== */
 .hero-neon-bg { background: radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%); }
 .hero-subtitle-badge { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.15); }

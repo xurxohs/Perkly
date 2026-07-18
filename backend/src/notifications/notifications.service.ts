@@ -185,6 +185,7 @@ export class NotificationsService {
     const expiringDrops = await this.prisma.offer.findMany({
       where: {
         isActive: true,
+        moderationStatus: 'APPROVED',
         isFlashDrop: true,
         expiresAt: {
           gt: now,
