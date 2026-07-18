@@ -15,15 +15,7 @@ function generateUUID(): string {
  */
 export function getSessionId(): string | null {
     if (typeof window === 'undefined') return null;
-    try {
-        const consent = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null') as {
-            version?: number;
-            analytics?: boolean;
-        } | null;
-        if (consent?.version !== 1 || consent.analytics !== true) return null;
-    } catch {
-        return null;
-    }
+    if (!hasAnalyticsConsent()) return null;
 
     let id = sessionStorage.getItem(SESSION_KEY);
     if (!id) {
@@ -31,4 +23,17 @@ export function getSessionId(): string | null {
         sessionStorage.setItem(SESSION_KEY, id);
     }
     return id;
+}
+
+export function hasAnalyticsConsent(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+        const consent = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null') as {
+            version?: number;
+            analytics?: boolean;
+        } | null;
+        return consent?.version === 1 && consent.analytics === true;
+    } catch {
+        return false;
+    }
 }

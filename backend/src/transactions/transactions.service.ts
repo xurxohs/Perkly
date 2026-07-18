@@ -22,6 +22,7 @@ import {
   USER_ADMIN_SELECT,
 } from '../offers/offer.selects';
 import { REWARD_POINT_VALUE_UZS, sellerPayout } from '../common/money';
+import { cashbackPointsForPurchase } from '../common/tier-benefits';
 import { randomBytes } from 'crypto';
 
 type PurchaseOffer = {
@@ -159,8 +160,12 @@ export class TransactionsService {
           throw new BadRequestException('Insufficient balance');
         }
 
-        // Add reward points to buyer (1 point per unit, +15% if squad reward active)
-        const baseRewardPoints = Math.floor(finalPrice / 12000);
+        // Tier cashback is expressed in points; one point has the explicit UZS
+        // value from common/money. Squad reward is an additional one-time boost.
+        const baseRewardPoints = cashbackPointsForPurchase(
+          finalPrice,
+          buyer.tier,
+        );
         const extraPoints = buyer.hasSquadReward
           ? Math.floor(baseRewardPoints * 0.15)
           : 0;
@@ -255,7 +260,11 @@ export class TransactionsService {
     if (promo) {
       message += `\nПромокод: ${promo.label} (-${promo.discountAmount.toLocaleString('ru-RU')} сум).`;
     }
-    message += `\nВаш кэшбек: ${Math.floor(finalPrice)} баллов.`;
+    const cashbackPoints = cashbackPointsForPurchase(finalPrice, buyer.tier);
+    const squadBonusPoints = buyer.hasSquadReward
+      ? Math.floor(cashbackPoints * 0.15)
+      : 0;
+    message += `\nВаш кэшбек: ${cashbackPoints + squadBonusPoints} баллов.`;
 
     if (isGift) {
       const giftLink = `https://t.me/${process.env.BOT_USERNAME || 'PerklyPlatformBot'}?start=gift_${transaction.giftCode}`;

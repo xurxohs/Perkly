@@ -29,7 +29,7 @@ const PRIZES: Prize[] = [
 
 const SEGMENT_ANGLE = 360 / PRIZES.length;
 const SPIN_DURATION = 5000; // ms
-const DAILY_LIMIT = 3;
+const DEFAULT_DAILY_LIMIT = 1;
 
 export default function FortuneWheel() {
     const { user, refreshUser } = useAuth();
@@ -37,13 +37,15 @@ export default function FortuneWheel() {
     const [isSpinning, setIsSpinning] = useState(false);
     const [prize, setPrize] = useState<Prize | null>(null);
     const [showModal, setShowModal] = useState(false);
-    const [spinsLeft, setSpinsLeft] = useState<number>(DAILY_LIMIT);
+    const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
+    const [spinsLeft, setSpinsLeft] = useState<number>(DEFAULT_DAILY_LIMIT);
     const wheelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!user) return;
         usersApi.getWheelStatus()
             .then((status) => {
+                setDailyLimit(status.dailyLimit);
                 setSpinsLeft(status.spinsRemaining);
             })
             .catch((err) => {
@@ -180,10 +182,10 @@ export default function FortuneWheel() {
             {/* Spins left */}
             <div className="text-center mb-6">
                 <div className="text-sm text-white/40 mb-2">
-                    Осталось попыток сегодня: <span className="text-white font-bold">{spinsLeft}</span> / {DAILY_LIMIT}
+                    Осталось попыток сегодня: <span className="text-white font-bold">{spinsLeft}</span> / {dailyLimit}
                 </div>
                 <div className="flex gap-1.5 justify-center flex-wrap max-w-[120px]">
-                    {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
+                    {Array.from({ length: dailyLimit }).map((_, i) => (
                         <div
                             key={i}
                             className={`w-2.5 h-2.5 rounded-full transition-all ${
@@ -214,7 +216,7 @@ export default function FortuneWheel() {
 
             {/* Prize history hint */}
             <p className="text-xs text-white/20 mt-4 text-center max-w-xs">
-                Каждый день вы получаете {DAILY_LIMIT} бесплатных попыток. Выигранные баллы начисляются автоматически.
+                Ваш тариф даёт {dailyLimit} бесплатных попыток в день. Выигранные баллы начисляются автоматически.
             </p>
 
             {/* ======== PRIZE MODAL ======== */}

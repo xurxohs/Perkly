@@ -1,4 +1,4 @@
-import { getSessionId } from '@/hooks/useSessionId';
+import { getSessionId, hasAnalyticsConsent } from '@/hooks/useSessionId';
 
 // Type Definitions
 export interface User {
@@ -910,11 +910,16 @@ export const paymentsApi = {
 
 // ===== ANALYTICS =====
 export const analyticsApi = {
-    trackEvent: (data: { eventType: string; offerId?: string; metadata?: string }) =>
-        request('/analytics/events', {
+    trackEvent: (data: { eventType: string; offerId?: string; metadata?: string }) => {
+        if (!hasAnalyticsConsent()) {
+            return Promise.resolve({ skipped: true as const });
+        }
+        return request('/analytics/events', {
             method: 'POST',
+            headers: { 'X-Analytics-Consent': 'granted' },
             body: JSON.stringify(data),
-        }),
+        });
+    },
     getEvents: (params?: { eventType?: string; userId?: string; skip?: number; take?: number }) => {
         const urlParams = new URLSearchParams();
         if (params?.eventType) urlParams.append('eventType', params.eventType);

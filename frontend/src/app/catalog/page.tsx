@@ -426,7 +426,7 @@ function CatalogContent() {
 
 export default function CatalogPage() {
     return (
-        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 py-8"><div className="h-8 w-48 rounded-xl animate-pulse bg-white/[0.05]" /></div>}>
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 py-8"><h1 className="sr-only">Каталог цифровых товаров и промокодов Perkly</h1><div className="h-8 w-48 rounded-xl animate-pulse bg-white/[0.05]" /></div>}>
             <CatalogContent />
         </Suspense>
     );

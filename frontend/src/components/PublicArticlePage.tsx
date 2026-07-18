@@ -30,7 +30,7 @@ export function PublicArticlePage({
     <main className="public-info-page min-h-screen px-5 py-12 sm:py-16">
       <article className="mx-auto max-w-6xl">
         <nav aria-label="Хлебные крошки" className="public-info-muted flex flex-wrap items-center gap-2 text-sm">
-          <Link href="/" className="public-info-link no-underline">Perkly</Link>
+          <Link href="/" className="public-info-link public-info-breadcrumb-link">Perkly</Link>
           <span aria-hidden="true">/</span>
           <span>{title}</span>
         </nav>

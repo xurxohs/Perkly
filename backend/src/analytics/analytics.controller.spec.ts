@@ -54,6 +54,7 @@ describe('AnalyticsController', () => {
           metadata: '{"source":"home"}',
         },
         'session-1',
+        'granted',
         'Bearer valid-token',
       ),
     ).resolves.toEqual({ id: 'event-1' });
@@ -77,6 +78,7 @@ describe('AnalyticsController', () => {
     await controller.trackEvent(
       { eventType: 'offer_view' },
       'session-1',
+      'granted',
       'Bearer fake-token',
     );
 
@@ -87,6 +89,19 @@ describe('AnalyticsController', () => {
       offerId: undefined,
       metadata: undefined,
     });
+  });
+
+  it('rejects analytics events when consent was not granted', async () => {
+    await expect(
+      controller.trackEvent(
+        { eventType: 'offer_view' },
+        'session-1',
+        undefined,
+        'Bearer valid-token',
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+
+    expect(analyticsService.trackEvent).not.toHaveBeenCalled();
   });
 
   it('returns analytics events with normalized pagination', async () => {

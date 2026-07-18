@@ -43,6 +43,13 @@ describe('UsersService blocking', () => {
     expect(prisma.userBlock.upsert).not.toHaveBeenCalled();
   });
 
+  it('rejects a non-integer subscription duration as a bad request', async () => {
+    await expect(service.subscribe('user-1', 'GOLD', 1.5)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+  });
+
   it('does not create blocks for missing or soft-deleted users', async () => {
     prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'user-2',

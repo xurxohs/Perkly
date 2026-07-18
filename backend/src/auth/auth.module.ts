@@ -5,7 +5,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
-import { AnalyticsModule } from '../analytics/analytics.module';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TelegramLoginStore } from './telegram-login-store.service';
@@ -26,7 +25,6 @@ function getJwtSecret() {
       secret: getJwtSecret(),
       signOptions: { expiresIn: '1d' },
     }),
-    forwardRef(() => AnalyticsModule),
     forwardRef(() => NotificationsModule),
   ],
   controllers: [AuthController],

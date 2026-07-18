@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { AnalyticsService } from '../analytics/analytics.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TelegramLoginStore } from './telegram-login-store.service';
 
@@ -41,7 +40,6 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwt },
-        { provide: AnalyticsService, useValue: {} },
         { provide: NotificationsService, useValue: { sendPushNotification: jest.fn() } },
         { provide: TelegramLoginStore, useValue: telegramStore },
       ],

@@ -1,5 +1,7 @@
 import {
   Controller,
+  BadRequestException,
+  ForbiddenException,
   Post,
   Get,
   Body,
@@ -31,8 +33,21 @@ export class AnalyticsController {
   async trackEvent(
     @Body() body: TrackEventBody,
     @Headers('x-session-id') sessionId?: string,
+    @Headers('x-analytics-consent') analyticsConsent?: string,
     @Headers('authorization') authorization?: string,
   ) {
+    if (analyticsConsent !== 'granted') {
+      throw new ForbiddenException('Analytics consent is required');
+    }
+    if (!/^[A-Za-z0-9:_-]{1,80}$/.test(body.eventType ?? '')) {
+      throw new BadRequestException('Invalid analytics event type');
+    }
+    if (body.offerId && body.offerId.length > 120) {
+      throw new BadRequestException('Invalid offer id');
+    }
+    if (body.metadata && body.metadata.length > 4096) {
+      throw new BadRequestException('Analytics metadata is too large');
+    }
     const userId = this.resolveUserId(authorization);
 
     return this.analyticsService.trackEvent({

@@ -1,7 +1,5 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BotService } from '../bot/bot.service';
 
 interface TrackEventDto {
   eventType: string;
@@ -11,32 +9,11 @@ interface TrackEventDto {
   metadata?: string;
 }
 
-interface UserData {
-  id: string;
-  email: string;
-  displayName?: string | null;
-  phone?: string | null;
-  telegramId?: string | null;
-  createdAt?: Date;
-}
-
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
-  private readonly adminTelegramId: string | undefined;
-  private readonly webhookUrl: string | undefined;
 
-  constructor(
-    private prisma: PrismaService,
-    @Inject(forwardRef(() => BotService))
-    private botService: BotService,
-    private configService: ConfigService,
-  ) {
-    this.adminTelegramId = this.configService.get<string>('ADMIN_TELEGRAM_ID');
-    this.webhookUrl = this.configService.get<string>(
-      'GOOGLE_SHEETS_WEBHOOK_URL',
-    );
-  }
+  constructor(private prisma: PrismaService) {}
 
   async trackEvent(data: TrackEventDto) {
     try {
@@ -59,89 +36,6 @@ export class AnalyticsService {
       );
       throw error;
     }
-  }
-
-  async notifyAdminNewUser(user: UserData) {
-    if (!this.adminTelegramId) {
-      this.logger.warn(
-        'ADMIN_TELEGRAM_ID not set — skipping new user notification',
-      );
-      return;
-    }
-
-    const now = new Date().toLocaleString('ru-RU', {
-      timeZone: 'Asia/Tashkent',
-    });
-    const message = [
-      `🆕 *Новый пользователь зарегистрирован!*`,
-      ``,
-      `👤 Имя: ${user.displayName || '—'}`,
-      `📧 Email: ${user.email}`,
-      `📱 Телефон: ${user.phone || '—'}`,
-      `🔗 Telegram: ${user.telegramId ? `ID ${user.telegramId}` : '—'}`,
-      `📅 Дата: ${now}`,
-      `🆔 ID: \`${user.id}\``,
-    ].join('\n');
-
-    await this.botService.sendTelegramNotification(
-      this.adminTelegramId,
-      message,
-    );
-    this.logger.log('Admin notified about new user');
-  }
-
-  async sendToGoogleSheetsWebhook(user: UserData) {
-    if (!this.webhookUrl) {
-      this.logger.warn('GOOGLE_SHEETS_WEBHOOK_URL not set — skipping webhook');
-      return;
-    }
-
-    try {
-      const payload = {
-        name: user.displayName || '',
-        email: user.email,
-        phone: user.phone || '',
-        telegramId: user.telegramId || '',
-        registeredAt: user.createdAt
-          ? user.createdAt.toISOString()
-          : new Date().toISOString(),
-        userId: user.id,
-      };
-
-      const response = await fetch(this.webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        this.logger.warn(`Webhook responded with status ${response.status}`);
-      } else {
-        this.logger.log('User registration sent to configured webhook');
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to send webhook: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
-
-  async onNewUserRegistered(user: UserData) {
-    // Track the registration event
-    await this.trackEvent({
-      eventType: 'registration',
-      userId: user.id,
-      metadata: JSON.stringify({
-        email: user.email,
-        displayName: user.displayName,
-      }),
-    });
-
-    // Notify admin via Telegram
-    await this.notifyAdminNewUser(user);
-
-    // Send data to Google Sheets
-    await this.sendToGoogleSheetsWebhook(user);
   }
 
   async getEvents(filters?: {

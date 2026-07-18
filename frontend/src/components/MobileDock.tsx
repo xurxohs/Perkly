@@ -31,6 +31,8 @@ function DockIcon({ item, isActive, onTap, light = false }: {
     light?: boolean;
 }) {
     const [pressed, setPressed] = useState(false);
+    const activeColor = light ? '#7b2cbf' : '#d8a4ff';
+    const inactiveColor = light ? '#6e6e73' : '#8e8e93';
 
     const handlePointerDown = useCallback(() => {
         setPressed(true);
@@ -67,7 +69,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
                     name={item.icon}
                     className="w-[22px] h-[22px]"
                     style={{
-                        color: isActive ? '#b43be2' : light ? 'rgba(29,29,31,0.48)' : 'rgba(255,255,255,0.45)',
+                        color: isActive ? activeColor : inactiveColor,
                         filter: isActive ? 'none' : 'none',
                         transition: 'color 0.4s ease-out, filter 0.4s ease-out'
                     }}
@@ -78,7 +80,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             <span
                 className="-mt-px text-[10px] font-medium leading-[11px]"
                 style={{
-                    color: isActive ? '#b43be2' : light ? 'rgba(29,29,31,0.42)' : 'rgba(255,255,255,0.3)',
+                    color: isActive ? activeColor : inactiveColor,
                 }}
             >
                 {item.label}

@@ -9,7 +9,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { AnalyticsService } from '../analytics/analytics.service';
 import { Cron } from '@nestjs/schedule';
 import { NotificationsService } from '../notifications/notifications.service';
 import * as jsonwebtoken from 'jsonwebtoken';
@@ -82,8 +81,6 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    @Inject(forwardRef(() => AnalyticsService))
-    private analyticsService: AnalyticsService,
     @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
     private telegramLoginStore: TelegramLoginStore,
@@ -148,8 +145,6 @@ export class AuthService {
         ...(displayName ? { displayName } : {}),
       },
     });
-    // Notify admin and webhook about new user
-    this.analyticsService.onNewUserRegistered(user).catch(() => {});
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _pw, ...result } = user;
     return result;
@@ -196,7 +191,6 @@ export class AuthService {
             displayName: displayName?.trim().slice(0, 80) || 'Пользователь Apple',
           },
         });
-        this.analyticsService.onNewUserRegistered(user).catch(() => {});
       }
     }
     return this.login(user, device);
@@ -432,7 +426,6 @@ export class AuthService {
 
     try {
       let user: UserRecord;
-      let isNewUser = false;
 
       if (entry.flow === 'link') {
         if (!entry.userId) {
@@ -463,7 +456,6 @@ export class AuthService {
           where: { telegramId },
         });
         if (!existing) {
-          isNewUser = true;
           const email = `tg_${telegramId}@telegram.local`;
           user = await this.prisma.user.upsert({
             where: { email },
@@ -478,9 +470,6 @@ export class AuthService {
               displayName: existing.displayName || displayName,
             },
           });
-        }
-        if (isNewUser) {
-          this.analyticsService.onNewUserRegistered(user).catch(() => {});
         }
       }
 
@@ -714,8 +703,6 @@ export class AuthService {
           avatarUrl: telegramData.photo_url ?? null,
         },
       });
-      // Notify admin about new widget user
-      this.analyticsService.onNewUserRegistered(user).catch(() => {});
     } else if (!user.telegramId) {
       user = await this.prisma.user.update({
         where: { id: user.id },

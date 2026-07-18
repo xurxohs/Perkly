@@ -47,26 +47,74 @@ interface TelegramWebApp {
     };
 }
 
+type TelegramWindow = Window & {
+    Telegram?: { WebApp: TelegramWebApp };
+};
+
+const TELEGRAM_WEB_APP_SDK = 'https://telegram.org/js/telegram-web-app.js';
+let telegramSdkPromise: Promise<TelegramWebApp | null> | null = null;
+
+function hasTelegramLaunchParams() {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const searchParams = new URLSearchParams(window.location.search);
+
+    return [hashParams, searchParams].some(
+        (params) => params.has('tgWebAppVersion') && params.has('tgWebAppPlatform'),
+    );
+}
+
+function loadTelegramWebApp(): Promise<TelegramWebApp | null> {
+    const win = window as TelegramWindow;
+    if (win.Telegram?.WebApp) return Promise.resolve(win.Telegram.WebApp);
+    if (!hasTelegramLaunchParams()) return Promise.resolve(null);
+    if (telegramSdkPromise) return telegramSdkPromise;
+
+    telegramSdkPromise = new Promise((resolve) => {
+        const finish = () => resolve(win.Telegram?.WebApp ?? null);
+        const existingScript = document.querySelector<HTMLScriptElement>(
+            `script[src="${TELEGRAM_WEB_APP_SDK}"]`,
+        );
+
+        if (existingScript) {
+            existingScript.addEventListener('load', finish, { once: true });
+            existingScript.addEventListener('error', () => resolve(null), { once: true });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = TELEGRAM_WEB_APP_SDK;
+        script.async = true;
+        script.onload = finish;
+        script.onerror = () => resolve(null);
+        document.head.appendChild(script);
+    });
+
+    return telegramSdkPromise;
+}
+
 export function useTelegram() {
     const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
     const [user, setUser] = useState<TelegramUser | null>(null);
 
     useEffect(() => {
-        const win = window as unknown as { Telegram?: { WebApp: TelegramWebApp } };
-        if (typeof window !== 'undefined' && win.Telegram?.WebApp) {
-            const tg = win.Telegram.WebApp;
-            
-            // Defer state update to avoid 'set-state-in-effect' lint warning
-            const timer = setTimeout(() => {
+        let cancelled = false;
+
+        void loadTelegramWebApp().then((tg) => {
+            if (!tg || cancelled) return;
+
+            tg.ready();
+            window.requestAnimationFrame(() => {
+                if (cancelled) return;
                 setWebApp(tg);
                 if (tg.initDataUnsafe?.user) {
                     setUser(tg.initDataUnsafe.user);
                 }
-            }, 0);
+            });
+        });
 
-            tg.ready();
-            return () => clearTimeout(timer);
-        }
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const expand = useCallback(() => webApp?.expand(), [webApp]);

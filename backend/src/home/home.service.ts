@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { REWARD_POINT_VALUE_UZS } from '../common/money';
+import { dailyWheelLimitForTier } from '../common/tier-benefits';
 import { TtlCache } from '../common/ttl-cache';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { EventsService } from '../events/events.service';
@@ -47,7 +48,6 @@ type HomeEngagementSummary = {
   claimedMissionIds: Set<string>;
 };
 
-const DAILY_WHEEL_LIMIT = 3;
 const DAILY_BONUS_EVENT = 'DAILY_BONUS_CLAIMED';
 const DAILY_MISSION_CLAIMED_PREFIX = 'DAILY_MISSION_CLAIMED:';
 const ACTIVE_TRANSACTION_STATUSES = ['PAID', 'ESCROW', 'DISPUTED'];
@@ -371,17 +371,24 @@ export class HomeService {
     const nextResetAt = new Date(startOfDay);
     nextResetAt.setDate(nextResetAt.getDate() + 1);
 
-    const spinsUsed = await this.prisma.analyticsEvent.count({
-      where: {
-        userId,
-        eventType: 'WHEEL_REWARD_CLAIMED',
-        createdAt: { gte: startOfDay },
-      },
-    });
-    const spinsRemaining = Math.max(0, DAILY_WHEEL_LIMIT - spinsUsed);
+    const [spinsUsed, user] = await Promise.all([
+      this.prisma.analyticsEvent.count({
+        where: {
+          userId,
+          eventType: 'WHEEL_REWARD_CLAIMED',
+          createdAt: { gte: startOfDay },
+        },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { tier: true },
+      }),
+    ]);
+    const dailyLimit = dailyWheelLimitForTier(user?.tier);
+    const spinsRemaining = Math.max(0, dailyLimit - spinsUsed);
 
     return {
-      dailyLimit: DAILY_WHEEL_LIMIT,
+      dailyLimit,
       spinsUsed,
       spinsRemaining,
       canSpin: spinsRemaining > 0,

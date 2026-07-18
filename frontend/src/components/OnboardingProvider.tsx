@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Flame, Ticket, MessageCircle, ChevronRight, Sparkles } from 'lucide-react';
 import { useTelegram } from '@/hooks/useTelegram';
 
@@ -32,17 +33,21 @@ const SLIDES = [
 ];
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const isTopkaRoute = pathname === '/feed' || pathname.startsWith('/feed/');
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [animating, setAnimating] = useState(false);
     const { hapticImpact } = useTelegram();
 
     useEffect(() => {
+        if (!isTopkaRoute) return;
+
         const frame = window.requestAnimationFrame(() => {
             setShowOnboarding(localStorage.getItem('perkly_onboarded_v2') !== 'true');
         });
         return () => window.cancelAnimationFrame(frame);
-    }, []);
+    }, [isTopkaRoute]);
 
     const handleNext = () => {
         hapticImpact('light');
@@ -62,7 +67,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         }
     };
 
-    if (!showOnboarding) {
+    if (!isTopkaRoute || !showOnboarding) {
         return <>{children}</>;
     }
 

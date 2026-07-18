@@ -11,13 +11,16 @@ import { SavedOffer, SAVED_OFFER_SELECT } from '../offers/offer.selects';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomUUID } from 'crypto';
 import { StorageService } from '../storage/storage.service';
+import {
+  dailyWheelLimitForTier,
+  subscriptionCost,
+} from '../common/tier-benefits';
 
 export const SUBSCRIPTION_PRICES: Record<string, number> = {
   GOLD: 59_880,
   PLATINUM: 119_880,
 };
 
-const DAILY_WHEEL_LIMIT = 3;
 const DAILY_BONUS_EVENT = 'DAILY_BONUS_CLAIMED';
 const DAILY_MISSION_CLAIMED_PREFIX = 'DAILY_MISSION_CLAIMED:';
 
@@ -623,15 +626,17 @@ export class UsersService {
   }
 
   async subscribe(userId: string, tier: 'GOLD' | 'PLATINUM', months: number) {
-    if (months < 1 || months > 12) {
-      throw new BadRequestException('Months must be between 1 and 12');
+    if (!Number.isInteger(months) || months < 1 || months > 12) {
+      throw new BadRequestException(
+        'Months must be a whole number between 1 and 12',
+      );
     }
 
     const pricePerMonth = SUBSCRIPTION_PRICES[tier];
     if (!pricePerMonth) {
       throw new BadRequestException('Invalid tier. Choose GOLD or PLATINUM');
     }
-    const cost = pricePerMonth * months;
+    const cost = subscriptionCost(pricePerMonth, months);
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -687,7 +692,8 @@ export class UsersService {
   }
 
   async getWheelStatus(userId: string) {
-    await this.ensureUserExists(userId);
+    const user = await this.ensureUserExists(userId);
+    const dailyLimit = dailyWheelLimitForTier(user.tier);
 
     const { startOfDay, nextResetAt } = this.getWheelWindow();
     const spinsUsed = await this.prisma.analyticsEvent.count({
@@ -697,10 +703,10 @@ export class UsersService {
         createdAt: { gte: startOfDay },
       },
     });
-    const spinsRemaining = Math.max(0, DAILY_WHEEL_LIMIT - spinsUsed);
+    const spinsRemaining = Math.max(0, dailyLimit - spinsUsed);
 
     return {
-      dailyLimit: DAILY_WHEEL_LIMIT,
+      dailyLimit,
       spinsUsed,
       spinsRemaining,
       canSpin: spinsRemaining > 0,
@@ -748,9 +754,12 @@ export class UsersService {
       points: reward.points,
       newRewardPoints: user.rewardPoints,
       newBalance: user.balance,
-      dailyLimit: DAILY_WHEEL_LIMIT,
+      dailyLimit: status.dailyLimit,
       spinsUsed: status.spinsUsed + 1,
-      spinsRemaining: Math.max(0, DAILY_WHEEL_LIMIT - (status.spinsUsed + 1)),
+      spinsRemaining: Math.max(
+        0,
+        status.dailyLimit - (status.spinsUsed + 1),
+      ),
       resetAt: status.resetAt,
     };
   }
@@ -1192,11 +1201,12 @@ export class UsersService {
   private async ensureUserExists(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: { id: true, tier: true },
     });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    return user;
   }
 
   private getWheelWindow(now = new Date()) {
