@@ -1,0 +1,47 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: Commit, tag, or branch to deploy
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy verified revision
+        env:
+          DEPLOY_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.PRODUCTION_SSH_USER }}
+        run: |
+          DEPLOY_SHA="$(git rev-parse HEAD)"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /var/www/perkly && git fetch origin && git checkout '$DEPLOY_SHA' && cd backend && npm ci && npx prisma migrate deploy && npm run build && pm2 reload perkly-backend --update-env && cd ../frontend && npm ci && npm run build && pm2 reload frontend --update-env"
+      - name: Verify readiness
+        run: curl --fail --retry 12 --retry-delay 5 https://perkly.uz/api/health/ready
