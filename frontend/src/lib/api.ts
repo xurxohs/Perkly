@@ -755,6 +755,15 @@ export const usersApi = {
             body: JSON.stringify(data),
         }),
 
+    uploadAvatar: (dataUrl: string) =>
+        request<User>('/users/me/avatar', {
+            method: 'POST',
+            body: JSON.stringify({ dataUrl }),
+        }),
+
+    removeAvatar: () =>
+        request<User>('/users/me/avatar', { method: 'DELETE' }),
+
     getStats: () =>
         request<{ totalSpent: number; totalPurchases: number }>('/users/me/stats'),
 

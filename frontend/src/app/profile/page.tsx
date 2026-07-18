@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2 } from 'lucide-react';
+import { Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Camera, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -59,6 +60,8 @@ export default function ProfilePage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState('');
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const [avatarError, setAvatarError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'saved' | 'promocodes' | 'settings'>('history');
     const [subscriptions, setSubscriptions] = useState<Transaction[]>([]);
     const [savedOffers, setSavedOffers] = useState<SavedOffer[]>([]);
@@ -166,6 +169,33 @@ export default function ProfilePage() {
             await refreshUser();
             setEditing(false);
         } catch { }
+    };
+
+    const handleAvatarFile = async (file: File) => {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            setAvatarError('Поддерживаются JPG, PNG и WebP.');
+            return;
+        }
+        if (file.size > 6 * 1024 * 1024) {
+            setAvatarError('Фотография должна быть не больше 6 МБ.');
+            return;
+        }
+        setAvatarUploading(true);
+        setAvatarError(null);
+        try {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+                reader.readAsDataURL(file);
+            });
+            await usersApi.uploadAvatar(dataUrl);
+            await refreshUser();
+        } catch (error) {
+            setAvatarError(error instanceof Error ? error.message : 'Не удалось загрузить фотографию');
+        } finally {
+            setAvatarUploading(false);
+        }
     };
 
     const handleRemoveSavedOffer = async (offerId: string) => {
@@ -359,9 +389,17 @@ export default function ProfilePage() {
                     <div className="profile-identity-orb" />
 
                     <div className="flex items-start sm:items-center gap-4 sm:gap-5 relative z-10">
-                        <div className="profile-avatar w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0">
-                            <PerklyGlyph name="profile" className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
-                        </div>
+                        <label className="profile-avatar group relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 cursor-pointer overflow-hidden" title="Изменить фотографию профиля">
+                            {user.avatarUrl ? (
+                                <Image src={user.avatarUrl} alt="Фотография профиля" fill sizes="80px" className="object-cover" />
+                            ) : (
+                                <PerklyGlyph name="profile" className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
+                            )}
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                {avatarUploading ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : <Camera className="h-5 w-5 text-white" />}
+                            </span>
+                            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={avatarUploading} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleAvatarFile(file); event.currentTarget.value = ''; }} />
+                        </label>
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
                                 {editing ? (
@@ -386,6 +424,7 @@ export default function ProfilePage() {
                                 )}
                             </div>
                             <p className="text-white/40 text-sm mb-3">{user.email}</p>
+                            {avatarError && <p className="mb-3 text-xs font-medium text-red-400">{avatarError}</p>}
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                 <span className={`px-3 py-1 rounded-lg text-xs font-bold w-fit border ${tier.bgClass} ${tier.textClass} ${tier.borderClass}`}>
                                     <Crown className="w-3 h-3 inline mr-1" />{user.tier}

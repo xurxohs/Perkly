@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Event, Prisma, TopkaPost } from '@prisma/client';
 import { TtlCache } from '../common/ttl-cache';
@@ -7,6 +8,7 @@ import {
   normalizePagination,
 } from '../common/pagination';
 import { assertAcceptableUserContent } from '../common/content-moderation';
+import { StorageService } from '../storage/storage.service';
 
 type EventMedia = {
   originalUrl?: string | null;
@@ -79,7 +81,46 @@ type EventFeedSlice = {
 export class EventsService {
   private readonly cache = new TtlCache();
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
+
+  async saveEventCover(dataUrl: string): Promise<{ url: string }> {
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) throw new BadRequestException('Expected a base64 data URL');
+
+    const mime = match[1].toLowerCase();
+    if (!new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']).has(mime)) {
+      throw new BadRequestException('Поддерживаются JPG, PNG и WebP');
+    }
+
+    const source = Buffer.from(match[2], 'base64');
+    if (source.length === 0 || source.length > 10 * 1024 * 1024) {
+      throw new BadRequestException('Изображение должно быть не больше 10 МБ');
+    }
+
+    let body: Buffer;
+    try {
+      const sharpModule = await import('sharp');
+      const sharpFactory = ((sharpModule as unknown as { default?: typeof import('sharp') }).default
+        ?? sharpModule) as unknown as typeof import('sharp');
+      body = await sharpFactory(source, { limitInputPixels: 40_000_000 })
+        .rotate()
+        .resize(1600, 1200, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 84, effort: 4 })
+        .toBuffer();
+    } catch {
+      throw new BadRequestException('Файл повреждён или не является изображением');
+    }
+
+    const url = await this.storage.put(
+      `events/${Date.now()}-${randomUUID()}.webp`,
+      body,
+      'image/webp',
+    );
+    return { url };
+  }
 
   listSaved(userId: string) {
     return this.prisma.savedEvent.findMany({

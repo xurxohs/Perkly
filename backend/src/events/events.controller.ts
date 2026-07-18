@@ -58,6 +58,17 @@ export class EventsController {
     );
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post('media/upload')
+  async uploadCover(
+    @Req() req: AuthRequest,
+    @Body() body: { dataUrl?: string },
+  ): Promise<{ url: string }> {
+    await this.ensureTopkaPublisher(req.user.userId);
+    if (!body.dataUrl) throw new BadRequestException('dataUrl is required');
+    return this.eventsService.saveEventCover(body.dataUrl);
+  }
+
   @Get()
   findAll(
     @Query('skip') skip?: string,
