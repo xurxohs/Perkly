@@ -4,7 +4,7 @@ import { guideArticles } from '@/content/trust-pages';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const pages = [
-    '', '/catalog', '/sell', '/pricing', '/about', '/how-it-works', '/safety',
+    '', '/sell', '/pricing', '/about', '/how-it-works', '/safety',
     '/seller-rules', '/content-policy', '/refunds', '/contacts', '/guides',
     '/support', '/privacy', '/terms',
     ...guideArticles.map(({ slug }) => `/guides/${slug}`),
@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return pages.map((path) => ({
     url: `https://perkly.uz${path}`,
     lastModified: editorialUpdate,
-    changeFrequency: path === '' || path === '/catalog' ? 'daily' : path.startsWith('/guides') ? 'monthly' : 'weekly',
-    priority: path === '' ? 1 : path === '/catalog' ? 0.9 : path === '/guides' ? 0.8 : 0.7,
+    changeFrequency: path === '' ? 'daily' : path.startsWith('/guides') ? 'monthly' : 'weekly',
+    priority: path === '' ? 1 : path === '/guides' ? 0.8 : 0.7,
   }));
 }

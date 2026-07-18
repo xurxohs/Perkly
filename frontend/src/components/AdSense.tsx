@@ -3,7 +3,11 @@
 import Script from 'next/script';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
-import { ADSENSE_PUBLISHER_ID, isAdSenseEligiblePath } from '@/lib/adsense-config';
+import {
+  ADSENSE_PUBLISHER_ID,
+  ADSENSE_RUNTIME_ENABLED,
+  isAdSenseEligiblePath,
+} from '@/lib/adsense-config';
 import { useConsent } from '@/components/ConsentManager';
 
 declare global {
@@ -21,8 +25,19 @@ export function AdSenseRuntime() {
     ready &&
     preferences.advertising &&
     ADSENSE_PUBLISHER_ID &&
+    ADSENSE_RUNTIME_ENABLED &&
     isAdSenseEligiblePath(pathname),
   );
+
+  useEffect(() => {
+    if (enabled) return;
+    // Google Auto Ads keeps global listeners after a client-side navigation.
+    // A one-time document reload is the only reliable way to guarantee that
+    // ads disappear after consent is withdrawn or an editorial page is left.
+    if (document.getElementById('perkly-adsense-runtime')) {
+      window.location.reload();
+    }
+  }, [enabled]);
 
   if (!enabled || !ADSENSE_PUBLISHER_ID) return null;
 
@@ -56,6 +71,7 @@ export function AdSenseSlot({
     ready &&
     preferences.advertising &&
     ADSENSE_PUBLISHER_ID &&
+    ADSENSE_RUNTIME_ENABLED &&
     /^\d+$/.test(slot) &&
     isAdSenseEligiblePath(pathname),
   );

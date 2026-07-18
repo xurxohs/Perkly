@@ -1,4 +1,5 @@
 import type { PublicArticleSection } from '@/components/PublicArticlePage';
+import type { GuideSlug } from '@/content/guide-routes';
 
 export const aboutSections: PublicArticleSection[] = [
   {
@@ -241,7 +242,7 @@ export const contentPolicySections: PublicArticleSection[] = [
 ];
 
 export type GuideArticle = {
-  slug: string;
+  slug: GuideSlug;
   title: string;
   description: string;
   readingTime: string;
@@ -318,4 +319,6 @@ export const guideArticles: GuideArticle[] = [
   },
 ];
 
-export const guideBySlug = new Map(guideArticles.map((article) => [article.slug, article]));
+export const guideBySlug = new Map<string, GuideArticle>(
+  guideArticles.map((article) => [article.slug, article]),
+);

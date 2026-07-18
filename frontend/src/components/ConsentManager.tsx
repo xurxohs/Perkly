@@ -11,7 +11,8 @@ import {
 } from 'react';
 
 const STORAGE_KEY = 'perkly-consent-v1';
-const CONSENT_VERSION = 1;
+// Increment whenever the purposes or advertising providers materially change.
+const CONSENT_VERSION = 2;
 
 export interface ConsentPreferences {
   analytics: boolean;

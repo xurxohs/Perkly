@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CatalogBanner, catalogBannersApi } from '@/lib/api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CatalogBanner, catalogBannersApi, type Offer } from '@/lib/api';
 
 const slides = [
     {
@@ -16,7 +16,7 @@ const slides = [
         mark: 'P',
     },
     {
-        title: 'Telegram и сервисы',
+        title: 'Подписки и сервисы',
         description: 'Цифровой доступ с выдачей внутри покупки и оплатой только в сумах.',
         href: '/catalog?category=SUBSCRIPTIONS',
         action: 'Выбрать подписку',
@@ -36,17 +36,17 @@ const slides = [
 ];
 
 const quickApps = [
-    { label: 'Telegram', image: '/brands/telegram.svg', href: '/catalog?search=Telegram', badge: 'Популярно' },
-    { label: 'Yandex', image: '/brands/yandex_plus.svg', href: '/catalog?search=Yandex' },
-    { label: 'Uzum', image: '/brands/uzum_market.svg', href: '/catalog?search=Uzum', badge: 'Новое' },
-    { label: 'Steam', image: '/brands/steam.svg', href: '/catalog?search=Steam' },
-    { label: 'Dodo', image: '/brands/dodo_pizza.svg', href: '/catalog?search=Dodo' },
-    { label: 'Skillbox', image: '/brands/skillbox.svg', href: '/catalog?search=Skillbox' },
-    { label: 'Yandex Go', image: '/brands/yandex_go.svg', href: '/catalog?search=Yandex%20Go' },
-    { label: 'Netflix', image: '/brands/netflix.svg', href: '/catalog?search=Netflix' },
+    { id: 'telegram', label: 'Telegram', pattern: /(^|\W)telegram(\W|$)/iu, image: '/brands/telegram.svg', href: '/catalog?search=Telegram' },
+    { id: 'yandex-plus', label: 'Yandex Plus', pattern: /(^|\W)yandex\s*(?:plus|плюс)(\W|$)/iu, image: '/brands/yandex_plus.svg', href: '/catalog?search=Yandex%20Plus' },
+    { id: 'uzum', label: 'Uzum', pattern: /(^|\W)uzum(\W|$)/iu, image: '/brands/uzum_market.svg', href: '/catalog?search=Uzum' },
+    { id: 'steam', label: 'Steam', pattern: /(^|\W)steam(\W|$)/iu, image: '/brands/steam.svg', href: '/catalog?search=Steam' },
+    { id: 'dodo', label: 'Dodo', pattern: /(^|\W)dodo(\W|$)/iu, image: '/brands/dodo_pizza.svg', href: '/catalog?search=Dodo' },
+    { id: 'skillbox', label: 'Skillbox', pattern: /(^|\W)skillbox(\W|$)/iu, image: '/brands/skillbox.svg', href: '/catalog?search=Skillbox' },
+    { id: 'yandex-go', label: 'Yandex Go', pattern: /(^|\W)yandex\s+go(\W|$)/iu, image: '/brands/yandex_go.svg', href: '/catalog?search=Yandex%20Go' },
+    { id: 'netflix', label: 'Netflix', pattern: /(^|\W)netflix(\W|$)/iu, image: '/brands/netflix.svg', href: '/catalog?search=Netflix' },
 ];
 
-export function CatalogShowcase() {
+export function CatalogShowcase({ offers }: { offers: Offer[] }) {
     const [active, setActive] = useState(0);
     const [banners, setBanners] = useState<CatalogBanner[]>([]);
     const touchStart = useRef<number | null>(null);
@@ -69,6 +69,10 @@ export function CatalogShowcase() {
 
     const slide = slides[active];
     const banner = banners[active];
+    const visibleQuickApps = useMemo(
+        () => quickApps.filter((app) => offers.some((offer) => app.pattern.test(`${offer.title} ${offer.description}`))),
+        [offers],
+    );
 
     return (
         <section className="catalog-showcase mb-7" aria-label="Рекомендуем в каталоге">
@@ -115,11 +119,11 @@ export function CatalogShowcase() {
                 </div>
             </div>}
 
-            <div className="-mx-6 overflow-x-auto px-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {visibleQuickApps.length > 0 && <div className="-mx-6 overflow-x-auto px-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <p className="mb-3 px-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Бренды в текущих результатах</p>
                 <div className="flex min-w-max gap-3 pb-1">
-                    {quickApps.map((app) => (
+                    {visibleQuickApps.map((app) => (
                         <Link key={app.label} href={app.href} className="group relative w-[72px] shrink-0 text-center no-underline sm:w-[82px]">
-                            {app.badge && <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-500 px-2 py-0.5 text-[8px] font-black text-white shadow-lg">{app.badge}</span>}
                             <span className="app-icon-squircle mx-auto block h-16 w-16 overflow-hidden bg-[#17171c] shadow-[0_10px_28px_rgba(0,0,0,.32)] transition-[filter,box-shadow] duration-200 group-hover:brightness-105 sm:h-[70px] sm:w-[70px]">
                                 <Image src={app.image} alt="" width={70} height={70} className="h-full w-full object-cover" />
                             </span>
@@ -127,7 +131,8 @@ export function CatalogShowcase() {
                         </Link>
                     ))}
                 </div>
-            </div>
+                <p className="px-1 pt-2 text-[10px] leading-4 text-white/30">Названия и знаки принадлежат их владельцам. Наличие предложения не означает официального партнёрства с Perkly.</p>
+            </div>}
         </section>
     );
 }

@@ -16,7 +16,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 const categories = [
   { title: 'Рядом', detail: 'Кафе и услуги', icon: 'location' as PerklyGlyphName, href: '/catalog?category=RESTAURANTS&near=true' },
   { title: 'Подписки', detail: 'Сервисы и приложения', icon: 'key' as PerklyGlyphName, href: '/catalog?category=SUBSCRIPTIONS' },
-  { title: 'Игры', detail: 'Ключи и аккаунты', icon: 'game' as PerklyGlyphName, href: '/catalog?category=GAMES' },
+  { title: 'Игры', detail: 'Ключи и лицензии', icon: 'game' as PerklyGlyphName, href: '/catalog?category=GAMES' },
   { title: 'Промокоды', detail: 'Скидки и QR-коды', icon: 'coupon' as PerklyGlyphName, href: '/catalog?fulfillmentType=PROMOCODE' },
   { title: 'Маркетплейсы', detail: 'Выгода на покупки', icon: 'store' as PerklyGlyphName, href: '/catalog?category=MARKETPLACES' },
   { title: 'Еда', detail: 'Предложения заведений', icon: 'coffee' as PerklyGlyphName, href: '/catalog?category=RESTAURANTS' },
@@ -86,7 +86,7 @@ export default async function Home() {
 
     {flashOffers.length > 0 && <section className="mb-14"><div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Успейте забрать</h2><Link href="/catalog?isFlashDrop=true" className="text-sm font-semibold text-white/45 no-underline">Все акции →</Link></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{flashOffers.map((offer) => <OfferCard key={offer.id} offer={offer} urgent />)}</div></section>}
 
-    <section><div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Стоит посмотреть</h2><Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline">Смотреть все →</Link></div>{popularOffers.length ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{popularOffers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div> : <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-sm text-white/30">Предложения скоро появятся</div>}</section>
+    <section><div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Стоит посмотреть</h2>{popularOffers.length > 0 && <Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline">Смотреть все →</Link>}</div>{popularOffers.length ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{popularOffers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div> : <div className="rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-7 sm:p-9"><h3 className="text-xl font-black text-white">Публикуем только проверенные предложения</h3><p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">Сейчас в открытом каталоге нет товаров, прошедших модерацию. Мы скрыли тестовые карточки и не подменяем их вымышленными предложениями. Пока можно изучить правила безопасной покупки или подать заявку продавца.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link href="/guides" className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-black no-underline">Читать руководства</Link><Link href="/sell" className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-white/70 no-underline">Для продавцов</Link></div></div>}</section>
   </div>;
 }
 

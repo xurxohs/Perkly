@@ -61,6 +61,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.perkly.uz}
         NEXT_PUBLIC_GOOGLE_ADSENSE_PUBLISHER_ID: ${NEXT_PUBLIC_GOOGLE_ADSENSE_PUBLISHER_ID:-}
+        NEXT_PUBLIC_GOOGLE_CERTIFIED_CMP_READY: ${NEXT_PUBLIC_GOOGLE_CERTIFIED_CMP_READY:-false}
     restart: unless-stopped
     environment:
       NODE_ENV: production

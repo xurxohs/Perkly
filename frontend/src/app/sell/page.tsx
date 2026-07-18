@@ -85,7 +85,7 @@ export default function SellPage() {
     {
       num: "01",
       title: "Регистрация",
-      desc: "Создайте аккаунт продавца за 2 минуты",
+      desc: "Заполните профиль продавца и данные компании",
     },
     {
       num: "02",
@@ -208,8 +208,8 @@ export default function SellPage() {
         </h1>
 
         <p className="text-lg text-white/40 max-w-lg mx-auto mb-10 leading-relaxed">
-          Рестораны, сервисы, бренды — продавайте купоны, подписки и цифровые
-          товары тысячам покупателей.
+          Рестораны, сервисы и бренды могут размещать купоны, подписки и цифровые
+          товары для покупателей в Узбекистане.
         </p>
 
         {isAuthenticated && company?.status === "ACTIVE" && canUseVendorHub ? (

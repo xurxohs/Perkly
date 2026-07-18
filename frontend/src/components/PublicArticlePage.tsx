@@ -5,6 +5,10 @@ export type PublicArticleSection = {
   title: string;
   paragraphs: string[];
   bullets?: string[];
+  links?: Array<{
+    href: string;
+    label: string;
+  }>;
 };
 
 type RelatedLink = {
@@ -17,12 +21,14 @@ export function PublicArticlePage({
   title,
   intro,
   updated = '18 июля 2026 года',
+  author,
   sections,
   related = [],
 }: {
   title: string;
   intro: string;
   updated?: string;
+  author?: string;
   sections: PublicArticleSection[];
   related?: RelatedLink[];
 }) {
@@ -36,7 +42,9 @@ export function PublicArticlePage({
         </nav>
 
         <header className="public-info-hero mt-8 rounded-[2rem] p-7 sm:p-10 lg:p-14">
-          <p className="public-info-muted text-sm">Обновлено {updated}</p>
+          <p className="public-info-muted text-sm">
+            {author ? `${author} · ` : ''}Обновлено {updated}
+          </p>
           <h1 className="mt-4 max-w-4xl text-4xl font-bold tracking-[-0.04em] sm:text-5xl lg:text-6xl">{title}</h1>
           <p className="public-info-muted mt-6 max-w-3xl text-lg leading-8 sm:text-xl">{intro}</p>
         </header>
@@ -62,6 +70,22 @@ export function PublicArticlePage({
                   {section.bullets && (
                     <ul className="space-y-3 pl-5">
                       {section.bullets.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  )}
+                  {section.links && (
+                    <ul className="space-y-3 pl-5">
+                      {section.links.map((item) => (
+                        <li key={item.href}>
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="public-info-link"
+                          >
+                            {item.label}
+                          </a>
+                        </li>
+                      ))}
                     </ul>
                   )}
                 </div>

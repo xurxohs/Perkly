@@ -36,7 +36,7 @@ const PRODUCT_TYPES: Array<{
 }> = [
     { value: '', label: 'Все товары', description: 'Без ограничений', icon: Sparkles },
     { value: 'PROMOCODE', label: 'Промокоды', description: 'Код или QR после покупки', icon: Ticket },
-    { value: 'DIGITAL_CODE', label: 'Цифровые товары', description: 'Ключи, аккаунты и доступы', icon: Package },
+    { value: 'DIGITAL_CODE', label: 'Цифровые товары', description: 'Ключи, лицензии и доступы', icon: Package },
     { value: 'LINK', label: 'Ссылки', description: 'Доступ по защищённой ссылке', icon: Link2 },
     { value: 'INSTRUCTIONS', label: 'Товары и услуги', description: 'Получение по инструкции', icon: Store },
 ];
@@ -244,7 +244,7 @@ function CatalogContent() {
                 )}
             </div>
 
-            <CatalogShowcase />
+            <CatalogShowcase offers={offers} />
 
             <div className="-mx-6 mb-5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max gap-2 pb-1">
@@ -353,12 +353,23 @@ function CatalogContent() {
                     ))}
                 </div>
             ) : offers.length === 0 ? (
-                <div className="text-center py-20">
-                    <p className="text-white/30 text-lg mb-4">Товары не найдены</p>
-                    <button onClick={resetFilters} className="text-purple-400 cursor-pointer bg-transparent border-0 text-sm underline">
-                        Сбросить фильтры
-                    </button>
-                </div>
+                activeFilterCount > 0 || search ? (
+                    <div className="text-center py-20">
+                        <p className="text-white/45 text-lg mb-4">По выбранным условиям предложений нет</p>
+                        <button onClick={resetFilters} className="text-purple-300 cursor-pointer bg-transparent border-0 text-sm underline underline-offset-4">
+                            Сбросить фильтры
+                        </button>
+                    </div>
+                ) : (
+                    <section className="rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-7 sm:p-10">
+                        <h2 className="text-2xl font-black text-white">Каталог без тестовых карточек</h2>
+                        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">Активных предложений, прошедших модерацию, сейчас нет. Мы не показываем вымышленные товары и логотипы брендов без реального предложения. Перед первой покупкой можно ознакомиться с практическими руководствами Perkly.</p>
+                        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                            <Link href="/guides" className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-black no-underline">Открыть руководства</Link>
+                            <Link href="/sell" className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-white/70 no-underline">Подать заявку продавца</Link>
+                        </div>
+                    </section>
+                )
             ) : (
                 <div className="catalog-offers-grid grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                     {offers.map((offer) => (

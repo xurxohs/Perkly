@@ -292,7 +292,7 @@ export default function PricingPage() {
             <section className="w-full glass-card p-10 text-center bg-[linear-gradient(135deg,rgba(88,28,135,0.15),rgba(30,58,138,0.08))] border-purple-500/10 relative overflow-hidden">
                 <div className="absolute -right-20 -top-20 w-60 h-60 rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(168,85,247,0.12),transparent)]" />
                 <h2 className="text-2xl font-extrabold text-white mb-3 relative z-10">Остались вопросы?</h2>
-                <p className="text-white/40 mb-6 relative z-10">Свяжитесь с нами в Telegram — ответим за минуту</p>
+                <p className="text-white/40 mb-6 relative z-10">Свяжитесь с нами в Telegram — обращения рассматриваем по очереди</p>
                 <a href="https://t.me/perkly_support" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold no-underline relative z-10 bg-[linear-gradient(135deg,#a855f7,#ec4899)] shadow-[0_0_25px_rgba(168,85,247,0.3)]">
                     <Zap className="w-4 h-4" />
                     Написать в Telegram
