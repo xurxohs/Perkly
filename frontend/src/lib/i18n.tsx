@@ -266,7 +266,11 @@ function localizeDynamicCopy(copy: string, language: AppLanguage): string {
   let result = copy;
   if (language === 'uz') {
     result = result.replace(/\bсум\b/gi, "so‘m");
-    result = result.replace(/\s+года\b/gi, '');
+    result = result.replace(/[\s\u00a0]+года\b/giu, '');
+    result = result.replace(
+      /Информация о предложении проверяется перед покупкой\./g,
+      'Taklif haqidagi ma’lumot xariddan oldin tekshiriladi.',
+    );
     RU_MONTHS.forEach((month, index) => {
       result = result.replace(new RegExp(`(\\d{1,2}) ${month}`, 'gi'), `$1-${UZ_MONTHS[index]}`);
     });
