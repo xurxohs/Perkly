@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Event, Offer } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
+import { QuickServicePanel } from '@/components/QuickServicePanel';
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
@@ -75,6 +76,8 @@ export default async function Home() {
         <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> История операции и споры</span><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="catalog" className="h-4 w-4 text-purple-300" /> Способ выдачи указан заранее</span><span>Цены только в UZS</span></div>
       </div>
     </section>
+
+    <QuickServicePanel />
 
     <section className="mb-14">
       <div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Что ищете?</h2><Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline hover:text-white">Весь каталог →</Link></div>
