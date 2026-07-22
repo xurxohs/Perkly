@@ -29,6 +29,16 @@ const ROOM_TITLES: Record<ChatRoom['type'], string> = {
     DISPUTE: 'Арбитраж',
 };
 
+const TRANSACTION_STATUS_LABELS: Record<string, string> = {
+    PENDING: 'Ожидает оплаты',
+    PAID: 'Оплачено',
+    ESCROW: 'Средства защищены',
+    COMPLETED: 'Завершено',
+    CANCELLED: 'Отменено',
+    REFUNDED: 'Возврат выполнен',
+    DISPUTED: 'Открыт спор',
+};
+
 function mergeMessage(list: ChatMessage[], message: ChatMessage) {
     if (list.some((item) => item.id === message.id)) return list;
     return [...list, message].sort(
@@ -41,7 +51,8 @@ function getMessageTime(value: string) {
 }
 
 function getDisplayName(user?: Pick<User, 'displayName' | 'email'> | null) {
-    return user?.displayName || user?.email || 'Пользователь';
+    const name = user?.displayName || user?.email || 'Пользователь';
+    return name.toLocaleLowerCase('ru') === 'perkly system' ? 'Perkly' : name;
 }
 
 export default function ChatPage() {
@@ -390,7 +401,7 @@ export default function ChatPage() {
                             {activeRoom.transaction?.offer && (
                                 <Link href={`/offer/?id=${activeRoom.transaction.offer.id}`} className="mx-3 mt-3 flex items-center gap-3 rounded-[18px] border border-white/[0.07] bg-white/[0.035] p-3 text-white no-underline xl:hidden">
                                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]"><Package className="h-5 w-5 text-purple-300" /></div>
-                                    <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{activeRoom.transaction.offer.title}</p><p className="mt-0.5 text-[11px] text-white/35">{activeRoom.transaction.price.toLocaleString('ru-RU')} сум · {activeRoom.transaction.status}</p></div>
+                                    <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{activeRoom.transaction.offer.title}</p><p className="mt-0.5 text-[11px] text-white/35">{activeRoom.transaction.price.toLocaleString('ru-RU')} сум · {TRANSACTION_STATUS_LABELS[activeRoom.transaction.status] ?? activeRoom.transaction.status}</p></div>
                                     <ChevronRight className="h-4 w-4 text-white/25" />
                                 </Link>
                             )}
@@ -437,7 +448,7 @@ export default function ChatPage() {
                         </div>
                         <h3 className="text-base font-extrabold leading-snug">{activeRoom.transaction.offer.title}</h3>
                         <p className="mt-2 text-xl font-black">{activeRoom.transaction.price.toLocaleString('ru-RU')} сум</p>
-                        <div className="mt-4 rounded-2xl bg-white/[0.045] p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-white/28">Статус</p><p className="mt-1 text-sm font-bold text-emerald-300">{activeRoom.transaction.status}</p></div>
+                        <div className="mt-4 rounded-2xl bg-white/[0.045] p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-white/28">Статус</p><p className="mt-1 text-sm font-bold text-emerald-300">{TRANSACTION_STATUS_LABELS[activeRoom.transaction.status] ?? activeRoom.transaction.status}</p></div>
                         <Link href={`/offer/?id=${activeRoom.transaction.offer.id}`} className="mt-4 flex h-11 items-center justify-center rounded-2xl bg-white text-sm font-extrabold text-black no-underline">Открыть товар</Link>
                         <p className="mt-auto text-xs leading-relaxed text-white/28"><ShieldCheck className="mr-1 inline h-3.5 w-3.5" /> Переписка хранится в Perkly и может использоваться при рассмотрении спора.</p>
                     </aside>

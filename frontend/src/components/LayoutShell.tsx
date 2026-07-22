@@ -36,9 +36,14 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         window.dispatchEvent(new Event(THEME_EVENT));
     };
     const isLightCommerce = theme === 'light';
+    const shellThemeClass = isImmersive
+        ? 'site-immersive-dark'
+        : isLightCommerce
+            ? 'site-light-commerce'
+            : 'site-dark-commerce';
 
     return (
-        <div className={`min-h-screen flex flex-col ${isLightCommerce ? 'site-light-commerce' : 'site-dark-commerce'}`}>
+        <div className={`min-h-screen flex flex-col ${shellThemeClass}`}>
             {!isImmersive && <Navbar theme={theme} onToggleTheme={toggleTheme} showThemeToggle />}
             <main className={`flex-1 relative overflow-x-hidden ${isImmersive ? 'pb-24 md:pb-0' : 'mt-16 pb-28 md:pb-0'}`}>
                 {children}
