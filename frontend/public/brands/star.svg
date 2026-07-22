@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <defs>
+    <linearGradient id="starLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe57f"/>
+      <stop offset="100%" stop-color="#ffb300"/>
+    </linearGradient>
+    <linearGradient id="starDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9800"/>
+      <stop offset="100%" stop-color="#e65100"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <!-- Facet 1 (top-left) -->
+    <polygon points="20,20 20,3 15.89,14.34" fill="url(#starLight)" />
+    <!-- Facet 2 (top-right shadow) -->
+    <polygon points="20,20 20,3 24.11,14.34" fill="url(#starDark)" />
+    <!-- Facet 3 (right-top light) -->
+    <polygon points="20,20 36.17,14.75 24.11,14.34" fill="url(#starLight)" />
+    <!-- Facet 4 (right-top shadow) -->
+    <polygon points="20,20 36.17,14.75 26.66,22.16" fill="url(#starDark)" />
+    <!-- Facet 5 (right-bottom light) -->
+    <polygon points="20,20 29.99,33.75 26.66,22.16" fill="url(#starLight)" />
+    <!-- Facet 6 (right-bottom shadow) -->
+    <polygon points="20,20 29.99,33.75 20,27" fill="url(#starDark)" />
+    <!-- Facet 7 (left-bottom light) -->
+    <polygon points="20,20 10.01,33.75 20,27" fill="url(#starLight)" />
+    <!-- Facet 8 (left-bottom shadow) -->
+    <polygon points="20,20 10.01,33.75 13.34,22.16" fill="url(#starDark)" />
+    <!-- Facet 9 (left-top light) -->
+    <polygon points="20,20 3.83,14.75 13.34,22.16" fill="url(#starLight)" />
+    <!-- Facet 10 (left-top shadow) -->
+    <polygon points="20,20 3.83,14.75 15.89,14.34" fill="url(#starDark)" />
+  </g>
+</svg>

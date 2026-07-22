@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <defs>
+    <linearGradient id="diaTable" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b3e5fc"/>
+      <stop offset="100%" stop-color="#4fc3f7"/>
+    </linearGradient>
+    <linearGradient id="diaLeft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#29b6f6"/>
+      <stop offset="100%" stop-color="#0288d1"/>
+    </linearGradient>
+    <linearGradient id="diaRight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0288d1"/>
+      <stop offset="100%" stop-color="#01579b"/>
+    </linearGradient>
+    <linearGradient id="diaCenter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#81d4fa"/>
+      <stop offset="100%" stop-color="#0288d1"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <!-- Crown top facets -->
+    <polygon points="12,8 28,8 35,16 5,16" fill="url(#diaTable)" />
+    <polygon points="12,8 28,8 20,16" fill="#e1f5fe" opacity="0.6" />
+    <polygon points="12,8 5,16 20,16" fill="url(#diaLeft)" />
+    <polygon points="28,8 35,16 20,16" fill="url(#diaRight)" />
+    <!-- Pavilion bottom facets -->
+    <polygon points="5,16 20,16 20,34" fill="url(#diaLeft)" />
+    <polygon points="35,16 20,16 20,34" fill="url(#diaRight)" />
+    <polygon points="12,16 28,16 20,34" fill="url(#diaCenter)" opacity="0.85" />
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32" width="44" height="32">
+  <defs>
+    <linearGradient id="ucBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fee08b"/>
+      <stop offset="50%" stop-color="#d69e2e"/>
+      <stop offset="100%" stop-color="#8c580e"/>
+    </linearGradient>
+    <linearGradient id="ucBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5b8"/>
+      <stop offset="100%" stop-color="#543303"/>
+    </linearGradient>
+    <linearGradient id="ucText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a2c00"/>
+      <stop offset="100%" stop-color="#1a0f00"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="40" height="28" rx="6" fill="url(#ucBg)" stroke="url(#ucBorder)" stroke-width="1.5"/>
+  <rect x="4.5" y="4.5" width="35" height="23" rx="4" fill="none" stroke="#fff3b0" stroke-width="1" opacity="0.6"/>
+  <text x="22" y="21.5" text-anchor="middle" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="15" fill="url(#ucText)" letter-spacing="1">UC</text>
+</svg>
