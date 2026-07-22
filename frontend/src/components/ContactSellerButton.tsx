@@ -19,7 +19,7 @@ export function ContactSellerButton({ sellerId }: { sellerId: string }) {
 
         setLoading(true);
         try {
-            const res = await api.chat.createRoom({ targetUserId: sellerId });
+            await api.chat.createDirectRoom(sellerId);
             router.push('/chat');
         } catch (err) {
             console.error('Failed to open seller chat:', err);
