@@ -120,7 +120,6 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                                 <Crown className="w-3 h-3 inline-block mr-1" /> Эксклюзив
                             </span>
                         )}
-                        {offer.isDemo && <span className="rounded-lg bg-white/10 px-3 py-1 text-xs font-bold text-white/70">DEMO</span>}
                     </div>
 
                     <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white mb-3 leading-[1.08]">{offer.title}</h1>
@@ -154,7 +153,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         {offer.stockQuantity != null ? <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50"><Boxes className="w-4 h-4 text-white/45" />Осталось: {offer.stockQuantity}</div> : null}
                     </div>
 
-                    {offer.isDemo && offer.sourceUrl && <a href={offer.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="mb-5 inline-flex items-center gap-2 text-xs text-white/35 hover:text-white/60">Демонстрационный источник: Playerok <ExternalLink className="h-3.5 w-3.5" /></a>}
+                    {offer.sourceUrl && <a href={offer.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="mb-5 inline-flex items-center gap-2 text-xs text-white/35 hover:text-white/60">Источник предложения <ExternalLink className="h-3.5 w-3.5" /></a>}
 
                     {/* Actions */}
                     <OfferActions offer={offer} />

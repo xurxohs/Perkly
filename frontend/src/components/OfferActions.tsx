@@ -121,7 +121,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
   return (
     <>
       <button onClick={openCheckout} className="w-full rounded-2xl border-0 bg-white py-4 text-base font-black text-black transition-colors hover:bg-white/90">
-        {offer.isDemo ? 'Посмотреть оформление' : offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`}
+        {offer.isDemo ? 'Оформить beta-заказ' : offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`}
       </button>
 
       {checkoutOpen && (
@@ -145,12 +145,12 @@ export default function OfferActions({ offer }: OfferActionsProps) {
               </div>
             ) : (
               <div className="space-y-5 p-5 sm:p-7">
-                {offer.isDemo && <p className="rounded-xl bg-white/[0.06] p-3 text-sm text-white/55">Это демонстрационная карточка. Реальное списание и выдача отключены.</p>}
+                {offer.isDemo && <p className="rounded-xl bg-white/[0.06] p-3 text-sm text-white/55">Beta-заказ: можно проверить весь интерфейс, реальное списание отключено.</p>}
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] p-4"><p className="line-clamp-2 text-sm font-bold text-white">{offer.title}</p><div className="mt-4 flex items-end justify-between"><span className="text-sm text-white/40">К оплате</span><span className="text-2xl font-black text-white">{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</span></div></div>
                 <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4"><input type="checkbox" checked={isGift} onChange={(event) => setIsGift(event.target.checked)} className="h-5 w-5 accent-purple-500" /><span><span className="block text-sm font-bold text-white">Купить в подарок</span><span className="mt-0.5 block text-xs text-white/35">Создадим ссылку для получателя</span></span></label>
                 <div className="flex items-center gap-2 text-xs text-white/35"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> Для поддерживаемых сделок действуют защищённые статусы и спор</div>
                 {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-                <div className="grid grid-cols-[auto_1fr] gap-2"><button onClick={() => setCheckoutStep(1)} disabled={purchasing} className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 font-bold text-white/60">Назад</button><button onClick={confirmPurchase} disabled={purchasing || offer.isDemo} className="rounded-2xl border-0 bg-white py-4 font-black text-black disabled:opacity-55">{offer.isDemo ? 'Демо-покупка' : purchasing ? 'Оформляем…' : 'Подтвердить покупку'}</button></div>
+                <div className="grid grid-cols-[auto_1fr] gap-2"><button onClick={() => setCheckoutStep(1)} disabled={purchasing} className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 font-bold text-white/60">Назад</button><button onClick={confirmPurchase} disabled={purchasing || offer.isDemo} className="rounded-2xl border-0 bg-white py-4 font-black text-black disabled:opacity-55">{offer.isDemo ? 'Beta-заказ готов к проверке' : purchasing ? 'Оформляем…' : 'Подтвердить покупку'}</button></div>
               </div>
             )}
           </section>

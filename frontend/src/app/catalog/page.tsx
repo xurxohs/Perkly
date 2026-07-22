@@ -235,6 +235,7 @@ function CatalogContent() {
                 </h1>
                 <p className="text-white/40">
                     {total > 0 ? `${total} предложений · цены только в сумах` : loading ? 'Обновляем предложения…' : 'Предложений пока нет'}
+                    {total > 0 && <span className="ml-2 text-purple-300/70">Beta-каталог</span>}
                 </p>
                 </div>
                 {activeFilterCount > 0 && (
@@ -396,7 +397,6 @@ function CatalogContent() {
                                             👑 VIP
                                         </div>
                                     )}
-                                    {offer.isDemo && <div className="absolute left-3 bottom-3 rounded-md bg-black/65 px-2 py-1 text-[9px] font-bold tracking-wider text-white/80 backdrop-blur">DEMO</div>}
                                 </div>
 
                                 <div className="p-3 sm:p-5 bg-gradient-to-b from-transparent to-black/20">
