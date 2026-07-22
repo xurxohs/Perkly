@@ -121,7 +121,7 @@ export default function OfferActions({ offer }: OfferActionsProps) {
   return (
     <>
       <button onClick={openCheckout} className="w-full rounded-2xl border-0 bg-white py-4 text-base font-black text-black transition-colors hover:bg-white/90">
-        {offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`}
+        {offer.isDemo ? 'Посмотреть оформление' : offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`}
       </button>
 
       {checkoutOpen && (
