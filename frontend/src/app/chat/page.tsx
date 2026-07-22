@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowLeft,
-    Bell,
     Check,
     CheckCheck,
     ChevronRight,
@@ -11,9 +10,7 @@ import {
     MessageSquare,
     Package,
     Search,
-    Send,
     ShieldCheck,
-    User as UserIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -21,6 +18,7 @@ import Image from 'next/image';
 import api, { ChatMessage, ChatRealtimeEvent, ChatRoom, User } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
+import { PerklyGlyph } from '@/components/PerklyGlyph';
 
 const ROOM_TITLES: Record<ChatRoom['type'], string> = {
     DIRECT: 'Личный чат',
@@ -364,8 +362,8 @@ export default function ChatPage() {
                             const active = room.id === activeRoomId;
                             return (
                                 <button key={room.id} onClick={() => setActiveRoomId(room.id)} className={`mb-1 flex w-full items-center gap-3 rounded-[20px] border-0 p-3 text-left transition ${active ? 'bg-white/[0.1]' : 'bg-transparent hover:bg-white/[0.055]'}`}>
-                                    <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[16px] bg-gradient-to-br from-[#7137ff] to-[#ef3f9d]">
-                                        {room.type === 'DIRECT' && participant?.avatarUrl ? <Image src={participant.avatarUrl} alt="" fill sizes="48px" className="object-cover" /> : room.type === 'DISPUTE' ? <ShieldCheck className="h-5 w-5" /> : room.type === 'SYSTEM' ? <Bell className="h-5 w-5" /> : <UserIcon className="h-5 w-5" />}
+                                    <div className="chat-avatar-tile relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[16px]">
+                                        {room.type === 'DIRECT' && participant?.avatarUrl ? <Image src={participant.avatarUrl} alt="" fill sizes="48px" className="object-cover" /> : <PerklyGlyph name={room.type === 'DISPUTE' ? 'shield' : room.type === 'DIRECT' ? 'profile' : 'chat'} className="h-5 w-5" />}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <div className="mb-1 flex items-center gap-2">
@@ -388,8 +386,8 @@ export default function ChatPage() {
                         <>
                             <header className="flex min-h-[72px] items-center gap-3 border-b border-white/[0.07] bg-[#0d0d0f]/92 px-3 pt-safe backdrop-blur-2xl sm:px-5">
                                 <button onClick={() => setActiveRoomId(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-0 bg-white/[0.055] text-white/70 md:hidden" aria-label="К списку чатов"><ArrowLeft className="h-5 w-5" /></button>
-                                <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[15px] bg-gradient-to-br from-[#7137ff] to-[#ef3f9d]">
-                                    {activeRoom.type === 'DIRECT' && otherParticipant?.avatarUrl ? <Image src={otherParticipant.avatarUrl} alt="" fill sizes="44px" className="object-cover" /> : activeRoom.type === 'DISPUTE' ? <ShieldCheck className="h-5 w-5" /> : activeRoom.type === 'SYSTEM' ? <Bell className="h-5 w-5" /> : <UserIcon className="h-5 w-5" />}
+                                <div className="chat-avatar-tile relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[15px]">
+                                    {activeRoom.type === 'DIRECT' && otherParticipant?.avatarUrl ? <Image src={otherParticipant.avatarUrl} alt="" fill sizes="44px" className="object-cover" /> : <PerklyGlyph name={activeRoom.type === 'DISPUTE' ? 'shield' : activeRoom.type === 'DIRECT' ? 'profile' : 'chat'} className="h-5 w-5" />}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h2 className="truncate text-[15px] font-extrabold sm:text-base">{roomTitle}</h2>
@@ -433,7 +431,7 @@ export default function ChatPage() {
                             <div className="border-t border-white/[0.07] bg-[#0d0d0f]/94 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-2xl md:pb-3">
                                 <form onSubmit={handleSend} className="mx-auto flex max-w-3xl items-end gap-2">
                                     <textarea value={input} onChange={(event) => handleInputChange(event.target.value)} placeholder={activeRoom.type === 'SYSTEM' ? 'Системный чат только для чтения' : 'Напишите сообщение'} disabled={activeRoom.type === 'SYSTEM'} rows={1} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSend(event); } }} className="min-h-12 max-h-28 flex-1 resize-none rounded-[20px] border border-white/[0.07] bg-white/[0.055] px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/25 focus:border-purple-400/30 disabled:opacity-45" />
-                                    <button type="submit" disabled={!input.trim() || isSending || activeRoom.type === 'SYSTEM'} className="grid h-12 w-12 shrink-0 place-items-center rounded-[17px] border-0 bg-white text-black transition disabled:bg-white/[0.06] disabled:text-white/20" aria-label="Отправить">{isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}</button>
+                                    <button type="submit" disabled={!input.trim() || isSending || activeRoom.type === 'SYSTEM'} className="grid h-12 w-12 shrink-0 place-items-center rounded-[17px] border-0 bg-white text-black transition disabled:bg-white/[0.06] disabled:text-white/20" aria-label="Отправить">{isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <PerklyGlyph name="send" className="h-5 w-5" />}</button>
                                 </form>
                             </div>
                         </>

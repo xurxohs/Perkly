@@ -281,7 +281,7 @@ function CatalogContent() {
             </div>
 
             {/* Search and filters */}
-            <div className="catalog-search-surface mb-6 rounded-[28px] border border-white/[0.07] bg-white/[0.025] p-3 backdrop-blur-2xl">
+            <div className="catalog-search-surface relative z-20 mb-6 overflow-visible rounded-[28px] border border-white/[0.07] bg-white/[0.025] p-3 backdrop-blur-2xl">
                 <div className="flex flex-col gap-3 lg:flex-row">
                 <form onSubmit={handleSearch} className="min-w-0 flex-1">
                     <div className="relative">
