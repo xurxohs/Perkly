@@ -1,5 +1,20 @@
 export const dynamic = 'force-dynamic';
-import { ArrowLeft, Shield, Clock, User, Package, Flame, Crown, ExternalLink, Boxes } from 'lucide-react';
+import {
+    ArrowLeft,
+    Shield,
+    Clock,
+    User,
+    Package,
+    Flame,
+    Crown,
+    ExternalLink,
+    Boxes,
+    PackageCheck,
+    Key,
+    FileText,
+    CheckCircle2,
+    ShieldCheck,
+} from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -8,6 +23,7 @@ import { Offer, User as UserType } from '@/lib/api';
 import OfferActions from '@/components/OfferActions';
 import { OfferGallery } from '@/components/OfferGallery';
 import { ReportOfferButton } from '@/components/ReportOfferButton';
+import { ContactSellerButton } from '@/components/ContactSellerButton';
 
 const CATEGORY_LABELS: Record<string, string> = {
     RESTAURANTS: 'Рестораны и Кафе',
@@ -85,19 +101,51 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
             </Link>
 
             <div className="grid md:grid-cols-2 gap-7 lg:gap-12 items-start">
-                {/* Left - Image */}
+                {/* Left - Image & Seller Card */}
                 <div>
-                    {(offer.images?.[0] || offer.imageUrl || offer.vendorLogo) ? <OfferGallery images={offer.images?.length ? offer.images : [offer.imageUrl || offer.vendorLogo || '']} title={offer.title} /> : <div className="flex aspect-[4/3] items-center justify-center rounded-[28px] border border-white/[0.07] bg-white/[0.025]"><Package className="w-24 h-24 text-white/20" /></div>}
+                    {(offer.images?.[0] || offer.imageUrl || offer.vendorLogo) ? (
+                        <OfferGallery images={offer.images?.length ? offer.images : [offer.imageUrl || offer.vendorLogo || '']} title={offer.title} />
+                    ) : (
+                        <div className="flex aspect-[4/3] items-center justify-center rounded-[28px] border border-white/[0.07] bg-white/[0.025]">
+                            <Package className="w-24 h-24 text-white/20" />
+                        </div>
+                    )}
 
-                    {/* Seller info */}
+                    {/* Seller Card & Activity */}
                     {offer.seller && (
-                        <div className="mt-3 flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06]">
-                                <User className="w-5 h-5 text-white" />
+                        <div className="mt-4 rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative shrink-0">
+                                        <div className="w-11 h-11 rounded-full flex items-center justify-center bg-purple-500/20 text-purple-200 font-extrabold border border-purple-500/30">
+                                            {((offer.seller as UserType).displayName || 'П')[0].toUpperCase()}
+                                        </div>
+                                        <span className="absolute bottom-0 right-0 flex h-3 w-3">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-[#121217]"></span>
+                                        </span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-sm font-extrabold text-white truncate">{(offer.seller as UserType).displayName || 'Продавец'}</span>
+                                            <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[11px] text-white/40 mt-0.5 flex-wrap">
+                                            <span className="text-emerald-400 font-semibold">В сети</span>
+                                            <span>•</span>
+                                            <span>Отвечает за ~5-15 мин</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <ContactSellerButton sellerId={offer.sellerId} />
                             </div>
-                            <div>
-                                <div className="text-sm font-semibold text-white">{(offer.seller as UserType).displayName || 'Продавец'}</div>
-                                <div className="text-xs text-white/30">Продавец на Perkly</div>
+
+                            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/40">
+                                <span>Продавец Perkly</span>
+                                <span className="text-purple-300 font-medium flex items-center gap-1">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> 100% Защита
+                                </span>
                             </div>
                         </div>
                     )}
@@ -125,7 +173,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                     <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white mb-3 leading-[1.08]">{offer.title}</h1>
 
                     {/* Price */}
-                    <div className="flex items-baseline gap-3 mb-7">
+                    <div className="flex items-baseline gap-3 mb-6">
                         <span className="text-3xl font-black text-white">
                             {offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}
                         </span>
@@ -133,10 +181,67 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         {offer.discountPercent ? <span className="text-sm font-bold text-emerald-400">−{offer.discountPercent}%</span> : null}
                     </div>
 
+                    {/* Block: What the buyer receives */}
+                    <div className="mb-6 rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.08] via-white/[0.02] to-transparent p-5">
+                        <h2 className="text-base font-extrabold text-white mb-3.5 flex items-center gap-2">
+                            <PackageCheck className="w-5 h-5 text-purple-400" />
+                            Что получит покупатель после покупки
+                        </h2>
+
+                        <div className="space-y-3">
+                            <div className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/5">
+                                <div className="p-2 rounded-lg bg-purple-500/20 text-purple-300 shrink-0">
+                                    <Key className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-white">
+                                        {offer.fulfillmentType === 'DIGITAL_CODE' ? 'Цифровой промокод / Ваучер' : offer.fulfillmentType === 'LINK' ? 'Прямая ссылка / Доступ' : 'Пошаговая инструкция и доступ'}
+                                    </div>
+                                    <div className="text-xs text-white/50 mt-0.5">
+                                        {offer.fulfillmentType === 'DIGITAL_CODE'
+                                            ? 'Мгновенно отобразится на экране после оплаты и сохранится в истории ваших заказов'
+                                            : offer.fulfillmentType === 'LINK'
+                                                ? 'Вы получите персональную ссылку на доступ сразу после подтверждения оплаты'
+                                                : 'Вы получите подробную инструкцию по активации сразу после подтверждения оплаты'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {offer.buyerInputPrompt && (
+                                <div className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/5">
+                                    <div className="p-2 rounded-lg bg-blue-500/20 text-blue-300 shrink-0">
+                                        <FileText className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs font-bold text-white">Данные при оформлении</div>
+                                        <div className="text-xs text-white/50 mt-0.5">Потребуется указать: <span className="text-white font-semibold">{offer.buyerInputPrompt}</span></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {offer.usageInstructions && (
+                                <div className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/5">
+                                    <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs font-bold text-white">Инструкция от продавца</div>
+                                        <div className="text-xs text-white/60 mt-0.5 whitespace-pre-wrap">{offer.usageInstructions}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-2 text-xs text-white/40 pt-1">
+                                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span>Средства переводятся продавцу только после подтвеждения получения товара</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Description */}
-                    <div className="mb-8">
-                        <h2 className="text-sm font-semibold text-white/45 mb-2">Что вы получите</h2>
-                        <p className="text-white/65 leading-relaxed">{offer.description}</p>
+                    <div className="mb-6">
+                        <h2 className="text-sm font-semibold text-white/45 mb-2">Описание товара</h2>
+                        <p className="text-white/65 leading-relaxed text-sm whitespace-pre-wrap">{offer.description}</p>
                     </div>
 
                     {/* Guarantee badges */}

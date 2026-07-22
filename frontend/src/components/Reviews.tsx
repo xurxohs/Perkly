@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Star, MessageCircle, Send, Gem, Medal } from 'lucide-react';
+import { Star, MessageCircle, Send, Gem, Medal, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { reviewsApi } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import Image from 'next/image';
@@ -29,6 +29,8 @@ export function Reviews({ offerId }: { offerId: string }) {
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
     const fetchReviews = useCallback(async () => {
         try {
@@ -54,6 +56,8 @@ export function Reviews({ offerId }: { offerId: string }) {
         if (!isAuthenticated || !user) return;
 
         setSubmitting(true);
+        setSubmitError(null);
+        setSubmitSuccess(null);
         try {
             await reviewsApi.create({
                 rating,
@@ -63,10 +67,12 @@ export function Reviews({ offerId }: { offerId: string }) {
             });
             setComment('');
             setRating(5);
-            fetchReviews(); // Refresh list
-        } catch (error) {
+            setSubmitSuccess('Ваш отзыв успешно опубликован!');
+            fetchReviews();
+        } catch (error: any) {
             console.error('Failed to submit review', error);
-            alert('Ошибка при отправке отзыва. Попробуйте позже.');
+            const msg = error?.response?.data?.message || error?.message || 'Оставлять отзывы могут только подтверждённые покупатели после оплаты товара.';
+            setSubmitError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setSubmitting(false);
         }
@@ -76,15 +82,23 @@ export function Reviews({ offerId }: { offerId: string }) {
         return <div className="animate-pulse flex space-x-4 p-6"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-white/10 rounded w-3/4"></div><div className="space-y-2"><div className="h-4 bg-white/10 rounded"></div><div className="h-4 bg-white/10 rounded w-5/6"></div></div></div></div>;
     }
 
+    const hasUserReviewed = user ? reviews.some(r => r.author.id === user.id) : false;
+
     return (
         <div className="mt-12 pt-8 border-t border-white/10">
-            <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <MessageCircle className="w-6 h-6 text-purple-400" />
-                    Отзывы покупателей
-                </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
+                        <MessageCircle className="w-6 h-6 text-purple-400" />
+                        Отзывы покупателей
+                    </h2>
+                    <p className="mt-1 text-xs text-white/40 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        Оставлять отзывы могут только подтвержденные покупатели после покупки
+                    </p>
+                </div>
                 {stats.totalReviews > 0 && (
-                    <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+                    <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10 w-fit">
                         <span className="text-xl font-bold text-yellow-500">{stats.averageRating.toFixed(1)}</span>
                         <div className="flex text-yellow-500 text-sm">
                             {'★'.repeat(Math.round(stats.averageRating))}{'☆'.repeat(5 - Math.round(stats.averageRating))}
@@ -96,48 +110,69 @@ export function Reviews({ offerId }: { offerId: string }) {
 
             {/* Submit Review Form */}
             {isAuthenticated ? (
-                <form onSubmit={handleSubmit} className="mb-10 bg-white/5 p-6 rounded-2xl border border-white/10">
-                    <h3 className="font-semibold mb-4 text-white/80">Оставить отзыв</h3>
+                hasUserReviewed ? (
+                    <div className="mb-10 bg-emerald-500/10 p-5 rounded-2xl border border-emerald-500/20 text-emerald-200 flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+                        <span className="text-sm font-semibold">Вы уже опубликовали отзыв к этому товару. Спасибо за вашу оценку!</span>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit} className="mb-10 bg-white/5 p-6 rounded-2xl border border-white/10">
+                        <h3 className="font-semibold mb-4 text-white/80">Оставить отзыв (только для покупателей)</h3>
 
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="text-sm text-white/50 mr-2">Оценка:</span>
-                        {[1, 2, 3, 4, 5].map(star => (
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="text-sm text-white/50 mr-2">Оценка:</span>
+                            {[1, 2, 3, 4, 5].map(star => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setRating(star)}
+                                    className="bg-transparent border-0 cursor-pointer p-0 transition-transform hover:scale-110"
+                                    title={`Оценить на ${star} звезд`}
+                                    aria-label={`Оценить на ${star} звезд`}
+                                >
+                                    <Star
+                                        className={`w-6 h-6 ${star <= rating ? 'text-yellow-500 fill-yellow-500' : 'text-white/20'}`}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="relative">
+                            <textarea
+                                value={comment}
+                                onChange={e => setComment(e.target.value)}
+                                placeholder="Расскажите о покупке и работе товара"
+                                className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-white/30 outline-none min-h-[100px] resize-y focus:border-purple-500/50 transition-colors"
+                            />
                             <button
-                                key={star}
-                                type="button"
-                                onClick={() => setRating(star)}
-                                className="bg-transparent border-0 cursor-pointer p-0 transition-transform hover:scale-110"
-                                title={`Оценить на ${star} звезд`}
-                                aria-label={`Оценить на ${star} звезд`}
+                                type="submit"
+                                disabled={submitting}
+                                className="absolute bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg px-4 py-2 text-xs font-bold flex items-center justify-center cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-50 gap-1.5"
+                                title="Отправить отзыв"
+                                aria-label="Отправить отзыв"
                             >
-                                <Star
-                                    className={`w-6 h-6 ${star <= rating ? 'text-yellow-500 fill-yellow-500' : 'text-white/20'}`}
-                                />
+                                <Send className="w-3.5 h-3.5" /> Опубликовать
                             </button>
-                        ))}
-                    </div>
+                        </div>
 
-                    <div className="relative">
-                        <textarea
-                            value={comment}
-                            onChange={e => setComment(e.target.value)}
-                            placeholder="Расскажите о своих впечатлениях (необязательно)"
-                            className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-white/30 outline-none min-h-[100px] resize-y focus:border-purple-500/50 transition-colors"
-                        />
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="absolute bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-2 flex items-center justify-center cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-50"
-                            title="Отправить отзыв"
-                            aria-label="Отправить отзыв"
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </div>
-                </form>
+                        {submitError && (
+                            <div className="mt-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center gap-2 font-medium">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                {submitError}
+                            </div>
+                        )}
+
+                        {submitSuccess && (
+                            <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2 font-medium">
+                                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                {submitSuccess}
+                            </div>
+                        )}
+                    </form>
+                )
             ) : (
                 <div className="mb-10 bg-white/5 p-6 rounded-2xl border border-white/10 text-center">
-                    <p className="text-white/60 mb-0">Войдите в аккаунт, чтобы оставить отзыв.</p>
+                    <p className="text-white/60 mb-0 text-sm">Авторизуйтесь и совершите покупку, чтобы оставить отзыв к товару.</p>
                 </div>
             )}
 
@@ -146,7 +181,7 @@ export function Reviews({ offerId }: { offerId: string }) {
                 {reviews.length === 0 ? (
                     <div className="text-center py-10 bg-white/5 rounded-2xl border border-white/5 border-dashed">
                         <Star className="w-8 h-8 text-white/20 mx-auto mb-3" />
-                        <p className="text-white/40">Пока нет отзывов. Станьте первым!</p>
+                        <p className="text-white/40">Пока нет отзывов от покупателей.</p>
                     </div>
                 ) : (
                     reviews.map(review => (
@@ -165,12 +200,15 @@ export function Reviews({ offerId }: { offerId: string }) {
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-sm text-white/90">
-                                                {review.author.displayName || 'Аноним'}
+                                                {review.author.displayName || 'Покупатель'}
+                                            </span>
+                                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1 font-bold">
+                                                <ShieldCheck className="w-3 h-3" /> Купил
                                             </span>
                                             {review.author.tier === 'PLATINUM' && <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30 flex items-center gap-1 w-max"><Gem className="w-3 h-3" /> PRO</span>}
                                             {review.author.tier === 'GOLD' && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30 flex items-center gap-1 w-max"><Medal className="w-3 h-3" /> Gold</span>}
                                         </div>
-                                        <div className="text-xs text-white/30">
+                                        <div className="text-xs text-white/30 mt-0.5">
                                             {new Date(review.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
                                         </div>
                                     </div>

@@ -22,6 +22,45 @@ export class ReviewsService {
     const comment = this.optionalString(input.comment);
     if (comment) assertAcceptableUserContent(comment, 'Review');
 
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: offerId },
+    });
+    if (!offer) {
+      throw new BadRequestException('Товар не найден');
+    }
+    if (offer.sellerId === authorId) {
+      throw new BadRequestException(
+        'Продавец не может оставить отзыв на свой собственный товар',
+      );
+    }
+
+    // 1. Check if user has bought this offer
+    const hasPurchased = await this.prisma.transaction.findFirst({
+      where: {
+        buyerId: authorId,
+        offerId,
+        status: { in: ['COMPLETED', 'ESCROW', 'PAID', 'SUCCESS', 'ISSUED', 'USED'] },
+      },
+    });
+
+    if (!hasPurchased) {
+      throw new BadRequestException(
+        'Оставлять отзывы могут только подтверждённые покупатели после оплаты товара',
+      );
+    }
+
+    // 2. Check if user has already reviewed this offer
+    const existingReview = await this.prisma.review.findFirst({
+      where: {
+        authorId,
+        offerId,
+      },
+    });
+
+    if (existingReview) {
+      throw new BadRequestException('Вы уже оставили отзыв к этому товару');
+    }
+
     return this.prisma.review.create({
       data: {
         offer: { connect: { id: offerId } },
