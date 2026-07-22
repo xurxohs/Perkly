@@ -80,9 +80,16 @@ export class OffersController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('VENDOR', 'ADMIN')
   @Patch('vendor/draft')
-  saveVendorDraft(@Req() req: AuthRequest, @Body() body: { payload?: unknown }) {
-    if (!body.payload || typeof body.payload !== 'object') throw new BadRequestException('payload is required');
-    return this.offersService.saveVendorDraft(req.user.userId, body.payload as Prisma.InputJsonValue);
+  saveVendorDraft(
+    @Req() req: AuthRequest,
+    @Body() body: { payload?: unknown },
+  ) {
+    if (!body.payload || typeof body.payload !== 'object')
+      throw new BadRequestException('payload is required');
+    return this.offersService.saveVendorDraft(
+      req.user.userId,
+      body.payload as Prisma.InputJsonValue,
+    );
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -309,6 +316,41 @@ export class OffersController {
       payload.periodDays = periodDays;
     }
 
+    const deliveryEstimateMinutes = this.optionalInteger(
+      body,
+      'deliveryEstimateMinutes',
+    );
+    if (deliveryEstimateMinutes !== undefined) {
+      if (deliveryEstimateMinutes < 0 || deliveryEstimateMinutes > 43200) {
+        throw new BadRequestException(
+          'deliveryEstimateMinutes must be between 0 and 43200',
+        );
+      }
+      payload.deliveryEstimateMinutes = deliveryEstimateMinutes;
+    }
+    const warrantyDays = this.optionalInteger(body, 'warrantyDays');
+    if (warrantyDays !== undefined) {
+      if (warrantyDays < 0 || warrantyDays > 3650)
+        throw new BadRequestException(
+          'warrantyDays must be between 0 and 3650',
+        );
+      payload.warrantyDays = warrantyDays;
+    }
+    const stockQuantity = this.optionalInteger(body, 'stockQuantity');
+    if (stockQuantity !== undefined) {
+      if (stockQuantity < 0 || stockQuantity > 1000000)
+        throw new BadRequestException(
+          'stockQuantity must be between 0 and 1000000',
+        );
+      payload.stockQuantity = stockQuantity;
+    }
+    const buyerInputPrompt = this.optionalString(body, 'buyerInputPrompt');
+    if (buyerInputPrompt !== undefined)
+      payload.buyerInputPrompt = buyerInputPrompt;
+    const buyerInputRequired = this.optionalBoolean(body, 'buyerInputRequired');
+    if (buyerInputRequired !== undefined)
+      payload.buyerInputRequired = buyerInputRequired;
+
     const isExclusive = this.optionalBoolean(body, 'isExclusive');
     if (isExclusive !== undefined) payload.isExclusive = isExclusive;
 
@@ -341,6 +383,7 @@ export class OffersController {
       'thumbnailUrl',
       'usageInstructions',
       'fulfillmentType',
+      'buyerInputPrompt',
     ] as const;
     for (const field of stringFields) {
       const value = this.optionalString(body, field);
@@ -357,8 +400,10 @@ export class OffersController {
       }
     }
 
-    if (body.images !== undefined) payload.images = this.normalizeImages(body.images) ?? [];
-    else if (typeof body.imageUrl === 'string' && body.imageUrl.trim()) payload.images = [body.imageUrl.trim()];
+    if (body.images !== undefined)
+      payload.images = this.normalizeImages(body.images) ?? [];
+    else if (typeof body.imageUrl === 'string' && body.imageUrl.trim())
+      payload.images = [body.imageUrl.trim()];
 
     const price = this.optionalInteger(body, 'price');
     if (price !== undefined) {
@@ -385,7 +430,26 @@ export class OffersController {
       }
       payload.periodDays = periodDays;
     }
-    for (const field of ['isActive', 'isExclusive', 'isFlashDrop'] as const) {
+    for (const [field, max] of [
+      ['deliveryEstimateMinutes', 43200],
+      ['warrantyDays', 3650],
+      ['stockQuantity', 1000000],
+    ] as const) {
+      const value = this.optionalInteger(body, field);
+      if (value !== undefined) {
+        if (value < 0 || value > max)
+          throw new BadRequestException(
+            `${field} must be between 0 and ${max}`,
+          );
+        payload[field] = value;
+      }
+    }
+    for (const field of [
+      'isActive',
+      'isExclusive',
+      'isFlashDrop',
+      'buyerInputRequired',
+    ] as const) {
       const value = this.optionalBoolean(body, field);
       if (value !== undefined) payload[field] = value;
     }
@@ -411,12 +475,15 @@ export class OffersController {
 
   private normalizeImages(value: unknown): string[] | undefined {
     if (value === undefined) return undefined;
-    if (!Array.isArray(value)) throw new BadRequestException('images must be an array');
+    if (!Array.isArray(value))
+      throw new BadRequestException('images must be an array');
     const images = value
-      .map((item) => typeof item === 'string' ? item.trim() : '')
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
       .filter((item) => item.startsWith('https://') || item.startsWith('/'));
-    if (images.length !== value.length) throw new BadRequestException('Некорректное изображение');
-    if (images.length > 8) throw new BadRequestException('Можно добавить не больше 8 изображений');
+    if (images.length !== value.length)
+      throw new BadRequestException('Некорректное изображение');
+    if (images.length > 8)
+      throw new BadRequestException('Можно добавить не больше 8 изображений');
     return [...new Set(images)];
   }
 
@@ -438,12 +505,7 @@ export class OffersController {
 
   private normalizeFulfillmentType(value: string): string {
     const normalized = value.trim().toUpperCase();
-    const supported = [
-      'PROMOCODE',
-      'DIGITAL_CODE',
-      'LINK',
-      'INSTRUCTIONS',
-    ];
+    const supported = ['PROMOCODE', 'DIGITAL_CODE', 'LINK', 'INSTRUCTIONS'];
     if (!supported.includes(normalized)) {
       throw new BadRequestException(
         `fulfillmentType must be one of: ${supported.join(', ')}`,

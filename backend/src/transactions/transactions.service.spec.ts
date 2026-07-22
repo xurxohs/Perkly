@@ -5,7 +5,7 @@ import { TransactionStatus } from '../common/enums';
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let prisma: {
-    offer: { findUnique: jest.Mock };
+    offer: { findUnique: jest.Mock; updateMany: jest.Mock };
     user: {
       findUnique: jest.Mock;
       findUniqueOrThrow: jest.Mock;
@@ -84,7 +84,7 @@ describe('TransactionsService', () => {
 
   beforeEach(() => {
     prisma = {
-      offer: { findUnique: jest.fn() },
+      offer: { findUnique: jest.fn(), updateMany: jest.fn() },
       user: {
         findUnique: jest.fn(),
         findUniqueOrThrow: jest.fn(),
@@ -190,6 +190,30 @@ describe('TransactionsService', () => {
       service.purchase('buyer-1', 'offer-2', false, 0, 'activation-1'),
     ).rejects.toBeInstanceOf(BadRequestException);
 
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('requires buyer data before reserving or charging an offer', async () => {
+    prisma.offer.findUnique.mockResolvedValue({
+      ...offer,
+      buyerInputRequired: true,
+      buyerInputPrompt: 'Telegram @username',
+    });
+
+    await expect(service.purchase('buyer-1', 'offer-1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('never charges a demo offer', async () => {
+    prisma.offer.findUnique.mockResolvedValue({ ...offer, isDemo: true });
+
+    await expect(service.purchase('buyer-1', 'offer-1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 

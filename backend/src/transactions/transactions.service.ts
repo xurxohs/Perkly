@@ -92,6 +92,15 @@ export class TransactionsService {
     if (!offer.isActive || offer.moderationStatus !== 'APPROVED') {
       throw new BadRequestException('Offer is no longer active');
     }
+    if (offer.buyerInputRequired && !normalizedBuyerComment) {
+      throw new BadRequestException('Required buyer information is missing');
+    }
+    if (offer.isDemo) {
+      throw new BadRequestException('Demo offers cannot be purchased');
+    }
+    if (typeof offer.stockQuantity === 'number' && offer.stockQuantity <= 0) {
+      throw new BadRequestException('Offer is out of stock');
+    }
 
     // Prevent self-purchase
     if (offer.sellerId === buyerId) {
@@ -131,6 +140,15 @@ export class TransactionsService {
     let transaction: Transaction;
     try {
       transaction = await this.prisma.$transaction(async (tx) => {
+        if (typeof offer.stockQuantity === 'number') {
+          const reserved = await tx.offer.updateMany({
+            where: { id: offer.id, isActive: true, stockQuantity: { gt: 0 } },
+            data: { stockQuantity: { decrement: 1 } },
+          });
+          if (reserved.count !== 1) {
+            throw new BadRequestException('Offer is out of stock');
+          }
+        }
         if (promo) {
           const updatedActivation = await tx.promocodeActivation.updateMany({
             where: {

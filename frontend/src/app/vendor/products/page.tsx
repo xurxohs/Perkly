@@ -29,11 +29,14 @@ type OfferForm = {
     title: string; description: string; category: string; fulfillmentType: Offer['fulfillmentType'];
     price: string; discountPercent: string; hiddenData: string; imageUrl: string; images: string[];
     periodDays: string; isActive: boolean; isExclusive: boolean; isFlashDrop: boolean;
+    deliveryEstimateMinutes: string; warrantyDays: string; stockQuantity: string;
+    buyerInputPrompt: string; buyerInputRequired: boolean;
 };
 
 const EMPTY_FORM: OfferForm = {
     title: '', description: '', category: 'MARKETPLACES', fulfillmentType: 'INSTRUCTIONS',
     price: '', discountPercent: '0', hiddenData: '', imageUrl: '', images: [], periodDays: '0',
+    deliveryEstimateMinutes: '', warrantyDays: '0', stockQuantity: '', buyerInputPrompt: '', buyerInputRequired: false,
     isActive: true, isExclusive: false, isFlashDrop: false,
 };
 
@@ -41,7 +44,9 @@ const formFromOffer = (offer: Offer): OfferForm => ({
     title: offer.title, description: offer.description, category: offer.category,
     fulfillmentType: offer.fulfillmentType ?? 'INSTRUCTIONS', price: String(offer.price),
     discountPercent: String(offer.discountPercent ?? 0), hiddenData: offer.hiddenData ?? '',
-    imageUrl: offer.imageUrl ?? offer.vendorLogo ?? '', images: offer.images?.length ? offer.images : (offer.imageUrl ? [offer.imageUrl] : []), periodDays: '0', isActive: offer.isActive,
+    imageUrl: offer.imageUrl ?? offer.vendorLogo ?? '', images: offer.images?.length ? offer.images : (offer.imageUrl ? [offer.imageUrl] : []), periodDays: String(offer.periodDays ?? 0),
+    deliveryEstimateMinutes: offer.deliveryEstimateMinutes == null ? '' : String(offer.deliveryEstimateMinutes), warrantyDays: String(offer.warrantyDays ?? 0), stockQuantity: offer.stockQuantity == null ? '' : String(offer.stockQuantity),
+    buyerInputPrompt: offer.buyerInputPrompt ?? '', buyerInputRequired: offer.buyerInputRequired ?? false, isActive: offer.isActive,
     isExclusive: offer.isExclusive, isFlashDrop: offer.isFlashDrop,
 });
 
@@ -213,6 +218,9 @@ export default function VendorProductsPage() {
             discountPercent: Number(form.discountPercent || 0), hiddenData: form.hiddenData.trim(),
             vendorLogo: form.imageUrl || undefined, imageUrl: form.images[0] || form.imageUrl || undefined, images: form.images,
             periodDays: Number(form.periodDays || 0), isActive: form.isActive,
+            deliveryEstimateMinutes: form.deliveryEstimateMinutes === '' ? undefined : Number(form.deliveryEstimateMinutes),
+            warrantyDays: Number(form.warrantyDays || 0), stockQuantity: form.stockQuantity === '' ? undefined : Number(form.stockQuantity),
+            buyerInputPrompt: form.buyerInputPrompt.trim() || undefined, buyerInputRequired: form.buyerInputRequired,
             isExclusive: form.isExclusive, isFlashDrop: form.isFlashDrop,
         };
         try {
@@ -307,6 +315,9 @@ export default function VendorProductsPage() {
                         <EditorSection number="2" title="Выдача покупки" hint="Эти данные откроются только после оплаты.">
                             <Field label="Способ выдачи"><div className="mt-2 grid gap-2 sm:grid-cols-2">{FULFILLMENT_TYPES.map((type) => <button type="button" key={type.id} onClick={() => setForm({ ...form, fulfillmentType: type.id })} className={`rounded-2xl border p-3 text-left transition-colors ${form.fulfillmentType === type.id ? 'border-purple-400/40 bg-purple-500/10' : 'border-white/10 bg-white/[0.025] hover:bg-white/5'}`}><div className="flex items-center justify-between"><p className="text-sm font-bold text-white">{type.name}</p>{form.fulfillmentType === type.id && <CheckCircle2 className="h-4 w-4 text-purple-300" />}</div><p className="mt-1 text-xs text-white/35">{type.hint}</p></button>)}</div></Field>
                             <Field label={form.fulfillmentType === 'INSTRUCTIONS' ? 'Инструкция покупателю' : 'Скрытые данные'}><textarea required rows={3} value={form.hiddenData} onChange={(event) => setForm({ ...form, hiddenData: event.target.value })} className="field font-mono" placeholder="Код, ссылка или пошаговая инструкция" /><p className="mt-2 text-xs text-white/30">Проверьте данные: покупатель получит их автоматически после успешной оплаты.</p></Field>
+                            <div className="grid gap-4 sm:grid-cols-3"><Field label="Выдача, минут"><input type="number" min="0" max="43200" value={form.deliveryEstimateMinutes} onChange={(event) => setForm({ ...form, deliveryEstimateMinutes: event.target.value })} className="field" placeholder="Например, 10" /></Field><Field label="Гарантия, дней"><input type="number" min="0" max="3650" value={form.warrantyDays} onChange={(event) => setForm({ ...form, warrantyDays: event.target.value })} className="field" /></Field><Field label="Остаток"><input type="number" min="0" max="1000000" value={form.stockQuantity} onChange={(event) => setForm({ ...form, stockQuantity: event.target.value })} className="field" placeholder="Без лимита" /></Field></div>
+                            <Field label="Что покупатель должен указать"><input value={form.buyerInputPrompt} maxLength={160} onChange={(event) => setForm({ ...form, buyerInputPrompt: event.target.value })} className="field" placeholder="Например: Telegram @username или email аккаунта" /></Field>
+                            <Toggle checked={form.buyerInputRequired} onChange={(value) => setForm({ ...form, buyerInputRequired: value })} label="Запрашивать эти данные до оплаты" />
                         </EditorSection>
 
                         <EditorSection number="3" title="Публикация" hint="Управляйте видимостью и продвижением.">

@@ -253,43 +253,50 @@ model Deposit {
 }
 
 model Offer {
-  id                String                @id @default(uuid())
-  title             String
-  description       String
-  price             Int                   @default(0)
-  discountPercent   Int?                  @default(0)
-  vendorLogo        String?
-  imageUrl          String?
-  thumbnailUrl      String?
-  images            Json?
-  usageInstructions String?
-  category          String
-  fulfillmentType   String                @default("INSTRUCTIONS")
-  isExclusive       Boolean               @default(false)
-  hiddenData        String
-  isActive          Boolean               @default(true)
-  isFlashDrop       Boolean               @default(false)
-  expiresAt         DateTime?
-  periodDays        Int                   @default(0)
-  latitude          Float?
-  longitude         Float?
-  sellerId          String
-  companyId         String?
-  featuredUntil     DateTime?
-  moderationStatus  String                @default("APPROVED")
-  moderationNote    String?
-  moderationAt      DateTime?
-  moderationBy      String?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  seller            User                  @relation("SellerOffers", fields: [sellerId], references: [id])
-  company           Company?              @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  promocodes        Promocode[]
-  activations       PromocodeActivation[]
-  savedBy           SavedOffer[]
-  reviews           Review[]
-  transactions      Transaction[]
-  cartItems         CartItem[]
+  id                      String                @id @default(uuid())
+  title                   String
+  description             String
+  price                   Int                   @default(0)
+  discountPercent         Int?                  @default(0)
+  vendorLogo              String?
+  imageUrl                String?
+  thumbnailUrl            String?
+  images                  Json?
+  usageInstructions       String?
+  category                String
+  fulfillmentType         String                @default("INSTRUCTIONS")
+  isExclusive             Boolean               @default(false)
+  hiddenData              String
+  isActive                Boolean               @default(true)
+  isFlashDrop             Boolean               @default(false)
+  expiresAt               DateTime?
+  periodDays              Int                   @default(0)
+  deliveryEstimateMinutes Int?
+  warrantyDays            Int                   @default(0)
+  stockQuantity           Int?
+  buyerInputPrompt        String?
+  buyerInputRequired      Boolean               @default(false)
+  isDemo                  Boolean               @default(false)
+  sourceUrl               String?
+  latitude                Float?
+  longitude               Float?
+  sellerId                String
+  companyId               String?
+  featuredUntil           DateTime?
+  moderationStatus        String                @default("APPROVED")
+  moderationNote          String?
+  moderationAt            DateTime?
+  moderationBy            String?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  seller                  User                  @relation("SellerOffers", fields: [sellerId], references: [id])
+  company                 Company?              @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  promocodes              Promocode[]
+  activations             PromocodeActivation[]
+  savedBy                 SavedOffer[]
+  reviews                 Review[]
+  transactions            Transaction[]
+  cartItems               CartItem[]
 
   @@index([isActive, isFlashDrop])
   @@index([isActive, expiresAt])
@@ -300,6 +307,7 @@ model Offer {
   @@index([featuredUntil])
   @@index([moderationStatus, isActive])
   @@index([createdAt])
+  @@index([isDemo, isActive])
 }
 
 model OfferDraft {

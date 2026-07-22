@@ -35,6 +35,15 @@ export interface Offer {
     isExclusive: boolean;
     isFlashDrop: boolean;
     expiresAt: string | null;
+    periodDays: number;
+    featuredUntil?: string | null;
+    deliveryEstimateMinutes?: number | null;
+    warrantyDays?: number;
+    stockQuantity?: number | null;
+    buyerInputPrompt?: string | null;
+    buyerInputRequired?: boolean;
+    isDemo?: boolean;
+    sourceUrl?: string | null;
     latitude: number | null;
     longitude: number | null;
     sellerId: string;

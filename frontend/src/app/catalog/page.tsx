@@ -396,6 +396,7 @@ function CatalogContent() {
                                             👑 VIP
                                         </div>
                                     )}
+                                    {offer.isDemo && <div className="absolute left-3 bottom-3 rounded-md bg-black/65 px-2 py-1 text-[9px] font-bold tracking-wider text-white/80 backdrop-blur">DEMO</div>}
                                 </div>
 
                                 <div className="p-3 sm:p-5 bg-gradient-to-b from-transparent to-black/20">

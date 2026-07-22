@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { ArrowLeft, Shield, Clock, User, Package, Flame, Crown } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, User, Package, Flame, Crown, ExternalLink, Boxes } from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -68,6 +68,14 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
     const offer = await getOffer(id);
 
     if (!offer) notFound();
+    const oldPrice = offer.discountPercent && offer.discountPercent > 0 && offer.discountPercent < 100
+        ? Math.round(offer.price / (1 - offer.discountPercent / 100))
+        : null;
+    const deliveryLabel = offer.deliveryEstimateMinutes == null
+        ? (offer.fulfillmentType === 'PROMOCODE' ? 'Код после оплаты' : 'Способ указан в карточке')
+        : offer.deliveryEstimateMinutes < 60
+            ? `Обычно до ${offer.deliveryEstimateMinutes} мин`
+            : `Обычно до ${Math.ceil(offer.deliveryEstimateMinutes / 60)} ч`;
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -112,6 +120,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                                 <Crown className="w-3 h-3 inline-block mr-1" /> Эксклюзив
                             </span>
                         )}
+                        {offer.isDemo && <span className="rounded-lg bg-white/10 px-3 py-1 text-xs font-bold text-white/70">DEMO</span>}
                     </div>
 
                     <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white mb-3 leading-[1.08]">{offer.title}</h1>
@@ -121,6 +130,8 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         <span className="text-3xl font-black text-white">
                             {offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}
                         </span>
+                        {oldPrice && <span className="text-base text-white/30 line-through">{oldPrice.toLocaleString('ru-RU')} сум</span>}
+                        {offer.discountPercent ? <span className="text-sm font-bold text-emerald-400">−{offer.discountPercent}%</span> : null}
                     </div>
 
                     {/* Description */}
@@ -137,9 +148,13 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         </div>
                         <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50">
                             <Clock className="w-4 h-4 text-blue-400" />
-                            {offer.fulfillmentType === 'PROMOCODE' ? 'Код после оплаты' : 'Способ указан в карточке'}
+                            {deliveryLabel}
                         </div>
+                        {offer.warrantyDays ? <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50"><Shield className="w-4 h-4 text-purple-300" />Гарантия {offer.warrantyDays} дн.</div> : null}
+                        {offer.stockQuantity != null ? <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50"><Boxes className="w-4 h-4 text-white/45" />Осталось: {offer.stockQuantity}</div> : null}
                     </div>
+
+                    {offer.isDemo && offer.sourceUrl && <a href={offer.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="mb-5 inline-flex items-center gap-2 text-xs text-white/35 hover:text-white/60">Демонстрационный источник: Playerok <ExternalLink className="h-3.5 w-3.5" /></a>}
 
                     {/* Actions */}
                     <OfferActions offer={offer} />
