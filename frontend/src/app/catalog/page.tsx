@@ -235,7 +235,6 @@ function CatalogContent() {
                 </h1>
                 <p className="text-white/40">
                     {total > 0 ? `${total} предложений · цены только в сумах` : loading ? 'Обновляем предложения…' : 'Предложений пока нет'}
-                    {total > 0 && <span className="ml-2 text-purple-300/70">Beta-каталог</span>}
                 </p>
                 </div>
                 {activeFilterCount > 0 && (

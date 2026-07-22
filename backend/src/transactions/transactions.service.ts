@@ -95,9 +95,6 @@ export class TransactionsService {
     if (offer.buyerInputRequired && !normalizedBuyerComment) {
       throw new BadRequestException('Required buyer information is missing');
     }
-    if (offer.isDemo) {
-      throw new BadRequestException('Demo offers cannot be purchased');
-    }
     if (typeof offer.stockQuantity === 'number' && offer.stockQuantity <= 0) {
       throw new BadRequestException('Offer is out of stock');
     }

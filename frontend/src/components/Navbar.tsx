@@ -36,9 +36,13 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
     };
 
     const tierNameGradient = user?.tier === 'PLATINUM'
-        ? 'linear-gradient(90deg, #b8c6ff 0%, #d7a8ff 42%, #ff8fcb 72%, #8bd8ff 100%)'
+        ? theme === 'light'
+            ? 'linear-gradient(90deg, #3547a8 0%, #7540a8 42%, #b22f79 72%, #167b9f 100%)'
+            : 'linear-gradient(90deg, #b8c6ff 0%, #d7a8ff 42%, #ff8fcb 72%, #8bd8ff 100%)'
         : user?.tier === 'GOLD'
-            ? 'linear-gradient(90deg, #fff0a8 0%, #f6c453 48%, #e7a92f 100%)'
+            ? theme === 'light'
+                ? 'linear-gradient(90deg, #8a5a00 0%, #b47800 48%, #7a4800 100%)'
+                : 'linear-gradient(90deg, #fff0a8 0%, #f6c453 48%, #e7a92f 100%)'
             : null;
     const canUseVendorHub = user?.role === 'VENDOR' || user?.role === 'ADMIN';
 

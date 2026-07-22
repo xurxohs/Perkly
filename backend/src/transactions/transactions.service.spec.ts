@@ -207,16 +207,6 @@ describe('TransactionsService', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('never charges a demo offer', async () => {
-    prisma.offer.findUnique.mockResolvedValue({ ...offer, isDemo: true });
-
-    await expect(service.purchase('buyer-1', 'offer-1')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
-    expect(prisma.$transaction).not.toHaveBeenCalled();
-  });
-
   it('returns the original purchase for a repeated idempotency key', async () => {
     const existing = {
       id: 'tx-existing',

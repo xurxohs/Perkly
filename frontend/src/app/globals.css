@@ -1498,6 +1498,20 @@
 .site-light-commerce .profile-day.is-claimed { color: #515154; background: #ececf0 !important; }
 .site-light-commerce .profile-day.is-today { color: #fff; background: linear-gradient(145deg,#7c3cff,#d93fa5) !important; }
 
+/* Interactive accent states must always retain readable contrast. Keep these
+   last so broad light-theme ink rules cannot recolor their labels. */
+.site-light-commerce .catalog-apple-light .catalog-filter-pill-selected,
+.site-light-commerce .catalog-apple-light .catalog-filter-pill-selected *,
+.site-light-commerce .catalog-apple-light .catalog-page-button-selected,
+.site-light-commerce .catalog-apple-light .catalog-page-button-selected * {
+  color: #fff !important;
+}
+.site-light-commerce .catalog-apple-light .catalog-filter-pill-selected,
+.site-light-commerce .catalog-apple-light .catalog-page-button-selected {
+  background: linear-gradient(135deg, #7138ee 0%, #c7379a 100%) !important;
+  border-color: transparent !important;
+}
+
 /* Immersive Topka media remains intentionally dark over imagery. */
 .site-light-commerce .feed-container,
 .site-light-commerce .event-card,
