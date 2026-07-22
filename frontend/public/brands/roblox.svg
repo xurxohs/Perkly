@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-  <rect width="40" height="40" rx="10" fill="#2d407e" />
-  <g transform="translate(20, 20) rotate(-15) translate(-10, -10)">
-    <path fill="#ffffff" fill-rule="evenodd" d="M 0,0 H 20 V 20 H 0 Z M 6.5,6.5 V 13.5 H 13.5 V 6.5 Z" />
-  </g>
-</svg>
+<svg role="img" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><title>Roblox</title><path d="M18.926 23.998 0 18.892 5.075.002 24 5.108ZM15.348 10.09l-5.282-1.453-1.414 5.2 5.282 1.453Z"/></svg>
