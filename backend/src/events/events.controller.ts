@@ -86,6 +86,7 @@ export class EventsController {
     return this.eventsService.findAll({
       ...pagination,
       where: {
+        moderationStatus: 'APPROVED',
         category: normalizedCategory,
         OR: normalizedSearch
           ? [
@@ -96,6 +97,12 @@ export class EventsController {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('mine')
+  mine(@Req() req: AuthRequest) {
+    return this.eventsService.listMine(req.user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -153,9 +160,17 @@ export class EventsController {
     @Body() body: Record<string, unknown>,
   ): Promise<Event> {
     await this.ensureEventOwnerOrAdmin(req.user, id);
+    const data = this.normalizeVendorEventUpdateBody(body);
+    if (req.user.role !== 'ADMIN') {
+      data.moderationStatus = 'PENDING';
+      data.moderationNote = null;
+      data.moderationAt = null;
+      data.moderationBy = null;
+      data.publishedAt = null;
+    }
     return this.eventsService.update({
       where: { id },
-      data: this.normalizeVendorEventUpdateBody(body),
+      data,
     });
   }
 
@@ -174,7 +189,7 @@ export class EventsController {
     eventId: string,
   ) {
     if (user.role === 'ADMIN') return;
-    const event = await this.eventsService.findOne(eventId);
+    const event = await this.eventsService.findManagedOne(eventId);
     if (!event || event.organizerId !== user.userId) {
       throw new ForbiddenException('You cannot modify this event');
     }

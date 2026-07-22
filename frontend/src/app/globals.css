@@ -311,6 +311,34 @@
 .site-light-commerce .public-info-link { color: #7b2cbf; }
 .site-light-commerce .public-info-breadcrumb-link { text-decoration-color: rgba(123, 44, 191, 0.48); }
 
+.consent-strip {
+  color: #1d1d1f;
+  background: rgba(245, 245, 247, 0.96);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+.consent-primary {
+  color: #fff;
+  background: #1d1d1f;
+}
+.consent-secondary {
+  color: #1d1d1f;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+}
+[data-perkly-theme="dark"] .consent-strip {
+  color: #f5f5f7;
+  background: rgba(23, 23, 26, 0.97);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+[data-perkly-theme="dark"] .consent-primary {
+  color: #1d1d1f;
+  background: #f5f5f7;
+}
+[data-perkly-theme="dark"] .consent-secondary {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
 /* ===== PAGE OFFERS EXTRACTION ===== */
 .hero-neon-bg { background: radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%); }
 .hero-subtitle-badge { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.15); }

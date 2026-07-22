@@ -86,6 +86,31 @@ export class AdminController {
     return this.adminService.deleteOffer(id, req.user.userId);
   }
 
+  // Events
+  @Get('events')
+  async getEvents(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+    @Query('search') search: string = '',
+    @Query('status') status: string = '',
+  ) {
+    return this.adminService.getAllEvents(
+      Number(page),
+      Number(limit),
+      search,
+      status,
+    );
+  }
+
+  @Patch('events/:id/moderation')
+  async moderateEvent(
+    @Param('id') id: string,
+    @Body() data: { status?: unknown; note?: unknown },
+    @Req() req: { user: { userId: string; role?: string } },
+  ) {
+    return this.adminService.moderateEvent(id, data, req.user.userId);
+  }
+
   // Transactions
   @Get('transactions')
   async getTransactions(

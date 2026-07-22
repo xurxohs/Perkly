@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Zap, Crown, Gem, ArrowRight, Sparkles, Shield, Clock, Gift, Star, Medal, Loader2 } from 'lucide-react';
+import { Check, Zap, Crown, Gem, ArrowRight, Shield, Clock, Gift, Star, Medal, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { usersApi } from '@/lib/api';
@@ -116,11 +116,6 @@ export default function PricingPage() {
             {/* Hero */}
             <section className="pt-20 pb-16 text-center w-full relative">
                 <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(168,85,247,0.1)_0%,transparent_70%)]" />
-
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-6 bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.15)]">
-                    <Sparkles className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm font-medium text-purple-300">Выберите свой тариф</span>
-                </div>
 
                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-5 leading-[1.05]">
                     Больше привилегий —<br />

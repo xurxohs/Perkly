@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, RefreshCw, ShieldAlert, XCircle } from 'lucide-react';
-import api, { ModerationAppeal, ModerationReport } from '@/lib/api';
+import { CalendarDays, CheckCircle2, MapPin, RefreshCw, ShieldAlert, XCircle } from 'lucide-react';
+import api, { Event, ModerationAppeal, ModerationReport } from '@/lib/api';
 
 type QueueItem =
     | { kind: 'REPORT'; item: ModerationReport }
@@ -10,6 +10,7 @@ type QueueItem =
 
 export default function AdminModerationPage() {
     const [items, setItems] = useState<QueueItem[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -18,10 +19,12 @@ export default function AdminModerationPage() {
         setLoading(true);
         setError(null);
         try {
-            const [reports, appeals] = await Promise.all([
+            const [reports, appeals, eventQueue] = await Promise.all([
                 api.safety.adminReports(),
                 api.safety.adminAppeals(),
+                api.admin.getEvents({ status: 'PENDING' }),
             ]);
+            setEvents(eventQueue.events);
             setItems([
                 ...reports.map((item) => ({ kind: 'REPORT' as const, item })),
                 ...appeals.map((item) => ({ kind: 'APPEAL' as const, item })),
@@ -57,6 +60,25 @@ export default function AdminModerationPage() {
         }
     };
 
+    const moderateEvent = async (event: Event, status: 'APPROVED' | 'REJECTED') => {
+        let note = '';
+        if (status === 'REJECTED') {
+            const answer = window.prompt('Что автору нужно исправить?', '');
+            if (answer === null || answer.trim().length < 3) return;
+            note = answer.trim();
+        }
+        setUpdatingId(event.id);
+        setError(null);
+        try {
+            await api.admin.moderateEvent(event.id, status, note);
+            await load();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Не удалось сохранить решение');
+        } finally {
+            setUpdatingId(null);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between gap-4">
@@ -70,6 +92,47 @@ export default function AdminModerationPage() {
             </div>
 
             {error && <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300">{error}</div>}
+
+            <section className="space-y-3">
+                <div className="flex items-end justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-white">События на публикацию</h2>
+                        <p className="mt-1 text-sm text-white/40">Проверьте обложку, описание, дату и место</p>
+                    </div>
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-sm text-white/50">{events.length}</span>
+                </div>
+                {!loading && events.length === 0 && (
+                    <div className="rounded-3xl bg-white/[0.03] py-10 text-center text-white/35">Новых событий на проверке нет</div>
+                )}
+                {events.map((event) => {
+                    const busy = updatingId === event.id;
+                    return (
+                        <article key={event.id} className="overflow-hidden rounded-3xl bg-white/[0.04]">
+                            <div className="grid gap-0 md:grid-cols-[240px_1fr]">
+                                <div className="min-h-48 bg-white/[0.04] bg-cover bg-center" style={{ backgroundImage: `url(${event.imageUrl})` }} />
+                                <div className="flex min-w-0 flex-col p-5">
+                                    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-white/40">
+                                        <span className="rounded-full bg-amber-400/10 px-2.5 py-1 font-semibold text-amber-200">ОЖИДАЕТ</span>
+                                        <span>{event.category}</span>
+                                        <span>·</span>
+                                        <span>{new Date(event.createdAt).toLocaleString('ru-RU')}</span>
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-white">{event.title}</h3>
+                                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/55">{event.description}</p>
+                                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/45">
+                                        <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" />{new Date(event.date).toLocaleString('ru-RU')}</span>
+                                        <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" />{event.location}</span>
+                                    </div>
+                                    <div className="mt-5 flex flex-wrap gap-2 md:mt-auto md:justify-end">
+                                        <button disabled={busy} onClick={() => void moderateEvent(event, 'REJECTED')} className="rounded-full bg-white/[0.06] px-5 py-2.5 text-sm font-semibold text-white/70 disabled:opacity-40">Вернуть на исправление</button>
+                                        <button disabled={busy} onClick={() => void moderateEvent(event, 'APPROVED')} className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-40">Опубликовать</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    );
+                })}
+            </section>
 
             <div className="space-y-3">
                 {!loading && items.length === 0 && (

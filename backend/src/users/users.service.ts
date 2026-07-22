@@ -124,6 +124,7 @@ const USER_SELECT = {
   updatedAt: true,
   telegramId: true,
   phone: true,
+  preferredLanguage: true,
 };
 
 @Injectable()
@@ -267,9 +268,9 @@ export class UsersService {
 
   async updateProfile(
     id: string,
-    data: { displayName?: string; avatarUrl?: string | null },
+    data: { displayName?: string; avatarUrl?: string | null; preferredLanguage?: string },
   ) {
-    const update: { displayName?: string; avatarUrl?: string | null } = {};
+    const update: { displayName?: string; avatarUrl?: string | null; preferredLanguage?: string } = {};
     if (data.displayName !== undefined) {
       const displayName = data.displayName.trim().replace(/\s+/g, ' ');
       if (displayName.length < 2 || displayName.length > 60) {
@@ -278,6 +279,12 @@ export class UsersService {
       update.displayName = displayName;
     }
     if (data.avatarUrl !== undefined) update.avatarUrl = data.avatarUrl;
+    if (data.preferredLanguage !== undefined) {
+      if (!['ru', 'uz'].includes(data.preferredLanguage)) {
+        throw new BadRequestException('preferredLanguage must be ru or uz');
+      }
+      update.preferredLanguage = data.preferredLanguage;
+    }
 
     return this.prisma.user.update({
       where: { id },

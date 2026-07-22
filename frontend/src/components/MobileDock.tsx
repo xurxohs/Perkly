@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
 import { useTelegram } from '@/hooks/useTelegram';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
+import { useLanguage } from '@/lib/i18n';
 
 const marketplaceDockItems = [
     { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
@@ -30,6 +31,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
     onTap: () => void;
     light?: boolean;
 }) {
+    const { t } = useLanguage();
     const [pressed, setPressed] = useState(false);
     const activeColor = light ? '#7b2cbf' : '#d8a4ff';
     const inactiveColor = light ? '#6e6e73' : '#8e8e93';
@@ -83,7 +85,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
                     color: isActive ? activeColor : inactiveColor,
                 }}
             >
-                {item.label}
+                {t(item.label)}
             </span>
 
         </Link >

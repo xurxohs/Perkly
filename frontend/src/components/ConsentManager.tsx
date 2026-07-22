@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 const STORAGE_KEY = 'perkly-consent-v1';
+const COOKIE_KEY = 'perkly_consent_v2';
 // Increment whenever the purposes or advertising providers materially change.
 const CONSENT_VERSION = 2;
 
@@ -40,7 +41,12 @@ const ConsentContext = createContext<ConsentContextValue | null>(null);
 
 function readStoredConsent(): StoredConsent | null {
   try {
-    const value = window.localStorage.getItem(STORAGE_KEY);
+    const cookieValue = document.cookie
+      .split('; ')
+      .find((part) => part.startsWith(`${COOKIE_KEY}=`))
+      ?.slice(COOKIE_KEY.length + 1);
+    const value = window.localStorage.getItem(STORAGE_KEY)
+      ?? (cookieValue ? decodeURIComponent(cookieValue) : null);
     if (!value) return null;
     const parsed = JSON.parse(value) as Partial<StoredConsent>;
     if (
@@ -92,6 +98,8 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
     };
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `${COOKIE_KEY}=${encodeURIComponent(JSON.stringify(stored))}; Max-Age=31536000; Path=/; SameSite=Lax${secure}`;
     } catch {
       // Privacy choices still apply for the current session if storage is unavailable.
     }
@@ -122,44 +130,47 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
 
   return (
     <ConsentContext.Provider value={contextValue}>
-      {children}
-
       {ready && !hasDecision && !settingsOpen && (
         <section
-          role="dialog"
-          aria-modal="true"
+          role="region"
           aria-labelledby="consent-title"
-          className="fixed inset-x-4 bottom-4 z-[120] mx-auto max-w-2xl rounded-[24px] border border-white/10 bg-[#17171a]/95 p-5 text-white shadow-2xl backdrop-blur-2xl sm:p-6"
+          className="consent-strip relative z-40 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+5.75rem)] sm:px-6 sm:pb-5 sm:pt-[calc(env(safe-area-inset-top)+6.25rem)]"
         >
-          <h2 id="consent-title" className="text-lg font-bold">Конфиденциальность</h2>
-          <p className="mt-2 text-sm leading-6 text-white/60">
-            Необходимое хранилище поддерживает вход и безопасность. Аналитику и рекламу мы включаем только с вашего разрешения.
-          </p>
-          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
+              <h2 id="consent-title" className="text-sm font-semibold">Cookie на Perkly</h2>
+              <p className="mt-1 text-xs leading-5 opacity-60 sm:text-sm">
+                Необходимые cookie обеспечивают вход и безопасность. Аналитика и реклама — только с вашего согласия.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => save({ analytics: true, advertising: true })}
-              className="h-11 rounded-full border-0 bg-white px-5 text-sm font-bold text-black"
+              className="consent-primary h-10 rounded-full border-0 px-5 text-sm font-semibold"
             >
-              Разрешить всё
+              Разрешить
             </button>
             <button
               type="button"
               onClick={() => save(DEFAULT_PREFERENCES)}
-              className="h-11 rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold text-white"
+              className="consent-secondary h-10 rounded-full px-5 text-sm font-semibold"
             >
               Только необходимое
             </button>
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
-              className="h-11 rounded-full border-0 bg-transparent px-5 text-sm font-semibold text-white/65"
+              className="h-10 border-0 bg-transparent px-2 text-sm font-medium opacity-55 hover:opacity-100"
             >
               Настроить
             </button>
+            </div>
           </div>
         </section>
       )}
+
+      {children}
 
       {ready && settingsOpen && (
         <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/55 p-4 sm:items-center" role="presentation">
@@ -216,15 +227,6 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {ready && hasDecision && !settingsOpen && (
-        <button
-          type="button"
-          onClick={openSettings}
-          className="fixed bottom-24 left-4 z-[90] rounded-full border border-white/10 bg-[#17171a]/90 px-3.5 py-2 text-xs font-semibold text-white/65 shadow-lg backdrop-blur-xl md:bottom-4"
-        >
-          Конфиденциальность
-        </button>
-      )}
     </ConsentContext.Provider>
   );
 }

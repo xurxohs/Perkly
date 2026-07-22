@@ -10,6 +10,7 @@ export interface User {
     tier: 'SILVER' | 'GOLD' | 'PLATINUM';
     balance: number;
     rewardPoints: number;
+    preferredLanguage?: 'ru' | 'uz';
     createdAt: string;
     updatedAt: string;
     accountStatus?: 'ACTIVE' | 'SUSPENDED';
@@ -500,6 +501,11 @@ export interface Event {
     organizerId: string;
     createdAt: string;
     updatedAt: string;
+    moderationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+    moderationNote?: string | null;
+    moderationAt?: string | null;
+    moderationBy?: string | null;
+    publishedAt?: string | null;
     postType?: 'event' | 'poster' | 'promo' | 'collection' | 'news' | 'place';
     subtitle?: string | null;
     tags?: string[];
@@ -770,7 +776,7 @@ export const usersApi = {
     exportPersonalData: () =>
         request<Record<string, unknown>>('/users/me/export'),
 
-    updateProfile: (data: { displayName?: string; avatarUrl?: string }) =>
+    updateProfile: (data: { displayName?: string; avatarUrl?: string; preferredLanguage?: 'ru' | 'uz' }) =>
         request<User>('/users/me', {
             method: 'PATCH',
             body: JSON.stringify(data),
@@ -1146,6 +1152,17 @@ export const adminApi = {
         }),
     archiveOffer: (id: string) =>
         request<Offer>(`/admin/offers/${id}`, { method: 'DELETE' }),
+    getEvents: (filters: { search?: string; status?: string } = {}) => {
+        const params = new URLSearchParams();
+        if (filters.search) params.set('search', filters.search);
+        if (filters.status) params.set('status', filters.status);
+        return request<{ events: Event[]; total: number }>(`/admin/events?${params.toString()}`);
+    },
+    moderateEvent: (id: string, status: 'APPROVED' | 'REJECTED', note = '') =>
+        request<Event>(`/admin/events/${id}/moderation`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, note }),
+        }),
     getTransactions: (filters: { search?: string; status?: string } = {}) => {
         const params = new URLSearchParams();
         if (filters.search) params.set('search', filters.search);

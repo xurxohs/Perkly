@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { ArrowRight, Flame, Sparkles } from 'lucide-react';
+import { ArrowRight, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { Event, Offer } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
@@ -69,7 +69,6 @@ export default async function Home() {
     <section className="relative flex min-h-[520px] items-center overflow-hidden py-16 text-center sm:min-h-[600px] sm:py-20">
       <div className="pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[720px] max-w-[95vw] -translate-x-1/2 rounded-full bg-purple-600/[0.12] blur-[110px]" />
       <div className="relative mx-auto max-w-4xl">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/[0.08] px-4 py-2 text-xs font-bold text-purple-200"><Sparkles className="h-3.5 w-3.5" /> Выгода рядом — оплата в сумах</div>
         <h1 className="text-balance text-4xl font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">Покупайте понятнее.<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Условия — до оплаты.</span></h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Промокоды, подписки и локальные предложения Узбекистана. Цена, ограничения и способ получения видны в карточке.</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/catalog" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-bold text-black no-underline transition hover:scale-[1.02]">Смотреть предложения <ArrowRight className="h-4 w-4" /></Link><Link href="/sell" className="inline-flex h-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-7 font-semibold text-white/75 no-underline hover:bg-white/[0.07]">Стать продавцом</Link></div>

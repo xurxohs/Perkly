@@ -1,5 +1,7 @@
 const SESSION_KEY = 'perkly_session_id';
 const CONSENT_KEY = 'perkly-consent-v1';
+const CONSENT_COOKIE_KEY = 'perkly_consent_v2';
+const CONSENT_VERSION = 2;
 
 function generateUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -28,11 +30,17 @@ export function getSessionId(): string | null {
 export function hasAnalyticsConsent(): boolean {
     if (typeof window === 'undefined') return false;
     try {
-        const consent = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null') as {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find((part) => part.startsWith(`${CONSENT_COOKIE_KEY}=`))
+            ?.slice(CONSENT_COOKIE_KEY.length + 1);
+        const stored = localStorage.getItem(CONSENT_KEY)
+            ?? (cookieValue ? decodeURIComponent(cookieValue) : null);
+        const consent = JSON.parse(stored || 'null') as {
             version?: number;
             analytics?: boolean;
         } | null;
-        return consent?.version === 1 && consent.analytics === true;
+        return consent?.version === CONSENT_VERSION && consent.analytics === true;
     } catch {
         return false;
     }

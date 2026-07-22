@@ -34,6 +34,7 @@ model User {
   notifyPurchases      Boolean               @default(true)
   notifyMessages       Boolean               @default(true)
   notifyNearby         Boolean               @default(true)
+  preferredLanguage    String                @default("ru")
   b2cProfile           B2CProfile?
   ownedCompanies       Company[]             @relation("CompanyOwner")
   savedOffers          SavedOffer[]
@@ -151,6 +152,11 @@ model Event {
   viewersCount      Int      @default(0)
   participantsCount Int      @default(0)
   organizerId       String
+  moderationStatus  String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  moderationNote    String?
+  moderationAt      DateTime?
+  moderationBy      String?
+  publishedAt       DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   organizer         User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
@@ -158,6 +164,7 @@ model Event {
   @@index([date])
   @@index([category])
   @@index([organizerId])
+  @@index([moderationStatus, createdAt])
   @@index([createdAt])
 }
 

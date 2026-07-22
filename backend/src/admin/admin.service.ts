@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ADMIN_OFFER_SELECT, USER_ADMIN_SELECT } from '../offers/offer.selects';
@@ -17,10 +18,15 @@ import {
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { assertAcceptableUserContent } from '../common/content-moderation';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional()
+    private notifications?: NotificationsService,
+  ) {}
 
   async getDashboardStats() {
     const today = new Date();
@@ -469,6 +475,83 @@ export class AdminService {
       });
       return offer;
     });
+  }
+
+  async getAllEvents(page = 1, limit = 20, search = '', status = '') {
+    page = this.page(page);
+    limit = this.limit(limit);
+    const skip = (page - 1) * limit;
+    const normalizedSearch = search.trim();
+    const normalizedStatus = status.trim().toUpperCase();
+    const where: Prisma.EventWhereInput = {
+      ...(normalizedStatus && ['PENDING', 'APPROVED', 'REJECTED'].includes(normalizedStatus)
+        ? { moderationStatus: normalizedStatus }
+        : {}),
+      ...(normalizedSearch
+        ? {
+            OR: [
+              { title: { contains: normalizedSearch, mode: Prisma.QueryMode.insensitive } },
+              { location: { contains: normalizedSearch, mode: Prisma.QueryMode.insensitive } },
+            ],
+          }
+        : {}),
+    };
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.event.count({ where }),
+    ]);
+    return { events, total, page, totalPages: Math.ceil(total / limit) };
+  }
+
+  async moderateEvent(
+    id: string,
+    data: { status?: unknown; note?: unknown },
+    adminId: string,
+  ) {
+    const status = typeof data.status === 'string' ? data.status.trim().toUpperCase() : '';
+    if (status !== 'APPROVED' && status !== 'REJECTED') {
+      throw new BadRequestException('Moderation status must be APPROVED or REJECTED');
+    }
+    const note = typeof data.note === 'string' ? data.note.trim() : '';
+    if (status === 'REJECTED' && !note) {
+      throw new BadRequestException('A rejection reason is required');
+    }
+    if (note.length > 2_000) {
+      throw new BadRequestException('Moderation note must not exceed 2000 characters');
+    }
+
+    const event = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.event.update({
+        where: { id },
+        data: {
+          moderationStatus: status,
+          moderationNote: note || null,
+          moderationAt: new Date(),
+          moderationBy: adminId,
+          publishedAt: status === 'APPROVED' ? new Date() : null,
+        },
+      });
+      await tx.adminLog.create({
+        data: {
+          adminId,
+          action: status === 'APPROVED' ? 'APPROVE_EVENT' : 'REJECT_EVENT',
+          targetId: id,
+          details: JSON.stringify({ status, note: note || null }),
+        },
+      });
+      return updated;
+    });
+
+    await this.notifications?.sendPushNotification(
+      event.organizerId,
+      status === 'APPROVED' ? 'Событие опубликовано' : 'Событие нужно исправить',
+      status === 'APPROVED'
+        ? `«${event.title}» появилось в Топке.`
+        : `«${event.title}»: ${note}`,
+      { eventId: event.id, moderationStatus: status },
+      'purchases',
+    );
+    return event;
   }
 
   // Transactions

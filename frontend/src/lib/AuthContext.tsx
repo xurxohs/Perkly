@@ -15,6 +15,7 @@ interface User {
     tier: string;
     balance: number;
     rewardPoints: number;
+    preferredLanguage?: 'ru' | 'uz';
 }
 
 interface AuthCtx {

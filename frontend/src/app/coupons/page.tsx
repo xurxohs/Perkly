@@ -50,11 +50,6 @@ export default function CouponsPage() {
             <section className="pt-20 pb-10 text-center w-full relative">
                 <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(236,72,153,0.08)_0%,transparent_70%)]" />
 
-                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-6 bg-pink-500/[0.08] border border-pink-500/[0.15]">
-                    <Tag className="w-4 h-4 text-pink-400" />
-                    <span className="text-sm font-medium text-pink-300">Актуальные предложения</span>
-                </div>
-
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
                     Купоны и <span className="text-gradient">Скидки</span>
                 </h1>

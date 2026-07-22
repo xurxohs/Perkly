@@ -1,5 +1,5 @@
 import FortuneWheel from '@/components/FortuneWheel';
-import { Sparkles, Coins, Tag, Coffee, Gem, Flame, Crown, RefreshCcw } from 'lucide-react';
+import { Coins, Tag, Coffee, Gem, Flame, Crown, RefreshCcw } from 'lucide-react';
 import Link from 'next/link';
 
 export default function WheelPage() {
@@ -14,11 +14,6 @@ export default function WheelPage() {
             <div className="text-center mb-10 relative">
                 {/* Glow */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none wheel-glow" />
-
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 wheel-badge">
-                    <Sparkles className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm font-medium text-yellow-300">Испытайте удачу</span>
-                </div>
 
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
                     Колесо Фортуны<br />

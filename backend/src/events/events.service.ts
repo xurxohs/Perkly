@@ -100,26 +100,77 @@ export class EventsService {
       throw new BadRequestException('Изображение должно быть не больше 10 МБ');
     }
 
-    let body: Buffer;
+    let body: Buffer = source;
+    let outputMime = mime === 'image/jpg' ? 'image/jpeg' : mime;
+    let extension =
+      outputMime === 'image/png'
+        ? 'png'
+        : outputMime === 'image/webp'
+          ? 'webp'
+          : 'jpg';
+    let sharpFactory: typeof import('sharp') | undefined;
     try {
       const sharpModule = await import('sharp');
-      const sharpFactory = ((sharpModule as unknown as { default?: typeof import('sharp') }).default
+      sharpFactory = ((sharpModule as unknown as { default?: typeof import('sharp') }).default
         ?? sharpModule) as unknown as typeof import('sharp');
-      body = await sharpFactory(source, { limitInputPixels: 40_000_000 })
-        .rotate()
-        .resize(1600, 1200, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 84, effort: 4 })
-        .toBuffer();
     } catch {
-      throw new BadRequestException('Файл повреждён или не является изображением');
+      // Some production hosts cannot load recent sharp binaries. Clients
+      // already resize covers, so keep a signature-validated original.
+    }
+
+    if (sharpFactory) {
+      try {
+        body = await sharpFactory(source, { limitInputPixels: 40_000_000 })
+          .rotate()
+          .resize(1600, 1200, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 84, effort: 4 })
+          .toBuffer();
+        outputMime = 'image/webp';
+        extension = 'webp';
+      } catch {
+        throw new BadRequestException(
+          'Файл повреждён или не является изображением',
+        );
+      }
+    } else if (!this.hasExpectedImageSignature(source, outputMime)) {
+      throw new BadRequestException(
+        'Файл повреждён или не является изображением',
+      );
     }
 
     const url = await this.storage.put(
-      `events/${Date.now()}-${randomUUID()}.webp`,
+      `events/${Date.now()}-${randomUUID()}.${extension}`,
       body,
-      'image/webp',
+      outputMime,
     );
     return { url };
+  }
+
+  private hasExpectedImageSignature(buffer: Buffer, mime: string) {
+    if (mime === 'image/jpeg') {
+      return (
+        buffer.length >= 3 &&
+        buffer[0] === 0xff &&
+        buffer[1] === 0xd8 &&
+        buffer[2] === 0xff
+      );
+    }
+    if (mime === 'image/png') {
+      return (
+        buffer.length >= 8 &&
+        buffer
+          .subarray(0, 8)
+          .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+      );
+    }
+    if (mime === 'image/webp') {
+      return (
+        buffer.length >= 12 &&
+        buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+        buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+      );
+    }
+    return false;
   }
 
   listSaved(userId: string) {
@@ -161,9 +212,25 @@ export class EventsService {
     return this.prisma.event.create({
       data: {
         ...data,
+        moderationStatus: 'PENDING',
+        moderationNote: null,
+        moderationAt: null,
+        moderationBy: null,
+        publishedAt: null,
         organizer: { connect: { id: organizerId } },
       },
     });
+  }
+
+  listMine(organizerId: string) {
+    return this.prisma.event.findMany({
+      where: { organizerId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  findManagedOne(id: string) {
+    return this.prisma.event.findUnique({ where: { id } });
   }
 
   async findAll(params: {
@@ -232,8 +299,8 @@ export class EventsService {
       return topkaEvents.find((event) => event.id === id) ?? null;
     }
 
-    return await this.prisma.event.findUnique({
-      where: { id },
+    return await this.prisma.event.findFirst({
+      where: { id, moderationStatus: 'APPROVED' },
     });
   }
 
@@ -421,6 +488,11 @@ export class EventsService {
       viewersCount: 0,
       participantsCount: 0,
       organizerId: post.createdBy || 'topka-admin',
+      moderationStatus: 'APPROVED',
+      moderationNote: null,
+      moderationAt: post.publishAt || post.createdAt,
+      moderationBy: post.createdBy,
+      publishedAt: post.publishAt || post.createdAt,
       createdAt: post.publishAt || post.createdAt,
       updatedAt: post.updatedAt,
       postType: post.postType,
@@ -476,6 +548,11 @@ export class EventsService {
       viewersCount: 0,
       participantsCount: 0,
       organizerId: 'topka-parser',
+      moderationStatus: 'APPROVED',
+      moderationNote: null,
+      moderationAt: updatedAt,
+      moderationBy: 'topka-parser',
+      publishedAt: updatedAt,
       createdAt: new Date(updatedAt.getTime() + index * 1000),
       updatedAt,
     };

@@ -7,6 +7,8 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useLanguage } from '@/lib/i18n';
 
 export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false }: {
     theme?: 'light' | 'dark';
@@ -19,6 +21,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+    const { t } = useLanguage();
 
     useEffect(() => {
         if (searchOpen && searchRef.current) searchRef.current.focus();
@@ -59,6 +62,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                         {theme === 'light' ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
                     </button>
                 )}
+                <LanguageSwitcher compact className="ml-0.5" />
             </div>
 
             {/* Search Bar — центральный */}
@@ -70,7 +74,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Поиск купонов, подписок, товаров..."
+                        placeholder={t('Поиск купонов, подписок, товаров...')}
                         className="w-full pl-10 pr-4 py-2.5 rounded-full text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
                     />
                 </form>
@@ -78,9 +82,9 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
 
             {/* Nav Links */}
             <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-white/50 shrink-0">
-                <Link href="/catalog" className="hover:text-white transition-colors no-underline text-inherit">Каталог</Link>
-                <Link href="/feed" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5">🔥 Топка</Link>
-                <Link href="/sell" className="hover:text-white transition-colors no-underline text-inherit">Продавать</Link>
+                <Link href="/catalog" className="hover:text-white transition-colors no-underline text-inherit">{t('Каталог')}</Link>
+                <Link href="/feed" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5">🔥 {t('Топка')}</Link>
+                <Link href="/sell" className="hover:text-white transition-colors no-underline text-inherit">{t('Продавать')}</Link>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2 sm:ml-4">
@@ -104,7 +108,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                     <>
                         <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-full hover:bg-white/5 transition no-underline text-white/70">
                             <PerklyGlyph name="profile" className="w-4 h-4" />
-                            <span className="hidden sm:inline">{user?.displayName || 'Профиль'}</span>
+                            <span className="hidden sm:inline">{user?.displayName || t('Профиль')}</span>
                             {tierBadge && (
                                 <tierBadge.icon
                                     className="w-3.5 h-3.5 ml-1"
@@ -129,10 +133,10 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                 ) : (
                     <>
                         <Link href="/login" className="hidden sm:flex px-4 py-2 text-sm font-medium rounded-full border border-white/10 hover:bg-white/5 transition items-center text-white no-underline">
-                            Войти
+                            {t('Войти')}
                         </Link>
                         <Link href="/register" className="px-4 py-2 text-sm font-medium rounded-full bg-white text-black hover:bg-white/90 transition flex items-center no-underline shadow-white-glow">
-                            Начать
+                            {t('Начать')}
                         </Link>
                     </>
                 )}
@@ -147,7 +151,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                             type="text"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Поиск купонов, подписок, товаров..."
+                            placeholder={t('Поиск купонов, подписок, товаров...')}
                             className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
                             autoFocus
                         />

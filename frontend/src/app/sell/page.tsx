@@ -8,7 +8,6 @@ import {
   Zap,
   Users,
   TrendingUp,
-  Store,
   BadgeCheck,
   CheckCircle2,
   AlertCircle,
@@ -187,19 +186,6 @@ export default function SellPage() {
               "radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%)",
           }}
         />
-
-        <div
-          className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-6"
-          style={{
-            background: "rgba(34,197,94,0.08)",
-            border: "1px solid rgba(34,197,94,0.15)",
-          }}
-        >
-          <Store className="w-4 h-4 text-green-400" />
-          <span className="text-sm font-medium text-green-300">
-            Для бизнеса и продавцов
-          </span>
-        </div>
 
         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-5 leading-[1.05]">
           Продавайте на

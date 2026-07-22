@@ -39,7 +39,7 @@ export class UsersController {
   @Patch('me')
   async updateMe(
     @Req() req: AuthRequest,
-    @Body() body: { displayName?: string; avatarUrl?: string },
+    @Body() body: { displayName?: string; avatarUrl?: string; preferredLanguage?: string },
   ) {
     return this.usersService.updateProfile(req.user.userId, body);
   }

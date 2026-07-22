@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -13,6 +14,7 @@ import {
   MAX_WALLET_BALANCE_UZS,
   MIN_TOP_UP_UZS,
 } from '../common/money';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Click Webhook Error Codes
 const CLICK_ERRORS = {
@@ -36,7 +38,11 @@ export class PaymentsService {
   private readonly clickMerchantId = process.env.CLICK_MERCHANT_ID || '12345';
   private readonly clickServiceId = process.env.CLICK_SERVICE_ID || '12345';
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional()
+    private notifications?: NotificationsService,
+  ) {}
 
   async getDeposit(userId: string, depositId: string) {
     const deposit = await this.prisma.deposit.findUnique({
@@ -128,13 +134,15 @@ export class PaymentsService {
     }
 
     if (!success) {
-      return this.prisma.deposit.update({
+      const failed = await this.prisma.deposit.update({
         where: { id: deposit.id },
         data: { status: 'FAILED' },
       });
+      await this.notifyTopUp(deposit.userId, deposit.amount, false, deposit.id);
+      return failed;
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const completed = await this.prisma.$transaction(async (tx) => {
       const updatedDeposit = await tx.deposit.update({
         where: { id: deposit.id },
         data: {
@@ -169,6 +177,8 @@ export class PaymentsService {
       });
       return updatedDeposit;
     });
+    await this.notifyTopUp(userId, deposit.amount, true, deposit.id);
+    return completed;
   }
 
   async processClickWebhook(body: any) {
@@ -291,6 +301,7 @@ export class PaymentsService {
           where: { id: deposit.id },
           data: { status: 'FAILED' },
         });
+        await this.notifyTopUp(deposit.userId, deposit.amount, false, deposit.id);
         return {
           click_trans_id,
           merchant_trans_id,
@@ -348,6 +359,8 @@ export class PaymentsService {
         throw { error: CLICK_ERRORS.ALREADY_PAID, message: 'Already paid' };
       }
 
+      await this.notifyTopUp(deposit.userId, deposit.amount, true, deposit.id);
+
       return {
         click_trans_id,
         merchant_trans_id,
@@ -356,5 +369,17 @@ export class PaymentsService {
         error_note: 'Success',
       };
     }
+  }
+
+  private async notifyTopUp(userId: string, amount: number, success: boolean, depositId: string) {
+    await this.notifications?.sendPushNotification(
+      userId,
+      success ? 'Баланс пополнен' : 'Платёж не завершён',
+      success
+        ? `${amount.toLocaleString('ru-RU')} сум зачислено на баланс Perkly.`
+        : `Пополнение на ${amount.toLocaleString('ru-RU')} сум отменено или не прошло.`,
+      { depositId, paymentStatus: success ? 'SUCCESS' : 'FAILED' },
+      'purchases',
+    );
   }
 }

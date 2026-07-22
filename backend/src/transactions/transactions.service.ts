@@ -278,7 +278,12 @@ export class TransactionsService {
       buyer.id,
       '🎉 Покупка успешна!',
       message,
-      { keyboard: inlineKeyboard },
+      {
+        keyboard: inlineKeyboard,
+        transactionId: transaction.id,
+        offerId: offer.id,
+        route: 'purchase',
+      },
     );
 
     // Try to notify the seller
@@ -301,7 +306,12 @@ export class TransactionsService {
         seller.id,
         '💰 Новая продажа!',
         message,
-        { keyboard: sellerKeyboard },
+        {
+          keyboard: sellerKeyboard,
+          transactionId: transaction.id,
+          offerId: offer.id,
+          route: 'sellerOrder',
+        },
       );
     }
 
@@ -563,8 +573,16 @@ export class TransactionsService {
         seller.id,
         '✅ Покупатель подтвердил получение!',
         message,
+        { transactionId: id, offerId: transaction.offerId, route: 'sellerOrder' },
       );
     }
+
+    await this.notificationsService.sendPushNotification(
+      transaction.buyerId,
+      'Покупка завершена',
+      `«${transaction.offer.title}» сохранена в истории. Доступ и инструкция останутся в Perkly.`,
+      { transactionId: id, offerId: transaction.offerId, route: 'purchase' },
+    );
 
     // Trigger squad goal check if buyer is in a squad
     if (updatedTx.buyer.squadId) {
@@ -710,6 +728,7 @@ export class TransactionsService {
         existing.buyerId,
         '❌ Заказ отменен',
         message,
+        { transactionId: id, offerId: existing.offerId, route: 'purchase' },
       );
 
       return transaction;
