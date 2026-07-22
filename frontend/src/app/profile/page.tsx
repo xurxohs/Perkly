@@ -624,7 +624,7 @@ export default function ProfilePage() {
                 </Link>
 
                 {/* Messages Button (Moved from Navbar) */}
-                <Link href="/messages" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-8 group no-underline border">
+                <Link href="/chat" className="profile-action-row w-full flex items-center justify-between p-5 rounded-[22px] mb-8 group no-underline border">
                     <div className="flex items-center gap-4">
                         <div className="profile-action-icon w-9 h-9 flex items-center justify-center">
                             <PerklyGlyph name="chat" className="w-6 h-6 text-white/70" />
