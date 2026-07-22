@@ -14,6 +14,29 @@ const LANGUAGE_EVENT = 'perkly-language-change';
 const RU_TO_UZ: Record<string, string> = {
   ...PUBLIC_COPY_UZ,
   'Поиск': 'Qidiruv',
+  'Поиск по всему Perkly': 'Butun Perkly bo‘ylab qidiruv',
+  'Что вам нужно?': 'Sizga nima kerak?',
+  'Например: Telegram Premium, кофе или концерт': 'Masalan: Telegram Premium, qahva yoki konsert',
+  'Глобальный поиск по Perkly': 'Perkly bo‘ylab global qidiruv',
+  'Область поиска': 'Qidiruv sohasi',
+  'Всё': 'Hammasi',
+  'Товары': 'Tovarlar',
+  'Поиск временно недоступен': 'Qidiruv vaqtincha ishlamayapti',
+  'Не удалось получить актуальные данные. Попробуйте ещё раз.': 'Yangilangan ma’lumotlarni olib bo‘lmadi. Qayta urinib ko‘ring.',
+  'Каталог пока пуст': 'Katalog hozircha bo‘sh',
+  'Здесь появятся товары, промокоды и события сразу после публикации и модерации.': 'Tovarlar, promokodlar va tadbirlar nashr va moderatsiyadan so‘ng shu yerda paydo bo‘ladi.',
+  'Открыть каталог': 'Katalogni ochish',
+  'Подсказки': 'Tavsiyalar',
+  'Лучшее совпадение': 'Eng mos natija',
+  'Результаты раздела': 'Bo‘lim natijalari',
+  'Ещё результаты': 'Boshqa natijalar',
+  'Такого пока нет': 'Hozircha bunday natija yo‘q',
+  'Попробуйте короче сформулировать запрос или выберите другую область поиска.': 'So‘rovni qisqaroq yozing yoki boshqa qidiruv bo‘limini tanlang.',
+  'Очистить': 'Tozalash',
+  'Недавние': 'So‘nggi qidiruvlar',
+  'Искать по разделу': 'Bo‘lim bo‘yicha qidirish',
+  'Можно начать отсюда': 'Shulardan boshlashingiz mumkin',
+  'Весь каталог': 'Butun katalog',
   'Купоны': 'Kuponlar',
   'Каталог': 'Katalog',
   'Чаты': 'Chatlar',
@@ -277,7 +300,10 @@ function localizeDynamicCopy(copy: string, language: AppLanguage): string {
     result = result
       .replace(/(\d+) предложени(?:е|я|й)/gi, '$1 ta taklif')
       .replace(/(\d+) покуп(?:ка|ки|ок)/gi, '$1 ta xarid')
-      .replace(/(\d+) дн(?:я|ей|\.)?/gi, '$1 kun');
+      .replace(/(\d+) дн(?:я|ей|\.)?/gi, '$1 kun')
+      .replace(/(\d+) найдено/gi, '$1 ta topildi')
+      .replace(/(\d+) вариантов/gi, '$1 ta variant')
+      .replace(/(\d+) ближайших/gi, '$1 ta yaqin');
   } else {
     result = result.replace(/\bso[‘']m\b/gi, 'сум');
     UZ_MONTHS.forEach((month, index) => {
