@@ -3324,3 +3324,103 @@ mark { padding: 0; color: inherit; background: color-mix(in srgb, var(--search-a
   display: flex;
   flex-direction: column;
 }
+
+/* ================================================================
+   QUICK SERVICE PANEL THEME ADAPTATION
+   ================================================================ */
+/* Dark Theme (Default) */
+.quick-service-selector-card {
+  background-color: #252734;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.quick-service-form {
+  background-color: #252734;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.quick-service-title {
+  color: #ffffff;
+}
+.quick-service-icon-selected {
+  background-color: #373b4d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.quick-service-icon-unselected {
+  background-color: transparent;
+  opacity: 0.65;
+}
+.quick-service-icon-unselected:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+.quick-service-input-wrapper {
+  background-color: #161720;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.quick-service-input-wrapper:focus-within {
+  border-color: rgba(32, 123, 254, 0.5);
+}
+.quick-service-input-label {
+  color: rgba(255, 255, 255, 0.45);
+}
+.quick-service-input {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+.quick-service-input::placeholder {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+.quick-service-pay-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #1c55e2 0%, #0096e6 100%) !important;
+}
+
+/* Light Theme Overrides (.site-light-commerce) */
+.site-light-commerce .quick-service-selector-card {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+.site-light-commerce .quick-service-form {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+.site-light-commerce .quick-service-title {
+  color: #1d1d1f !important;
+}
+.site-light-commerce .quick-service-icon-selected {
+  background-color: #f0f1f7 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+}
+.site-light-commerce .quick-service-icon-unselected {
+  background-color: transparent !important;
+  opacity: 0.65;
+}
+.site-light-commerce .quick-service-icon-unselected:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  opacity: 1;
+}
+.site-light-commerce .quick-service-input-wrapper {
+  background-color: #f6f7fb !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+.site-light-commerce .quick-service-input-wrapper:focus-within {
+  background-color: #ffffff !important;
+  border-color: rgba(28, 85, 226, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(28, 85, 226, 0.08) !important;
+}
+.site-light-commerce .quick-service-input-label {
+  color: #6e6e73 !important;
+}
+.site-light-commerce .quick-service-input {
+  color: #1d1d1f !important;
+  background-color: transparent !important;
+}
+.site-light-commerce .quick-service-input::placeholder {
+  color: #a1a1a6 !important;
+}
+.site-light-commerce .quick-service-pay-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #1c55e2 0%, #0096e6 100%) !important;
+}
