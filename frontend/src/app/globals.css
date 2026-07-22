@@ -1461,6 +1461,8 @@
 /* Preserve readable foregrounds on authored gradients and media. */
 .site-light-commerce main .catalog-showcase-banner [class*="text-white"],
 .site-light-commerce main [class*="from-orange-500"][class*="to-red-500"],
+.site-light-commerce main [class*="from-[#1c55e2]"],
+.site-light-commerce main [class*="from-[#207bfe]"],
 .site-light-commerce main .bg-telegram-gradient,
 .site-light-commerce main .bg-primary-gradient { color: #fff !important; }
 .site-light-commerce main .catalog-showcase-banner [class*="text-white"] { color: #fff !important; }
@@ -3420,17 +3422,18 @@ mark { padding: 0; color: inherit; background: color-mix(in srgb, var(--search-a
 .site-light-commerce .quick-service-input::placeholder {
   color: #a1a1a6 !important;
 }
+.site-light-commerce main .quick-service-pay-btn,
+.site-light-commerce main .quick-service-pay-btn *,
 .site-light-commerce .quick-service-pay-btn,
 .site-light-commerce .quick-service-pay-btn * {
   color: #ffffff !important;
   background: linear-gradient(135deg, #1c55e2 0%, #0096e6 100%) !important;
 }
+.site-light-commerce main .quick-service-panel span[class*="bg-[#10b981]"],
 .site-light-commerce .quick-service-panel span[class*="bg-[#10b981]"] {
   color: #ffffff !important;
 }
+.site-light-commerce main .quick-service-panel span[class*="from-[#207bfe]"],
 .site-light-commerce .quick-service-panel span[class*="from-[#207bfe]"] {
   color: #ffffff !important;
-}
-.site-light-commerce .quick-service-panel img[src*="steam.svg"] {
-  filter: invert(1) brightness(0.15) !important;
 }
