@@ -5,7 +5,6 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { MobileDock } from '@/components/MobileDock';
 import { Footer } from '@/components/Footer';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 // Pages where we hide the desktop navbar and footer (app-style fullscreen pages)
 const IMMERSIVE_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
@@ -41,12 +40,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return (
         <div className={`min-h-screen flex flex-col ${isLightCommerce ? 'site-light-commerce' : 'site-dark-commerce'}`}>
             {!isImmersive && <Navbar theme={theme} onToggleTheme={toggleTheme} showThemeToggle />}
-            {isImmersive && (
-                <LanguageSwitcher
-                    compact
-                    className="fixed right-4 top-[max(12px,env(safe-area-inset-top))] z-[70] text-white shadow-lg"
-                />
-            )}
             <main className={`flex-1 relative overflow-x-hidden ${isImmersive ? 'pb-24 md:pb-0' : 'mt-16 pb-28 md:pb-0'}`}>
                 {children}
             </main>

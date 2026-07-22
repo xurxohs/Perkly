@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TopUpModal from '@/components/TopUpModal';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderClass: string; glowClass: string }> = {
     SILVER: { bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', borderClass: 'border-slate-400/30', glowClass: 'bg-[radial-gradient(circle,_rgba(148,163,184,0.2),_transparent_70%)]' },
@@ -1070,6 +1071,13 @@ export default function ProfilePage() {
 
                 {activeTab === 'settings' && (
                     <div className="rounded-2xl p-6 bg-white/[0.02] border border-white/[0.06]">
+                        <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-white/[0.03] px-4 py-3">
+                            <div>
+                                <p className="text-sm font-semibold text-white">Язык интерфейса</p>
+                                <p className="mt-0.5 text-xs text-white/40">Русский или O‘zbekcha</p>
+                            </div>
+                            <LanguageSwitcher />
+                        </div>
                         <div className="mb-6">
                             <label className="text-sm text-white/50 mb-2 block">Email</label>
                             <div className="px-4 py-3 rounded-xl text-white/60 text-sm bg-white/[0.03]">

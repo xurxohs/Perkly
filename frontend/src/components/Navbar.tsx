@@ -7,7 +7,6 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/lib/i18n';
 
 export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false }: {
@@ -41,6 +40,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
         : user?.tier === 'GOLD'
             ? 'linear-gradient(90deg, #fff0a8 0%, #f6c453 48%, #e7a92f 100%)'
             : null;
+    const canUseVendorHub = user?.role === 'VENDOR' || user?.role === 'ADMIN';
 
     return (
         <nav 
@@ -62,11 +62,10 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                         {theme === 'light' ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
                     </button>
                 )}
-                <LanguageSwitcher compact className="ml-0.5" />
             </div>
 
             {/* Search Bar — центральный */}
-            <div className="hidden md:flex flex-1 max-w-md mx-6">
+            <div className="hidden md:flex flex-1 max-w-lg ml-3 mr-6">
                 <form onSubmit={handleSearch} className="w-full relative">
                     <PerklyGlyph name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                     <input
@@ -83,8 +82,14 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
             {/* Nav Links */}
             <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-white/50 shrink-0">
                 <Link href="/catalog" className="hover:text-white transition-colors no-underline text-inherit">{t('Каталог')}</Link>
-                <Link href="/feed" className="hover:text-white transition-colors no-underline text-inherit flex items-center gap-1.5">🔥 {t('Топка')}</Link>
-                <Link href="/sell" className="hover:text-white transition-colors no-underline text-inherit">{t('Продавать')}</Link>
+                <Link
+                    href={canUseVendorHub ? '/vendor' : '/sell'}
+                    title={canUseVendorHub ? 'Открыть кабинет продавца' : 'Стать продавцом'}
+                    className="hover:text-white transition-colors no-underline text-inherit"
+                >
+                    {t('Продать')}
+                </Link>
+                <Link href="/chat" className="hover:text-white transition-colors no-underline text-inherit">{t('Чаты')}</Link>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2 sm:ml-4">
