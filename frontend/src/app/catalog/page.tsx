@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { Search, Flame, Store, Package, ChevronDown, Link2, MapPin, SlidersHorizontal, Sparkles, Ticket, X } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { Search, Flame, Store, Package, ChevronDown, Check, Link2, MapPin, SlidersHorizontal, Sparkles, Ticket, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -66,6 +66,8 @@ function CatalogContent() {
     const [category, setCategory] = useState(initialCategory);
     const [fulfillmentType, setFulfillmentType] = useState<'' | Offer['fulfillmentType']>(initialFulfillment);
     const [sort, setSort] = useState('newest');
+    const [sortOpen, setSortOpen] = useState(false);
+    const sortMenuRef = useRef<HTMLDivElement>(null);
     const [page, setPage] = useState(0);
     const [isFlashDrop, setIsFlashDrop] = useState(initialFlash);
     const [isNearMe, setIsNearMe] = useState(initialNear || !!searchParams.get('lat'));
@@ -119,6 +121,21 @@ function CatalogContent() {
     useEffect(() => {
         fetchOffers();
     }, [fetchOffers]);
+
+    useEffect(() => {
+        const closeSortMenu = (event: PointerEvent) => {
+            if (!sortMenuRef.current?.contains(event.target as Node)) setSortOpen(false);
+        };
+        const closeSortMenuOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setSortOpen(false);
+        };
+        document.addEventListener('pointerdown', closeSortMenu);
+        document.addEventListener('keydown', closeSortMenuOnEscape);
+        return () => {
+            document.removeEventListener('pointerdown', closeSortMenu);
+            document.removeEventListener('keydown', closeSortMenuOnEscape);
+        };
+    }, []);
 
     useEffect(() => {
         const refreshIfVisible = () => {
@@ -280,18 +297,37 @@ function CatalogContent() {
                     </div>
                 </form>
 
-                <div className="relative min-w-[190px]">
-                    <select
-                    value={sort}
-                    onChange={(e) => { setSort(e.target.value); setPage(0); }}
-                    title="Сортировка"
-                    className="h-12 w-full appearance-none rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 pr-10 text-sm font-semibold text-white/75 outline-none cursor-pointer"
-                >
-                    {SORT_OPTIONS.map(s => (
-                        <option key={s.value} value={s.value} className="bg-[#111]">{s.label}</option>
-                    ))}
-                </select>
-                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                <div ref={sortMenuRef} className="relative min-w-[205px]">
+                    <button
+                        type="button"
+                        onClick={() => setSortOpen((value) => !value)}
+                        aria-haspopup="listbox"
+                        aria-expanded={sortOpen}
+                        className="catalog-sort-trigger flex h-12 w-full items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 text-sm font-semibold text-white/75 transition"
+                    >
+                        <span>{SORT_OPTIONS.find((option) => option.value === sort)?.label}</span>
+                        <ChevronDown className={`h-4 w-4 text-white/35 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {sortOpen && (
+                        <div role="listbox" aria-label="Сортировка" className="catalog-sort-menu absolute right-0 top-[calc(100%+8px)] z-30 w-full min-w-[220px] overflow-hidden rounded-[20px] border border-white/[0.09] bg-[#17171a]/95 p-1.5 shadow-[0_18px_55px_rgba(0,0,0,.3)] backdrop-blur-2xl">
+                            {SORT_OPTIONS.map((option) => {
+                                const selected = sort === option.value;
+                                return (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        role="option"
+                                        aria-selected={selected}
+                                        onClick={() => { setSort(option.value); setPage(0); setSortOpen(false); }}
+                                        className={`catalog-sort-option flex h-11 w-full items-center justify-between rounded-[15px] border-0 px-3 text-left text-sm font-semibold transition ${selected ? 'is-selected bg-white/[0.09] text-white' : 'bg-transparent text-white/55 hover:bg-white/[0.055] hover:text-white'}`}
+                                    >
+                                        {option.label}
+                                        {selected && <Check className="h-4 w-4" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 <button
