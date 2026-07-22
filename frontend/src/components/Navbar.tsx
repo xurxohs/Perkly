@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, X, Gem, Medal, Moon, Sun } from 'lucide-react';
+import { LogOut, X, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useState, useRef, useEffect } from 'react';
@@ -36,10 +36,10 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
         }
     };
 
-    const tierBadge = user?.tier === 'PLATINUM'
-        ? { icon: Gem, bg: 'linear-gradient(135deg, #a855f7, #d946ef)', shadow: '0 0 10px rgba(168,85,247,0.4)', color: '#fff' }
+    const tierNameGradient = user?.tier === 'PLATINUM'
+        ? 'linear-gradient(90deg, #b8c6ff 0%, #d7a8ff 42%, #ff8fcb 72%, #8bd8ff 100%)'
         : user?.tier === 'GOLD'
-            ? { icon: Medal, bg: 'linear-gradient(135deg, #fbbf24, #f59e0b)', shadow: '0 0 10px rgba(251,191,36,0.4)', color: '#fff' }
+            ? 'linear-gradient(90deg, #fff0a8 0%, #f6c453 48%, #e7a92f 100%)'
             : null;
 
     return (
@@ -108,16 +108,17 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                     <>
                         <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-full hover:bg-white/5 transition no-underline text-white/70">
                             <PerklyGlyph name="profile" className="w-4 h-4" />
-                            <span className="hidden sm:inline">{user?.displayName || t('Профиль')}</span>
-                            {tierBadge && (
-                                <tierBadge.icon
-                                    className="w-3.5 h-3.5 ml-1"
-                                    style={{
-                                        filter: `drop-shadow(${tierBadge.shadow})`,
-                                        color: tierBadge.color
-                                    } as React.CSSProperties}
-                                />
-                            )}
+                            <span
+                                className="hidden sm:inline font-bold"
+                                style={tierNameGradient ? {
+                                    backgroundImage: tierNameGradient,
+                                    WebkitBackgroundClip: 'text',
+                                    backgroundClip: 'text',
+                                    color: 'transparent'
+                                } : undefined}
+                            >
+                                {user?.displayName || t('Профиль')}
+                            </span>
                         </Link>
                         <button 
                             onClick={() => {

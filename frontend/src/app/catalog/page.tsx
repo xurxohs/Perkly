@@ -255,7 +255,7 @@ function CatalogContent() {
                             <button
                                 key={item.value || 'all'}
                                 onClick={() => { setCategory(item.value); setPage(0); }}
-                                className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-purple-400/35 bg-purple-500/15 text-white shadow-[0_8px_30px_rgba(168,85,247,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
+                                className={`catalog-filter-pill ${selected ? 'catalog-filter-pill-selected' : ''} inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-purple-400/35 bg-purple-500/15 text-white shadow-[0_8px_30px_rgba(168,85,247,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
                             >
                                 <PerklyGlyph name={item.glyph} className="h-4 w-4" /> {item.label}
                             </button>
@@ -424,7 +424,7 @@ function CatalogContent() {
                             {position > 0 && pageIndex - visiblePages[position - 1] > 1 && <span className="text-white/25">…</span>}
                             <button
                                 onClick={() => setPage(pageIndex)}
-                                className={`w-10 h-10 rounded-xl text-sm font-semibold cursor-pointer border-0 transition-all ${page === pageIndex ? 'text-white bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'text-white/40 hover:text-white bg-white/[0.03]'}`}
+                                className={`catalog-page-button ${page === pageIndex ? 'catalog-page-button-selected' : ''} w-10 h-10 rounded-xl text-sm font-semibold cursor-pointer border transition-all ${page === pageIndex ? 'text-white bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'text-white/40 hover:text-white bg-white/[0.03]'}`}
                             >
                                 {pageIndex + 1}
                             </button>

@@ -1162,15 +1162,19 @@
   background: #fff !important;
 }
 
-/* Category pills */
-.catalog-apple-light > div:nth-of-type(3) button {
+/* Category pills and pagination use semantic classes so layout changes cannot
+   accidentally switch their dark/light appearance. */
+.catalog-apple-light .catalog-filter-pill:not(.catalog-filter-pill-selected),
+.catalog-apple-light .catalog-page-button:not(.catalog-page-button-selected) {
   color: #515154 !important;
   background: #fff !important;
-  border: 0 !important;
+  border-color: rgba(0,0,0,.07) !important;
 }
-.catalog-apple-light > div:nth-of-type(3) button[class*="bg-purple"] {
+.catalog-apple-light .catalog-filter-pill-selected,
+.catalog-apple-light .catalog-page-button-selected {
   color: #fff !important;
   background: linear-gradient(135deg, #7c3cff, #d93fa5) !important;
+  border-color: transparent !important;
 }
 
 /* Search and filter surface */
@@ -1279,15 +1283,26 @@
 .site-dark-commerce .catalog-apple-light [class*="text-white/6"],
 .site-dark-commerce .catalog-apple-light [class*="text-white/7"] { color: rgba(255,255,255,.48) !important; }
 .site-dark-commerce .catalog-apple-light > div:first-child p { color: rgba(255,255,255,.42) !important; }
-.site-dark-commerce .catalog-apple-light > div:nth-of-type(3) button {
+.site-dark-commerce .catalog-apple-light .catalog-filter-pill:not(.catalog-filter-pill-selected),
+.site-dark-commerce .catalog-apple-light .catalog-page-button:not(.catalog-page-button-selected) {
   color: rgba(255,255,255,.52) !important;
   background: rgba(255,255,255,.045) !important;
-  border: 1px solid rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.07) !important;
 }
-.site-dark-commerce .catalog-apple-light > div:nth-of-type(3) button[class*="bg-purple"] {
+.site-dark-commerce .catalog-apple-light .catalog-filter-pill:not(.catalog-filter-pill-selected):hover,
+.site-dark-commerce .catalog-apple-light .catalog-page-button:not(.catalog-page-button-selected):hover {
+  color: rgba(255,255,255,.9) !important;
+  background: rgba(255,255,255,.085) !important;
+}
+.site-dark-commerce .catalog-apple-light .catalog-filter-pill-selected {
   color: #fff !important;
   background: rgba(168,85,247,.18) !important;
   border-color: rgba(192,132,252,.3) !important;
+}
+.site-dark-commerce .catalog-apple-light .catalog-page-button-selected {
+  color: #fff !important;
+  background: linear-gradient(135deg, #7c3cff, #d93fa5) !important;
+  border-color: transparent !important;
 }
 .site-dark-commerce .catalog-apple-light .catalog-search-surface {
   background: rgba(255,255,255,.028) !important;
