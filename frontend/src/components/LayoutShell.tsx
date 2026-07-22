@@ -37,7 +37,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     };
     const isLightCommerce = theme === 'light';
     const shellThemeClass = isImmersive
-        ? 'site-immersive-dark'
+        ? (theme === 'light' ? 'site-immersive-light' : 'site-immersive-dark')
         : isLightCommerce
             ? 'site-light-commerce'
             : 'site-dark-commerce';

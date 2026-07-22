@@ -310,14 +310,14 @@ export default function ChatPage() {
 
     if (loading || (isAuthenticated && isLoadingRooms)) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center text-white/50">
+            <div className="chat-marketplace min-h-screen bg-black flex items-center justify-center text-white/50">
                 <Loader2 className="w-6 h-6 animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#060607] text-white md:p-3">
+        <div className="chat-marketplace min-h-screen bg-[#060607] text-white md:p-3">
             <div className="mx-auto flex h-[calc(100dvh-76px)] max-w-[1500px] overflow-hidden bg-[#0b0b0d] md:h-[calc(100dvh-24px)] md:rounded-[30px] md:border md:border-white/[0.08] md:shadow-[0_24px_80px_rgba(0,0,0,.45)]">
                 <aside className={`${activeRoomId ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col border-white/[0.07] bg-[#101012] md:w-[350px] md:border-r`}>
                     <div className="border-b border-white/[0.07] px-4 pb-4 pt-[max(16px,env(safe-area-inset-top))] md:pt-5">
