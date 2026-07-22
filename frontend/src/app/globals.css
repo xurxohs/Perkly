@@ -3420,7 +3420,17 @@ mark { padding: 0; color: inherit; background: color-mix(in srgb, var(--search-a
 .site-light-commerce .quick-service-input::placeholder {
   color: #a1a1a6 !important;
 }
-.site-light-commerce .quick-service-pay-btn {
+.site-light-commerce .quick-service-pay-btn,
+.site-light-commerce .quick-service-pay-btn * {
   color: #ffffff !important;
   background: linear-gradient(135deg, #1c55e2 0%, #0096e6 100%) !important;
+}
+.site-light-commerce .quick-service-panel span[class*="bg-[#10b981]"] {
+  color: #ffffff !important;
+}
+.site-light-commerce .quick-service-panel span[class*="from-[#207bfe]"] {
+  color: #ffffff !important;
+}
+.site-light-commerce .quick-service-panel img[src*="steam.svg"] {
+  filter: invert(1) brightness(0.15) !important;
 }
