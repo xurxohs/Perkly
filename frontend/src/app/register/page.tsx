@@ -24,7 +24,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-
+import { useTelegram } from "@/hooks/useTelegram";
 const API_BASE =
   typeof window !== "undefined"
     ? "/api"
@@ -104,6 +104,7 @@ function currentMaxBirthYear() {
 export default function RegisterPage() {
   const router = useRouter();
   const { register, refreshUser, user } = useAuth();
+  const { initData, isTMA, hapticNotification } = useTelegram();
   const [step, setStep] = useState<Step>("intro");
   const [formData, setFormData] = useState({
     displayName: "",
@@ -118,6 +119,28 @@ export default function RegisterPage() {
   const [tgStep, setTgStep] = useState<"idle" | "waiting">("idle");
   const [tgUrl, setTgUrl] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto TMA login if inside Telegram WebApp
+  useEffect(() => {
+    if (initData && isTMA && !user) {
+      setLoading(true);
+      fetch(`${API_BASE}/auth/telegram-miniapp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.access_token) {
+            localStorage.setItem("perkly_token", data.access_token);
+            hapticNotification("success");
+            refreshUser().then(() => setStep("birth"));
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [initData, isTMA, user, refreshUser, hapticNotification]);
 
   const vibe = useMemo(() => getVibe(birthYear), [birthYear]);
   const passName =
@@ -595,7 +618,10 @@ function MethodStep({
         disabled={loading}
         className="shadow-telegram-glow flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border-0 bg-telegram-gradient px-4 py-4 text-base font-bold text-white transition-all hover:opacity-90 disabled:opacity-70"
       >
-        <Send className="h-5 w-5" />
+        <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0" aria-hidden="true">
+          <circle cx="12" cy="12" r="12" fill="#24A1DE" />
+          <path fill="#FFFFFF" d="M5.425 11.8711C8.8375 10.3844 11.1133 9.40444 12.2525 8.93111C15.505 7.57778 16.18 7.34222 16.6206 7.33444C16.7175 7.33278 16.9342 7.35611 17.0744 7.46972C17.1928 7.56583 17.2256 7.69556 17.2411 7.78667C17.2567 7.87778 17.2761 8.08556 17.2606 8.24944C17.0839 10.1064 16.3211 14.6 15.9328 16.6783C15.7686 17.5572 15.4444 17.8517 15.1311 17.8806C14.4506 17.9439 13.9339 17.4311 13.275 16.9989C12.2439 16.3228 11.6617 15.9011 10.6617 15.2422C9.50611 14.4811 10.255 14.0617 10.9139 13.3772C11.0864 13.1978 14.0842 10.47 14.1422 10.2228C14.1494 10.1919 14.1561 10.0767 14.0878 10.0161C14.0194 9.95556 13.9183 9.97611 13.845 9.99278C13.7411 10.0161 12.0911 11.1067 8.89222 13.2667C8.42333 13.5883 7.99833 13.745 7.61722 13.7367C7.19722 13.7278 6.38889 13.5 5.78778 13.3044C5.05 13.0644 4.46444 12.9378 4.51556 12.5306C4.54222 12.3183 4.83444 12.1022 5.425 11.8711Z" />
+        </svg>
         Быстро через Telegram
       </button>
 

@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
-        <rect width="100%" height="100%" fill="#0047ff" rx="20" />
-        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="white">Skillbox</text>
-    </svg>
+<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Skillbox</title><rect width="24" height="24" rx="4" fill="#0055FF"/><path fill="#FFFFFF" d="M5 6h14v2.2H5V6zm0 4.9h14v2.2H5v-2.2zm0 4.9h14V18H5v-2.2z"/></svg>

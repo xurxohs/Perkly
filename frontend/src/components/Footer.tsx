@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Mail, MapPin, MessageCircle } from 'lucide-react';
 import { useTelegram } from '@/hooks/useTelegram';
+import { PerklyLogoMark } from '@/components/PerklyLogoMark';
 
 const footerGroups = [
   {
@@ -44,7 +45,7 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-3 text-white no-underline">
-              <span className="h-9 w-9 rounded-full bg-primary-gradient" />
+              <PerklyLogoMark className="h-9 w-9 shrink-0" />
               <span className="text-xl font-semibold tracking-tight">Perkly</span>
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-6 text-white/45">Каталог предложений и цифровых товаров для Узбекистана. Цена, ограничения и способ получения должны быть понятны до покупки.</p>

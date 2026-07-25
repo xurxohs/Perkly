@@ -15,11 +15,11 @@ type Template = {
 
 const catalog: Record<string, Template[]> = {
   RESTAURANTS: [
-    { title: 'Комбо на двоих', image: '/brands/evos.png', price: 79000 },
+    { title: 'Комбо на двоих', image: '/brands/evos.svg', price: 79000 },
     { title: 'Пицца 30 см', image: '/brands/dodo_pizza.svg', price: 69000 },
-    { title: 'Кофе и десерт', image: '/brands/safia.png', price: 39000 },
-    { title: 'Сет национальной кухни', image: '/brands/gijduvon.png', price: 119000 },
-    { title: 'Скидка на заказ', image: '/brands/oqtepa.png', price: 25000, fulfillment: 'PROMOCODE' },
+    { title: 'Кофе и десерт', image: '/brands/safia.svg', price: 39000 },
+    { title: 'Сет национальной кухни', image: '/brands/gijduvon.svg', price: 119000 },
+    { title: 'Скидка на заказ', image: '/brands/oqtepa.svg', price: 25000, fulfillment: 'PROMOCODE' },
   ],
   SUBSCRIPTIONS: [
     { title: 'Telegram Premium', image: '/brands/telegram.svg', price: 59000, periodDays: 30, prompt: 'Укажите Telegram @username', sourceUrl: 'https://playerok.com/telegram/premium' },
@@ -57,11 +57,11 @@ const catalog: Record<string, Template[]> = {
     { title: 'Гид по старому городу', image: '/demo-events/exhibition.png', price: 179000 },
   ],
   FITNESS: [
-    { title: 'Разовое посещение', image: '/brands/befit.png', price: 45000 },
-    { title: 'Абонемент на месяц', image: '/brands/befit.png', price: 399000, periodDays: 30 },
-    { title: 'Персональная тренировка', image: '/brands/befit.png', price: 149000 },
-    { title: 'Групповая тренировка', image: '/brands/befit.png', price: 75000 },
-    { title: 'Фитнес и бассейн', image: '/brands/befit.png', price: 499000, periodDays: 30 },
+    { title: 'Разовое посещение', image: '/brands/befit.svg', price: 45000 },
+    { title: 'Абонемент на месяц', image: '/brands/befit.svg', price: 399000, periodDays: 30 },
+    { title: 'Персональная тренировка', image: '/brands/befit.svg', price: 149000 },
+    { title: 'Групповая тренировка', image: '/brands/befit.svg', price: 75000 },
+    { title: 'Фитнес и бассейн', image: '/brands/befit.svg', price: 499000, periodDays: 30 },
   ],
   OTHER: [
     { title: 'Билет на концерт', image: '/demo-events/comedy.png', price: 150000, fulfillment: 'DIGITAL_CODE' },

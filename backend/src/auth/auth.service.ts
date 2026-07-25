@@ -378,7 +378,9 @@ export class AuthService {
       device,
     });
     const BOT_USERNAME =
-      process.env.TELEGRAM_BOT_USERNAME ?? 'PerklyLoginBot';
+      process.env.TELEGRAM_BOT_USERNAME ??
+      process.env.BOT_USERNAME ??
+      'PerklyPlatformBot';
     const url = `https://t.me/${BOT_USERNAME}?start=login_${token}`;
     return { token, url };
   }

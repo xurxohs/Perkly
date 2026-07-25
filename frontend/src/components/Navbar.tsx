@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
 import { useLanguage } from '@/lib/i18n';
+import { PerklyLogoMark } from '@/components/PerklyLogoMark';
 
 export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false }: {
     theme?: 'light' | 'dark';
@@ -52,7 +53,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
         >
             <div className="flex items-center gap-1 shrink-0">
                 <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary-gradient shadow-primary-glow" />
+                    <PerklyLogoMark className="w-7 h-7 sm:w-8 sm:h-8 shadow-primary-glow shrink-0" />
                     <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
                 </Link>
                 {showThemeToggle && (
