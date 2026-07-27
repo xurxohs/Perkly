@@ -46,6 +46,17 @@ const productTypeLabel = (value: Offer['fulfillmentType']) => PRODUCT_TYPES.find
 const isUrgentOffer = (offer: Offer) => Boolean(
     offer.isFlashDrop && offer.expiresAt && new Date(offer.expiresAt).getTime() > Date.now(),
 );
+const LEGACY_BRAND_ASSETS: Record<string, string> = {
+    '/brands/befit.png': '/brands/befit.svg',
+    '/brands/evos.png': '/brands/evos.svg',
+    '/brands/gijduvon.png': '/brands/gijduvon.svg',
+    '/brands/oqtepa.png': '/brands/oqtepa.svg',
+    '/brands/safia.png': '/brands/safia.svg',
+};
+const catalogImageUrl = (offer: Offer) => {
+    const source = offer.imageUrl || offer.vendorLogo || '';
+    return LEGACY_BRAND_ASSETS[source] || source;
+};
 function CatalogContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || '';
@@ -494,12 +505,12 @@ function CatalogContent() {
                 )
             ) : (
                 <div className="catalog-offers-grid grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
-                    {offers.map((offer) => (
+                    {offers.map((offer, index) => (
                         <div key={offer.id} className="catalog-offer-card relative overflow-hidden group bg-white/[0.03] border border-white/[0.08] transition-[border-color,box-shadow] duration-200 hover:border-white/[0.14]">
                             <Link href={`/offer/?id=${offer.id}`} className="no-underline text-inherit block">
                                 <div className="catalog-offer-media relative aspect-[16/10] overflow-hidden bg-white/5 flex items-center justify-center border-b border-white/[0.04]">
                                     {(offer.imageUrl || offer.vendorLogo) ? (
-                                        <Image src={offer.imageUrl || offer.vendorLogo || ''} fill sizes="(max-width: 1023px) 50vw, 25vw" className="catalog-offer-image object-cover" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                        <Image src={catalogImageUrl(offer)} fill priority={index < 2} sizes="(max-width: 359px) 100vw, (max-width: 1023px) 50vw, 25vw" className="catalog-offer-image object-cover" alt={offer.title} onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                     ) : null}
                                     <div className={`flex items-center justify-center h-full text-white/20 ${(offer.imageUrl || offer.vendorLogo) ? 'hidden' : ''}`}>
                                         {(() => {
