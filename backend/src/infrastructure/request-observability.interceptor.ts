@@ -17,6 +17,13 @@ export class RequestObservabilityInterceptor implements NestInterceptor {
   constructor(private readonly metrics: MetricsService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // This interceptor is registered globally, so Nest also invokes it for
+    // Telegraf updates. Telegram contexts do not expose Fastify request/reply
+    // objects and must pass through without HTTP observability handling.
+    if (context.getType<string>() !== 'http') {
+      return next.handle();
+    }
+
     const http = context.switchToHttp();
     const request = http.getRequest<FastifyRequest>();
     const response = http.getResponse<FastifyReply>();
