@@ -14,6 +14,8 @@ function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const isRegistered = searchParams.get("registered");
+    const requestedNext = searchParams.get("next");
+    const nextPath = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
     const { login } = useAuth();
     const { initData, isTMA, hapticNotification } = useTelegram();
 
@@ -42,13 +44,13 @@ function LoginForm() {
                         localStorage.setItem('perkly_token', data.access_token);
                         hapticNotification('success');
                         setTgStep('done');
-                        setTimeout(() => router.push('/'), 500);
+                        setTimeout(() => router.push(nextPath), 500);
                     }
                 })
                 .catch(() => {})
                 .finally(() => setLoading(false));
         }
-    }, [initData, isTMA, router, hapticNotification]);
+    }, [initData, isTMA, router, hapticNotification, nextPath]);
 
     // Clean up polling on unmount
     useEffect(() => {
@@ -61,7 +63,7 @@ function LoginForm() {
         setError("");
         try {
             await login(formData.email, formData.password);
-            router.push("/");
+            router.push(nextPath);
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "Неверный email или пароль.";
             setError(errorMessage);
@@ -91,7 +93,7 @@ function LoginForm() {
                         clearInterval(pollRef.current!);
                         localStorage.setItem('perkly_token', pollData.access_token);
                         setTgStep('done');
-                        setTimeout(() => router.push('/'), 800);
+                        setTimeout(() => router.push(nextPath), 800);
                     } else if (pollData.status === 'expired') {
                         clearInterval(pollRef.current!);
                         setTgStep('idle');

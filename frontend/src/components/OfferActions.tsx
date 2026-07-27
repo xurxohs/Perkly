@@ -1,85 +1,75 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Check, ChevronLeft, Gift, Loader2, LockKeyhole, ShoppingBag, Wallet, X } from 'lucide-react';
 import { transactionsApi } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { PerklyGlyph } from '@/components/PerklyGlyph';
 
 interface OfferActionsProps {
   offer: {
     id: string;
     title: string;
     price: number;
-    category: string;
     fulfillmentType: 'PROMOCODE' | 'DIGITAL_CODE' | 'LINK' | 'INSTRUCTIONS';
     usageInstructions?: string;
     buyerInputPrompt?: string | null;
     buyerInputRequired?: boolean;
-    isDemo?: boolean;
+    stockQuantity?: number | null;
   };
 }
 
 const fulfillmentCopy = {
-  PROMOCODE: {
-    title: 'Промокод или QR-код',
-    detail: 'Код появится в профиле сразу после успешной покупки.',
-    items: ['Рабочий код товара', 'Инструкция по активации', 'Защита покупки Perkly'],
-  },
-  DIGITAL_CODE: {
-    title: 'Цифровая выдача',
-    detail: 'Ключ или данные доступа появятся в защищённом разделе покупки.',
-    items: ['Данные цифрового товара', 'Инструкция после покупки', 'Чат с продавцом'],
-  },
-  LINK: {
-    title: 'Защищённая ссылка',
-    detail: 'Ссылка на получение станет доступна после оплаты.',
-    items: ['Ссылка на товар', 'Инструкция после покупки', 'Защита покупки Perkly'],
-  },
-  INSTRUCTIONS: {
-    title: 'Получение по инструкции',
-    detail: 'Продавец получит заказ, а вам откроются дальнейшие шаги.',
-    items: ['Инструкция по получению', 'Чат с продавцом', 'Защита сделки Perkly'],
-  },
+  PROMOCODE: ['Промокод или QR-код', 'Код появится в покупке сразу после успешной оплаты.'],
+  DIGITAL_CODE: ['Цифровая выдача', 'Ключ или данные доступа появятся в защищённом разделе покупки.'],
+  LINK: ['Защищённая ссылка', 'Ссылка на получение станет доступна после оплаты.'],
+  INSTRUCTIONS: ['Получение по инструкции', 'После оплаты откроются инструкция и дальнейшие шаги.'],
 } as const;
 
 export default function OfferActions({ offer }: OfferActionsProps) {
   const router = useRouter();
-  const { isAuthenticated, refreshUser } = useAuth();
+  const { isAuthenticated, user, refreshUser } = useAuth();
   const { hapticImpact, hapticNotification } = useTelegram();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1);
   const [buyerComment, setBuyerComment] = useState('');
   const [isGift, setIsGift] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
-  const [purchased, setPurchased] = useState(false);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
   const [giftCode, setGiftCode] = useState<string | null>(null);
   const [error, setError] = useState('');
   const fulfillment = fulfillmentCopy[offer.fulfillmentType] || fulfillmentCopy.INSTRUCTIONS;
+  const soldOut = offer.stockQuantity === 0;
+
+  useEffect(() => {
+    if (!checkoutOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !purchasing) setCheckoutOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [checkoutOpen, purchasing]);
 
   const openCheckout = () => {
+    if (soldOut) return;
     if (!isAuthenticated) {
       hapticImpact('medium');
-      router.push('/login');
+      router.push(`/login?next=${encodeURIComponent(`/offer?id=${offer.id}`)}`);
       return;
     }
     setError('');
-    setCheckoutStep(1);
     setCheckoutOpen(true);
-  };
-
-  const closeCheckout = () => {
-    if (purchasing) return;
-    setCheckoutOpen(false);
-    setCheckoutStep(1);
-    setError('');
   };
 
   const confirmPurchase = async () => {
     if (offer.buyerInputRequired && !buyerComment.trim()) {
-      setError('Заполните данные для получения товара.');
-      setCheckoutStep(1);
+      setError('Заполните обязательные данные для получения товара.');
       return;
     }
     hapticImpact('heavy');
@@ -94,9 +84,8 @@ export default function OfferActions({ offer }: OfferActionsProps) {
         buyerComment.trim() || undefined,
       );
       hapticNotification('success');
-      setPurchased(true);
+      setTransactionId(tx.id);
       setGiftCode(tx.giftCode || null);
-      setCheckoutOpen(false);
       await refreshUser();
     } catch (err: unknown) {
       hapticNotification('error');
@@ -106,51 +95,105 @@ export default function OfferActions({ offer }: OfferActionsProps) {
     }
   };
 
-  if (purchased) {
-    return (
-      <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] p-5">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-black"><PerklyGlyph name="shield" className="h-5 w-5" /></span>
-          <div><p className="font-bold text-white">{isGift ? 'Подарок готов' : 'Покупка оформлена'}</p><p className="mt-0.5 text-sm text-white/45">Откройте покупку в профиле, чтобы получить товар.</p></div>
-        </div>
-        {giftCode && <p className="mt-4 rounded-xl bg-black/30 p-3 text-center font-mono text-sm text-white/70">{giftCode}</p>}
-      </div>
-    );
-  }
+  const actionLabel = soldOut
+    ? 'Нет в наличии'
+    : offer.price === 0
+      ? 'Получить бесплатно'
+      : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`;
 
   return (
     <>
-      <button onClick={openCheckout} className="w-full rounded-2xl border-0 bg-white py-4 text-base font-black text-black transition-colors hover:bg-white/90">
-        {offer.price === 0 ? 'Получить бесплатно' : `Купить за ${offer.price.toLocaleString('ru-RU')} сум`}
+      <button
+        type="button"
+        onClick={openCheckout}
+        disabled={soldOut}
+        className="offer-primary-action"
+      >
+        <ShoppingBag aria-hidden="true" />
+        {actionLabel}
       </button>
 
-      {checkoutOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCheckout(); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="checkout-title" className="w-full max-w-[600px] overflow-hidden rounded-t-[30px] border border-white/[0.09] bg-[#151519] shadow-2xl sm:rounded-[28px]">
-            <header className="flex items-center justify-between px-5 pb-4 pt-5 sm:px-7 sm:pt-6">
-              <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-purple-300/65">Шаг {checkoutStep} из 2</p><h2 id="checkout-title" className="mt-1 text-xl font-black text-white">{checkoutStep === 1 ? 'Получение' : 'Подтверждение'}</h2></div>
-              <button onClick={closeCheckout} aria-label="Закрыть" className="border-0 bg-transparent p-2 text-2xl font-light text-white/45 hover:text-white">×</button>
-            </header>
-            <div className="grid grid-cols-2 gap-2 px-5 sm:px-7"><span className="h-1 rounded-full bg-purple-500" /><span className={`h-1 rounded-full ${checkoutStep === 2 ? 'bg-purple-500' : 'bg-white/15'}`} /></div>
+      <div className="offer-mobile-buybar" aria-label="Панель покупки">
+        <div>
+          <span>Цена</span>
+          <strong>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</strong>
+        </div>
+        <button type="button" onClick={openCheckout} disabled={soldOut}>{soldOut ? 'Нет в наличии' : 'Купить'}</button>
+      </div>
 
-            {checkoutStep === 1 ? (
-              <div className="space-y-5 p-5 sm:p-7">
-                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.045] p-4">
-                  <div className="flex items-start gap-3"><PerklyGlyph name="catalog" className="mt-0.5 h-5 w-5 text-purple-300" /><div><p className="font-bold text-white">Способ получения</p><p className="mt-2 text-sm font-semibold text-white/75">{fulfillment.title}</p><p className="mt-1 text-xs leading-5 text-white/40">{offer.usageInstructions || fulfillment.detail}</p></div></div>
-                </div>
-                <label className="block"><span className="mb-2 block text-sm font-semibold text-white/55">{offer.buyerInputPrompt || 'Комментарий продавцу'} <span className="font-normal text-white/25">· {offer.buyerInputRequired ? 'обязательно' : 'необязательно'}</span></span><textarea required={offer.buyerInputRequired} value={buyerComment} onChange={(event) => setBuyerComment(event.target.value.slice(0, 1000))} rows={3} placeholder={offer.buyerInputPrompt ? 'Введите данные без ошибок' : 'Например, уточнение по аккаунту или активации'} className="w-full resize-none rounded-2xl border border-white/[0.08] bg-white/[0.045] p-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-purple-400/35" /><span className="mt-1 block text-right text-[10px] text-white/20">{buyerComment.length}/1000</span></label>
-                {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-                <div><h3 className="text-lg font-black text-white">Вы получите после оплаты</h3><ul className="mt-3 space-y-2">{fulfillment.items.map((item, index) => <li key={item} className="flex items-center gap-3 text-sm text-white/65"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-black text-purple-300">{index + 1}</span>{item}</li>)}</ul></div>
-                <button onClick={() => { if (offer.buyerInputRequired && !buyerComment.trim()) { setError('Заполните данные для получения товара.'); return; } setError(''); hapticImpact('light'); setCheckoutStep(2); }} className="w-full rounded-2xl border-0 bg-white py-4 font-black text-black">Далее</button>
+      {checkoutOpen && (
+        <div className="offer-checkout-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !purchasing) setCheckoutOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="checkout-title" className="offer-checkout-sheet">
+            {transactionId ? (
+              <div className="offer-checkout-success">
+                <span className="offer-checkout-success-icon"><Check aria-hidden="true" /></span>
+                <p>Оплата прошла</p>
+                <h2 id="checkout-title">{isGift ? 'Подарок готов' : 'Покупка оформлена'}</h2>
+                <span>Заказ сохранён в профиле. Там находятся статус, инструкция и данные для получения.</span>
+                {giftCode && <code>{giftCode}</code>}
+                <Link href="/profile">Открыть покупку</Link>
+                <button type="button" onClick={() => setCheckoutOpen(false)}>Остаться на странице</button>
               </div>
             ) : (
-              <div className="space-y-5 p-5 sm:p-7">
-                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] p-4"><p className="line-clamp-2 text-sm font-bold text-white">{offer.title}</p><div className="mt-4 flex items-end justify-between"><span className="text-sm text-white/40">К оплате</span><span className="text-2xl font-black text-white">{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</span></div></div>
-                <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4"><input type="checkbox" checked={isGift} onChange={(event) => setIsGift(event.target.checked)} className="h-5 w-5 accent-purple-500" /><span><span className="block text-sm font-bold text-white">Купить в подарок</span><span className="mt-0.5 block text-xs text-white/35">Создадим ссылку для получателя</span></span></label>
-                <div className="flex items-center gap-2 text-xs text-white/35"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> Для поддерживаемых сделок действуют защищённые статусы и спор</div>
-                {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-                <div className="grid grid-cols-[auto_1fr] gap-2"><button onClick={() => setCheckoutStep(1)} disabled={purchasing} className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 font-bold text-white/60">Назад</button><button onClick={confirmPurchase} disabled={purchasing} className="rounded-2xl border-0 bg-white py-4 font-black text-black disabled:opacity-55">{purchasing ? 'Оформляем…' : 'Подтвердить покупку'}</button></div>
-              </div>
+              <>
+                <header>
+                  <div>
+                    <p>Безопасное оформление</p>
+                    <h2 id="checkout-title">Подтвердите покупку</h2>
+                  </div>
+                  <button type="button" onClick={() => setCheckoutOpen(false)} disabled={purchasing} aria-label="Закрыть"><X aria-hidden="true" /></button>
+                </header>
+
+                <div className="offer-checkout-scroll">
+                  <div className="offer-checkout-product">
+                    <span>{offer.title}</span>
+                    <strong>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</strong>
+                  </div>
+
+                  <div className="offer-checkout-delivery">
+                    <LockKeyhole aria-hidden="true" />
+                    <div><strong>{fulfillment[0]}</strong><span>{offer.usageInstructions || fulfillment[1]}</span></div>
+                  </div>
+
+                  {(offer.buyerInputPrompt || offer.buyerInputRequired) && (
+                    <label className="offer-checkout-input">
+                      <span>{offer.buyerInputPrompt || 'Данные для получения'} {offer.buyerInputRequired ? <em>Обязательно</em> : <small>Необязательно</small>}</span>
+                      <textarea
+                        required={offer.buyerInputRequired}
+                        value={buyerComment}
+                        onChange={(event) => setBuyerComment(event.target.value.slice(0, 1000))}
+                        rows={3}
+                        placeholder="Введите данные внимательно"
+                      />
+                      <small>{buyerComment.length}/1000</small>
+                    </label>
+                  )}
+
+                  <label className="offer-checkout-gift">
+                    <input type="checkbox" checked={isGift} onChange={(event) => setIsGift(event.target.checked)} />
+                    <Gift aria-hidden="true" />
+                    <span><strong>Купить в подарок</strong><small>Создадим код для получателя</small></span>
+                  </label>
+
+                  <div className="offer-checkout-balance">
+                    <Wallet aria-hidden="true" />
+                    <span>Ваш баланс</span>
+                    <strong>{user ? `${user.balance.toLocaleString('ru-RU')} сум` : '—'}</strong>
+                  </div>
+
+                  {error && <p className="offer-checkout-error">{error}</p>}
+                </div>
+
+                <footer>
+                  <p><LockKeyhole aria-hidden="true" /> Оплата защищена Perkly</p>
+                  <div>
+                    <button type="button" onClick={() => setCheckoutOpen(false)} disabled={purchasing} aria-label="Назад"><ChevronLeft aria-hidden="true" /></button>
+                    <button type="button" onClick={confirmPurchase} disabled={purchasing}>
+                      {purchasing ? <><Loader2 className="animate-spin" /> Оформляем…</> : actionLabel}
+                    </button>
+                  </div>
+                </footer>
+              </>
             )}
           </section>
         </div>

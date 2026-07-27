@@ -13,6 +13,8 @@ import {
     FileText,
     CheckCircle2,
     ShieldCheck,
+    BadgeCheck,
+    RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Metadata } from 'next';
@@ -130,7 +132,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
     };
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="offer-detail-page max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-10">
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
@@ -138,66 +140,25 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                 }}
             />
             {/* Back */}
-            <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-white/40 hover:text-white transition mb-8 no-underline">
+            <Link href="/catalog" className="offer-back-link">
                 <ArrowLeft className="w-4 h-4" /> Каталог
             </Link>
 
-            <div className="grid md:grid-cols-2 gap-7 lg:gap-12 items-start">
-                {/* Left - Image & Seller Card */}
-                <div>
+            <div className="offer-detail-layout">
+                <div className="offer-media-column">
                     {(offer.images?.[0] || offer.imageUrl || offer.vendorLogo) ? (
                         <OfferGallery images={offer.images?.length ? offer.images : [offer.imageUrl || offer.vendorLogo || '']} title={offer.title} />
                     ) : (
-                        <div className="flex aspect-[4/3] items-center justify-center rounded-[28px] border border-white/[0.07] bg-white/[0.025]">
+                        <div className="offer-gallery-placeholder">
                             <Package className="w-24 h-24 text-white/20" />
-                        </div>
-                    )}
-
-                    {/* Seller Card & Activity */}
-                    {offer.seller && (
-                        <div className="mt-4 rounded-2xl bg-white/[0.025] border border-white/[0.06] p-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="relative shrink-0">
-                                        <div className="w-11 h-11 rounded-full flex items-center justify-center bg-purple-500/20 text-purple-200 font-extrabold border border-purple-500/30">
-                                            {((offer.seller as UserType).displayName || 'П')[0].toUpperCase()}
-                                        </div>
-                                        <span className="absolute bottom-0 right-0 flex h-3 w-3">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-[#121217]"></span>
-                                        </span>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-sm font-extrabold text-white truncate">{(offer.seller as UserType).displayName || 'Продавец'}</span>
-                                            <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                        </div>
-                                        <div className="flex items-center gap-2 text-[11px] text-white/40 mt-0.5 flex-wrap">
-                                            <span className="text-emerald-400 font-semibold">В сети</span>
-                                            <span>•</span>
-                                            <span>Отвечает за ~5-15 мин</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <ContactSellerButton sellerId={offer.sellerId} />
-                            </div>
-
-                            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/40">
-                                <span>Продавец Perkly</span>
-                                <span className="text-purple-300 font-medium flex items-center gap-1">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> 100% Защита
-                                </span>
-                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Right - Info */}
-                <div className="md:sticky md:top-24">
+                <div className="offer-info-column">
                     {/* Badges */}
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <span className="px-3 py-1 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                    <div className="offer-badges">
+                        <span>
                             {CATEGORY_LABELS[offer.category] || offer.category}
                         </span>
                         {offer.isFlashDrop && (
@@ -212,106 +173,108 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         )}
                     </div>
 
-                    <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white mb-3 leading-[1.08]">{offer.title}</h1>
+                    <h1>{offer.title}</h1>
 
                     {/* Price */}
-                    <div className="flex items-baseline gap-3 mb-6">
-                        <span className="text-3xl font-black text-white">
+                    <div className="offer-price-row">
+                        <strong>
                             {offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}
-                        </span>
+                        </strong>
                         {oldPrice && <span className="text-base text-white/30 line-through">{oldPrice.toLocaleString('ru-RU')} сум</span>}
                         {offer.discountPercent ? <span className="text-sm font-bold text-emerald-400">−{offer.discountPercent}%</span> : null}
                     </div>
 
                     {/* Block: What the buyer receives */}
-                    <div className="mb-6 rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.08] via-white/[0.02] to-transparent p-5">
-                        <h2 className="text-base font-extrabold text-white mb-3.5 flex items-center gap-2">
+                    <div className="offer-fulfillment-card">
+                        <h2>
                             <PackageCheck className="w-5 h-5 text-purple-400" />
                             Что получит покупатель после покупки
                         </h2>
 
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/5">
-                                <div className="p-2 rounded-lg bg-purple-500/20 text-purple-300 shrink-0">
+                        <div className="offer-fulfillment-list">
+                            <div>
+                                <i>
                                     <Key className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <div className="text-xs font-bold text-white">
+                                </i>
+                                <section>
+                                    <strong>
                                         {offer.fulfillmentType === 'DIGITAL_CODE' ? 'Цифровой промокод / Ваучер' : offer.fulfillmentType === 'LINK' ? 'Прямая ссылка / Доступ' : 'Пошаговая инструкция и доступ'}
-                                    </div>
-                                    <div className="text-xs text-white/50 mt-0.5">
+                                    </strong>
+                                    <span>
                                         {offer.fulfillmentType === 'DIGITAL_CODE'
                                             ? 'Мгновенно отобразится на экране после оплаты и сохранится в истории ваших заказов'
                                             : offer.fulfillmentType === 'LINK'
                                                 ? 'Вы получите персональную ссылку на доступ сразу после подтверждения оплаты'
                                                 : 'Вы получите подробную инструкцию по активации сразу после подтверждения оплаты'}
-                                    </div>
-                                </div>
+                                    </span>
+                                </section>
                             </div>
 
                             {offer.buyerInputPrompt && (
-                                <div className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/5">
-                                    <div className="p-2 rounded-lg bg-blue-500/20 text-blue-300 shrink-0">
+                                <div>
+                                    <i>
                                         <FileText className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-bold text-white">Данные при оформлении</div>
-                                        <div className="text-xs text-white/50 mt-0.5">Потребуется указать: <span className="text-white font-semibold">{offer.buyerInputPrompt}</span></div>
-                                    </div>
+                                    </i>
+                                    <section><strong>Данные при оформлении</strong><span>Потребуется указать: <b>{offer.buyerInputPrompt}</b></span></section>
                                 </div>
                             )}
 
                             {offer.usageInstructions && (
-                                <div className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/5">
-                                    <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
+                                <div>
+                                    <i>
                                         <CheckCircle2 className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-bold text-white">Инструкция от продавца</div>
-                                        <div className="text-xs text-white/60 mt-0.5 whitespace-pre-wrap">{offer.usageInstructions}</div>
-                                    </div>
+                                    </i>
+                                    <section><strong>Инструкция от продавца</strong><span className="whitespace-pre-wrap">{offer.usageInstructions}</span></section>
                                 </div>
                             )}
-
-                            <div className="flex items-center gap-2 text-xs text-white/40 pt-1">
-                                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                                <span>Средства переводятся продавцу только после подтвеждения получения товара</span>
-                            </div>
                         </div>
+                        <p><ShieldCheck aria-hidden="true" /> Средства переводятся продавцу после подтверждения получения товара</p>
                     </div>
 
-                    {/* Description */}
-                    <div className="mb-6">
-                        <h2 className="text-sm font-semibold text-white/45 mb-2">Описание товара</h2>
-                        <p className="text-white/65 leading-relaxed text-sm whitespace-pre-wrap">{offer.description}</p>
-                    </div>
-
-                    {/* Guarantee badges */}
-                    <div className="grid grid-cols-2 gap-2 mb-7">
-                        <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50">
+                    <div className="offer-facts">
+                        <div>
                             <Shield className="w-4 h-4 text-green-400" />
-                            Эскроу защита
+                            <span>Защита сделки</span><strong>Средства под защитой</strong>
                         </div>
-                        <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50">
+                        <div>
                             <Clock className="w-4 h-4 text-blue-400" />
-                            {deliveryLabel}
+                            <span>Срок получения</span><strong>{deliveryLabel}</strong>
                         </div>
-                        {offer.warrantyDays ? <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50"><Shield className="w-4 h-4 text-purple-300" />Гарантия {offer.warrantyDays} дн.</div> : null}
-                        {offer.stockQuantity != null ? <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.025] border border-white/[0.06] px-3 py-3 text-xs text-white/50"><Boxes className="w-4 h-4 text-white/45" />Осталось: {offer.stockQuantity}</div> : null}
+                        {offer.warrantyDays ? <div><RotateCcw className="w-4 h-4 text-purple-300" /><span>Гарантия</span><strong>{offer.warrantyDays} дней</strong></div> : null}
+                        {offer.stockQuantity != null ? <div><Boxes className="w-4 h-4 text-white/45" /><span>Доступность</span><strong>{offer.stockQuantity > 0 ? `Осталось ${offer.stockQuantity}` : 'Нет в наличии'}</strong></div> : null}
                     </div>
 
                     {offer.sourceUrl && <a href={offer.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="mb-5 inline-flex items-center gap-2 text-xs text-white/35 hover:text-white/60">Источник предложения <ExternalLink className="h-3.5 w-3.5" /></a>}
 
                     {/* Actions */}
                     <OfferActions offer={offer} />
-                    <ReportOfferButton offerId={offer.id} />
+
+                    {offer.seller && (
+                        <div className="offer-seller-card">
+                            <div className="offer-seller-avatar">{((offer.seller as UserType).displayName || 'П')[0].toUpperCase()}</div>
+                            <div className="offer-seller-copy">
+                                <span>Продавец</span>
+                                <strong>{(offer.seller as UserType).displayName || 'Продавец Perkly'} <BadgeCheck aria-label="Проверенный продавец" /></strong>
+                                <small>Покупка и переписка сохраняются в Perkly</small>
+                            </div>
+                            <ContactSellerButton sellerId={offer.sellerId} />
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Reviews Section */}
-            <div className="mt-12 pt-12 border-t border-white/5">
+            <section className="offer-description-section">
+                <div>
+                    <span>О предложении</span>
+                    <h2>Описание и условия</h2>
+                </div>
+                <p>{offer.description}</p>
+            </section>
+
+            <div className="offer-reviews-section">
                 <Reviews offerId={offer.id} />
             </div>
+            <div className="offer-report-row"><ReportOfferButton offerId={offer.id} /></div>
         </div>
     );
 }
