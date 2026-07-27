@@ -8,9 +8,8 @@ import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 import { useLanguage } from '@/lib/i18n';
 
 const marketplaceDockItems = [
-    { href: '/search', icon: 'search' as PerklyGlyphName, label: 'Поиск' },
-    { href: '/coupons', icon: 'coupon' as PerklyGlyphName, label: 'Купоны' },
     { href: '/catalog', icon: 'catalog' as PerklyGlyphName, label: 'Каталог' },
+    { href: '/coupons', icon: 'coupon' as PerklyGlyphName, label: 'Купоны' },
     { href: '/chat', icon: 'chat' as PerklyGlyphName, label: 'Чаты' },
     { href: '/profile', icon: 'profile' as PerklyGlyphName, label: 'Профиль' },
 ];
@@ -126,7 +125,7 @@ export function MobileDock() {
             <div className="h-20 md:hidden" />
 
             {/* Dock */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-[env(safe-area-inset-bottom,8px)]">
+            <div className="mobile-dock-safe fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-[env(safe-area-inset-bottom,8px)]">
                 {/* Outer container with blur */}
                 <div
                     className={`mx-4 mb-2 px-2 py-2 rounded-[30px] flex items-center justify-around gap-1 w-full max-w-[390px] liquid-glass-dock ${isLightCommerce ? 'light-commerce-dock' : ''}`}

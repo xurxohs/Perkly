@@ -268,6 +268,15 @@ export class BotService {
         reply_markup: { remove_keyboard: true },
       },
     );
+
+    await ctx.reply('Откройте Perkly — вход уже подтверждён.', {
+      reply_markup: Markup.inlineKeyboard([
+        Markup.button.url(
+          'Открыть Perkly',
+          'https://perkly.uz/auth/complete?source=telegram',
+        ),
+      ]).reply_markup,
+    });
   }
 
   @Command('nearby')

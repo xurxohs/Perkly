@@ -69,9 +69,27 @@ export function Reviews({ offerId }: { offerId: string }) {
             setRating(5);
             setSubmitSuccess('Ваш отзыв успешно опубликован!');
             fetchReviews();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to submit review', error);
-            const msg = error?.response?.data?.message || error?.message || 'Оставлять отзывы могут только подтверждённые покупатели после оплаты товара.';
+            const rawResponseMessage = typeof error === 'object'
+                && error !== null
+                && 'response' in error
+                && typeof error.response === 'object'
+                && error.response !== null
+                && 'data' in error.response
+                && typeof error.response.data === 'object'
+                && error.response.data !== null
+                && 'message' in error.response.data
+                ? error.response.data.message
+                : undefined;
+            const responseMessage = typeof rawResponseMessage === 'string'
+                ? rawResponseMessage
+                : Array.isArray(rawResponseMessage) && rawResponseMessage.every((item) => typeof item === 'string')
+                    ? rawResponseMessage
+                    : undefined;
+            const msg = responseMessage
+                ?? (error instanceof Error ? error.message : undefined)
+                ?? 'Оставлять отзывы могут только подтверждённые покупатели после оплаты товара.';
             setSubmitError(Array.isArray(msg) ? msg.join(', ') : msg);
         } finally {
             setSubmitting(false);

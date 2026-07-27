@@ -5,11 +5,7 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-
-type RateLimitBucket = {
-  count: number;
-  resetAt: number;
-};
+import { RateLimitService } from '../infrastructure/rate-limit.service';
 
 type RateLimitRule = {
   name: string;
@@ -31,33 +27,26 @@ type RateLimitedRequest = {
 
 @Injectable()
 export class AuthRateLimitGuard implements CanActivate {
-  private readonly buckets = new Map<string, RateLimitBucket>();
-  private lastCleanupAt = 0;
+  constructor(private readonly limits: RateLimitService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RateLimitedRequest>();
     const rule = this.ruleFor(request);
-    const now = Date.now();
-    this.cleanup(now);
-
     const key = `${rule.name}:${rule.key(request)}`;
-    const bucket = this.buckets.get(key);
-    if (!bucket || bucket.resetAt <= now) {
-      this.buckets.set(key, { count: 1, resetAt: now + rule.windowMs });
+    const result = await this.limits.consume(
+      key,
+      rule.limit,
+      Math.ceil(rule.windowMs / 1_000),
+    );
+    if (result.allowed) {
       return true;
     }
 
-    bucket.count += 1;
-    if (bucket.count <= rule.limit) {
-      return true;
-    }
-
-    const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
     throw new HttpException(
       {
         statusCode: HttpStatus.TOO_MANY_REQUESTS,
         message: 'Too many auth attempts, please try again later',
-        retryAfter,
+        retryAfter: result.retryAfter,
       },
       HttpStatus.TOO_MANY_REQUESTS,
     );
@@ -152,16 +141,5 @@ export class AuthRateLimitGuard implements CanActivate {
   private queryValue(request: RateLimitedRequest, key: string) {
     const value = request.query?.[key];
     return typeof value === 'string' ? value.trim() : '';
-  }
-
-  private cleanup(now: number) {
-    if (now - this.lastCleanupAt < 60_000) return;
-    this.lastCleanupAt = now;
-
-    for (const [key, bucket] of this.buckets.entries()) {
-      if (bucket.resetAt <= now) {
-        this.buckets.delete(key);
-      }
-    }
   }
 }

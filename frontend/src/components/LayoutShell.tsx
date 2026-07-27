@@ -28,6 +28,22 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         document.documentElement.dataset.perklyTheme = theme;
+        const browserChromeColor = theme === 'light' ? '#f5f5f7' : '#000000';
+        document.documentElement.style.backgroundColor = browserChromeColor;
+        document.documentElement.style.colorScheme = theme;
+        document.body.style.backgroundColor = browserChromeColor;
+
+        let themeTags = Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'));
+        if (themeTags.length === 0) {
+            const runtimeTheme = document.createElement('meta');
+            runtimeTheme.name = 'theme-color';
+            document.head.appendChild(runtimeTheme);
+            themeTags = [runtimeTheme];
+        }
+        themeTags.forEach((themeTag) => {
+            themeTag.removeAttribute('media');
+            themeTag.content = browserChromeColor;
+        });
     }, [theme]);
 
     const toggleTheme = () => {
@@ -43,12 +59,20 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             : 'site-dark-commerce';
 
     return (
-        <div className={`min-h-screen flex flex-col ${shellThemeClass}`}>
-            {!isImmersive && <Navbar theme={theme} onToggleTheme={toggleTheme} showThemeToggle />}
-            <main className={`flex-1 relative overflow-x-hidden ${isImmersive ? 'pb-24 md:pb-0' : 'mt-16 pb-28 md:pb-0'}`}>
+        <div className={`site-shell min-h-screen flex flex-col ${shellThemeClass}`}>
+            {!isImmersive && (
+                <div className="desktop-site-navbar">
+                    <Navbar theme={theme} onToggleTheme={toggleTheme} showThemeToggle />
+                </div>
+            )}
+            <main className={`site-main flex-1 relative overflow-x-hidden ${isImmersive ? 'pb-24 md:pb-0' : 'pb-28 md:mt-16 md:pb-0'}`}>
                 {children}
             </main>
-            {!isImmersive && <Footer />}
+            {!isImmersive && (
+                <div className="desktop-site-footer">
+                    <Footer />
+                </div>
+            )}
             <MobileDock />
         </div>
     );

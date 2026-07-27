@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
-import { ArrowRight, Lock, Mail, Send, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowRight, Lock, Mail, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -123,12 +123,6 @@ function LoginForm() {
 
             {/* Header */}
             <div className="z-10 text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 shadow-telegram-glow overflow-hidden">
-                    <svg viewBox="0 0 24 24" className="w-14 h-14" aria-hidden="true">
-                        <circle cx="12" cy="12" r="12" fill="#24A1DE" />
-                        <path fill="#FFFFFF" d="M5.425 11.8711C8.8375 10.3844 11.1133 9.40444 12.2525 8.93111C15.505 7.57778 16.18 7.34222 16.6206 7.33444C16.7175 7.33278 16.9342 7.35611 17.0744 7.46972C17.1928 7.56583 17.2256 7.69556 17.2411 7.78667C17.2567 7.87778 17.2761 8.08556 17.2606 8.24944C17.0839 10.1064 16.3211 14.6 15.9328 16.6783C15.7686 17.5572 15.4444 17.8517 15.1311 17.8806C14.4506 17.9439 13.9339 17.4311 13.275 16.9989C12.2439 16.3228 11.6617 15.9011 10.6617 15.2422C9.50611 14.4811 10.255 14.0617 10.9139 13.3772C11.0864 13.1978 14.0842 10.47 14.1422 10.2228C14.1494 10.1919 14.1561 10.0767 14.0878 10.0161C14.0194 9.95556 13.9183 9.97611 13.845 9.99278C13.7411 10.0161 12.0911 11.1067 8.89222 13.2667C8.42333 13.5883 7.99833 13.745 7.61722 13.7367C7.19722 13.7278 6.38889 13.5 5.78778 13.3044C5.05 13.0644 4.46444 12.9378 4.51556 12.5306C4.54222 12.3183 4.83444 12.1022 5.425 11.8711Z" />
-                    </svg>
-                </div>
                 <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">С возвращением</h1>
                 <p className="text-white/50 text-sm">Войдите через Telegram или email</p>
             </div>
@@ -148,10 +142,12 @@ function LoginForm() {
                         className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-base transition-all cursor-pointer border-0 bg-telegram-gradient shadow-telegram-glow ${loading ? 'opacity-70' : 'opacity-100 hover:opacity-90'}`}
                         title="Войти через Telegram"
                     >
-                        <svg viewBox="0 0 24 24" className="w-6 h-6 shrink-0" aria-hidden="true">
-                            <circle cx="12" cy="12" r="12" fill="#24A1DE" />
-                            <path fill="#FFFFFF" d="M5.425 11.8711C8.8375 10.3844 11.1133 9.40444 12.2525 8.93111C15.505 7.57778 16.18 7.34222 16.6206 7.33444C16.7175 7.33278 16.9342 7.35611 17.0744 7.46972C17.1928 7.56583 17.2256 7.69556 17.2411 7.78667C17.2567 7.87778 17.2761 8.08556 17.2606 8.24944C17.0839 10.1064 16.3211 14.6 15.9328 16.6783C15.7686 17.5572 15.4444 17.8517 15.1311 17.8806C14.4506 17.9439 13.9339 17.4311 13.275 16.9989C12.2439 16.3228 11.6617 15.9011 10.6617 15.2422C9.50611 14.4811 10.255 14.0617 10.9139 13.3772C11.0864 13.1978 14.0842 10.47 14.1422 10.2228C14.1494 10.1919 14.1561 10.0767 14.0878 10.0161C14.0194 9.95556 13.9183 9.97611 13.845 9.99278C13.7411 10.0161 12.0911 11.1067 8.89222 13.2667C8.42333 13.5883 7.99833 13.745 7.61722 13.7367C7.19722 13.7278 6.38889 13.5 5.78778 13.3044C5.05 13.0644 4.46444 12.9378 4.51556 12.5306C4.54222 12.3183 4.83444 12.1022 5.425 11.8711Z" />
-                        </svg>
+                        <img
+                            src="/brands/telegram.svg"
+                            alt=""
+                            className="w-6 h-6 shrink-0"
+                            aria-hidden="true"
+                        />
                         Войти через Telegram
                     </button>
                     <p className="text-center text-xs text-white/30 mt-2">

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
@@ -30,13 +30,13 @@ export const metadata: Metadata = {
     url: './',
     title: defaultTitle,
     description: defaultDescription,
-    images: [{ url: '/icon-512.png', width: 512, height: 512, alt: 'Perkly' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Perkly — маркетплейс цифровых товаров и промокодов' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: defaultTitle,
     description: defaultDescription,
-    images: ['/icon-512.png'],
+    images: ['/og-image.png'],
   },
   manifest: '/manifest.json',
   icons: {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'Perkly',
   },
   formatDetection: {
@@ -55,14 +55,82 @@ export const metadata: Metadata = {
     : undefined,
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  colorScheme: 'light dark',
+  // The stored Perkly theme is applied before paint below. A single initial
+  // color prevents Safari from choosing its dark chrome from the OS theme.
+  themeColor: '#f5f5f7',
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased text-white min-h-screen flex flex-col bg-black`}>
+    <html lang="ru" className="dark" data-perkly-theme="light" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+              try {
+                const theme = localStorage.getItem('perkly-theme') === 'dark' ? 'dark' : 'light';
+                const color = theme === 'dark' ? '#000000' : '#f5f5f7';
+                const root = document.documentElement;
+                root.dataset.perklyTheme = theme;
+                root.style.backgroundColor = color;
+                root.style.colorScheme = theme;
+                document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+                  meta.removeAttribute('media');
+                  meta.setAttribute('content', color);
+                });
+              } catch (_) {}
+            })();`,
+          }}
+        />
+      </head>
+      <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  '@id': 'https://perkly.uz/#organization',
+                  name: 'Perkly',
+                  url: 'https://perkly.uz',
+                  logo: 'https://perkly.uz/icon-512.png',
+                  contactPoint: {
+                    '@type': 'ContactPoint',
+                    email: 'support@perkly.uz',
+                    contactType: 'customer support',
+                    availableLanguage: ['Russian', 'Uzbek'],
+                  },
+                },
+                {
+                  '@type': 'WebSite',
+                  '@id': 'https://perkly.uz/#website',
+                  url: 'https://perkly.uz',
+                  name: 'Perkly',
+                  publisher: { '@id': 'https://perkly.uz/#organization' },
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target: {
+                      '@type': 'EntryPoint',
+                      urlTemplate: 'https://perkly.uz/search?q={search_term_string}',
+                    },
+                    'query-input': 'required name=search_term_string',
+                  },
+                },
+              ],
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
         <Providers>
           <AnalyticsTracker />
           <OnboardingProvider>

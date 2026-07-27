@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Camera, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -50,6 +49,19 @@ const offerAccessLabel = (transaction: Transaction) => {
     }
 };
 
+const transactionStatusLabel = (status: string) => {
+    switch (status) {
+        case 'PAID': return 'Оплачено';
+        case 'COMPLETED': return 'Завершено';
+        case 'ESCROW': return 'В обработке';
+        case 'PENDING': return 'Ожидает оплаты';
+        case 'DISPUTED': return 'Открыт спор';
+        case 'CANCELLED': return 'Отменено';
+        case 'REFUNDED': return 'Возвращено';
+        default: return status;
+    }
+};
+
 
 
 export default function ProfilePage() {
@@ -78,6 +90,8 @@ export default function ProfilePage() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [qrModalData, setQrModalData] = useState<{ title: string; data: string } | null>(null);
     const [topUpModalOpen, setTopUpModalOpen] = useState(false);
+    const [mobilePanel, setMobilePanel] = useState<'none' | 'seller' | 'settings'>('none');
+    const [mobilePurchaseLimit, setMobilePurchaseLimit] = useState(4);
 
     // Telegram binding states
     const [tgStep, setTgStep] = useState<'idle' | 'waiting' | 'done'>('idle');
@@ -381,6 +395,193 @@ export default function ProfilePage() {
     return (
         <>
             <div className="profile-modern max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+                <section className="profile-mobile-shell md:hidden" aria-label="Профиль пользователя">
+                    <header className="profile-mobile-titlebar">
+                        <h1>Профиль</h1>
+                        <button
+                            type="button"
+                            aria-label="Редактировать профиль"
+                            onClick={() => { setEditing(true); setEditName(user.displayName || ''); }}
+                        >
+                            <Edit2 aria-hidden="true" />
+                        </button>
+                    </header>
+
+                    <div className="profile-mobile-person">
+                        <label className="profile-mobile-avatar" title="Изменить фотографию профиля">
+                            {user.avatarUrl ? (
+                                <img src={user.avatarUrl} alt="Фотография профиля" />
+                            ) : (
+                                <PerklyGlyph name="profile" aria-hidden="true" />
+                            )}
+                            {avatarUploading && <span className="profile-mobile-avatar-loading"><Loader2 aria-hidden="true" /></span>}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={avatarUploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleAvatarFile(file); event.currentTarget.value = ''; }} />
+                        </label>
+                        <div className="profile-mobile-person-copy">
+                            <h2>{user.displayName || 'Пользователь'}</h2>
+                            <p>{user.email}</p>
+                            <span className={`profile-mobile-tier profile-mobile-tier-${user.tier.toLowerCase()}`}>
+                                <Crown aria-hidden="true" /> {user.tier}
+                            </span>
+                        </div>
+                    </div>
+                    {avatarError && <p className="profile-mobile-error">{avatarError}</p>}
+                    {editing && (
+                        <div className="profile-mobile-edit">
+                            <input value={editName} onChange={(event) => setEditName(event.target.value)} aria-label="Имя пользователя" placeholder="Имя пользователя" />
+                            <button type="button" onClick={handleSaveName}>Сохранить</button>
+                            <button type="button" aria-label="Отменить изменение имени" onClick={() => setEditing(false)}><X aria-hidden="true" /></button>
+                        </div>
+                    )}
+
+                    <button type="button" className="profile-mobile-wallet" onClick={() => setTopUpModalOpen(true)}>
+                        <span className="profile-mobile-wallet-icon"><PerklyGlyph name="catalog" aria-hidden="true" /></span>
+                        <span>
+                            <small>Баланс</small>
+                            <strong>{user.balance.toLocaleString('ru-RU')} сум</strong>
+                        </span>
+                        <span className="profile-mobile-wallet-action">Пополнить</span>
+                    </button>
+
+                    <nav className="profile-mobile-segments" aria-label="Разделы профиля">
+                        <button type="button" className={activeTab === 'history' ? 'is-active' : ''} onClick={() => setActiveTab('history')}>Покупки</button>
+                        <button type="button" className={activeTab === 'saved' ? 'is-active' : ''} onClick={() => setActiveTab('saved')}>Сохранённые</button>
+                        <button type="button" className={activeTab === 'promocodes' ? 'is-active' : ''} onClick={() => setActiveTab('promocodes')}>Промокоды</button>
+                    </nav>
+
+                    <div className="profile-mobile-metrics">
+                        <div><strong>{stats.totalPurchases}</strong><span>покупок</span></div>
+                        <div><strong>{user.rewardPoints.toLocaleString('ru-RU')}</strong><span>баллов Perkly</span></div>
+                    </div>
+
+                    <section className="profile-mobile-content" aria-live="polite">
+                        {activeTab === 'history' && (
+                            <>
+                                <div className="profile-mobile-content-head">
+                                    <div><strong>Покупки</strong><span>Статус и следующий шаг</span></div>
+                                    <span>{transactions.length}</span>
+                                </div>
+                                {transactions.length === 0 ? (
+                                    <div className="profile-mobile-empty">
+                                        <ShoppingBag aria-hidden="true" />
+                                        <strong>Покупок пока нет</strong>
+                                        <Link href="/catalog">Открыть каталог</Link>
+                                    </div>
+                                ) : (
+                                    <div className="profile-mobile-purchase-list">
+                                        {transactions.slice(0, mobilePurchaseLimit).map((tx) => (
+                                            <Link href={tx.offer?.id ? `/offer?id=${tx.offer.id}` : '/profile'} className="profile-mobile-purchase" key={tx.id}>
+                                                <span className="profile-mobile-purchase-icon"><ShoppingBag aria-hidden="true" /></span>
+                                                <span className="profile-mobile-purchase-copy">
+                                                    <strong>{tx.offer?.title || 'Покупка'}</strong>
+                                                    <small>{transactionStatusLabel(tx.status)} · {new Date(tx.createdAt).toLocaleDateString('ru-RU')}</small>
+                                                </span>
+                                                <span className="profile-mobile-purchase-price">{tx.price.toLocaleString('ru-RU')} сум</span>
+                                                <span className="profile-mobile-chevron" aria-hidden="true">›</span>
+                                            </Link>
+                                        ))}
+                                        {mobilePurchaseLimit < transactions.length && (
+                                            <button type="button" className="profile-mobile-more" onClick={() => setMobilePurchaseLimit((value) => value + 4)}>
+                                                Показать ещё
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        {activeTab === 'saved' && (
+                            <>
+                                <div className="profile-mobile-content-head">
+                                    <div><strong>Сохранённые</strong><span>Вернуться к товару позже</span></div>
+                                    <span>{savedOffers.length}</span>
+                                </div>
+                                {savedOffers.length === 0 ? (
+                                    <div className="profile-mobile-empty"><Bookmark aria-hidden="true" /><strong>Здесь пока пусто</strong><Link href="/catalog">Найти товары</Link></div>
+                                ) : savedOffers.slice(0, 6).map((item) => (
+                                    <Link href={`/offer?id=${item.offerId}`} className="profile-mobile-purchase" key={item.id}>
+                                        <span className="profile-mobile-purchase-icon"><Bookmark aria-hidden="true" /></span>
+                                        <span className="profile-mobile-purchase-copy"><strong>{item.offer.title}</strong><small>{item.offer.category}</small></span>
+                                        <span className="profile-mobile-purchase-price">{item.offer.price === 0 ? 'Бесплатно' : `${item.offer.price.toLocaleString('ru-RU')} сум`}</span>
+                                        <span className="profile-mobile-chevron" aria-hidden="true">›</span>
+                                    </Link>
+                                ))}
+                            </>
+                        )}
+                        {activeTab === 'promocodes' && (
+                            <>
+                                <div className="profile-mobile-content-head">
+                                    <div><strong>Промокоды</strong><span>Коды и срок действия</span></div>
+                                    <span>{promocodeActivations.length}</span>
+                                </div>
+                                {promocodeActivations.length === 0 ? (
+                                    <div className="profile-mobile-empty"><Ticket aria-hidden="true" /><strong>Промокодов пока нет</strong><Link href="/coupons">Смотреть купоны</Link></div>
+                                ) : promocodeActivations.slice(0, 6).map((activation) => (
+                                    <div className="profile-mobile-purchase" key={activation.id}>
+                                        <span className="profile-mobile-purchase-icon"><Ticket aria-hidden="true" /></span>
+                                        <span className="profile-mobile-purchase-copy"><strong>{activation.promocode?.title ?? 'Промокод'}</strong><small>{PROMOCODE_ACTIVATION_META[activation.status]?.label ?? activation.status}</small></span>
+                                        <code className="profile-mobile-purchase-price">{activation.codeSnapshot ?? 'Готов'}</code>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                    </section>
+
+                    <div className="profile-mobile-menu">
+                        <button type="button" onClick={() => setMobilePanel((value) => value === 'seller' ? 'none' : 'seller')}>
+                            <span className="profile-mobile-menu-icon"><Store aria-hidden="true" /></span>
+                            <span><strong>{canUseVendorHub ? 'Мои товары и продажи' : 'Стать продавцом'}</strong><small>{canUseVendorHub ? 'Заказы, товары и статистика' : 'Открыть свой магазин в Perkly'}</small></span>
+                            <span className="profile-mobile-chevron" aria-hidden="true">›</span>
+                        </button>
+                        <Link href="/chat">
+                            <span className="profile-mobile-menu-icon"><MessageCircle aria-hidden="true" /></span>
+                            <span><strong>Чаты</strong><small>Покупки, продавцы и поддержка</small></span>
+                            <span className="profile-mobile-chevron" aria-hidden="true">›</span>
+                        </Link>
+                        <Link href="/pricing">
+                            <span className="profile-mobile-menu-icon"><Crown aria-hidden="true" /></span>
+                            <span><strong>Тариф и привилегии</strong><small>Возможности вашего аккаунта</small></span>
+                            <span className="profile-mobile-chevron" aria-hidden="true">›</span>
+                        </Link>
+                        <button type="button" onClick={() => setMobilePanel((value) => value === 'settings' ? 'none' : 'settings')}>
+                            <span className="profile-mobile-menu-icon"><Settings aria-hidden="true" /></span>
+                            <span><strong>Настройки</strong><small>Язык, безопасность и аккаунт</small></span>
+                            <span className="profile-mobile-chevron" aria-hidden="true">›</span>
+                        </button>
+                    </div>
+
+                    {mobilePanel === 'seller' && (
+                        <section className="profile-mobile-subpanel">
+                            <div className="profile-mobile-content-head">
+                                <div><strong>{canUseVendorHub ? 'Продажи' : 'Стать продавцом'}</strong><span>{canUseVendorHub ? 'Управление магазином' : 'Начните продавать в Perkly'}</span></div>
+                                <button type="button" aria-label="Закрыть" onClick={() => setMobilePanel('none')}><X aria-hidden="true" /></button>
+                            </div>
+                            {canUseVendorHub ? (
+                                <div className="profile-mobile-action-grid">
+                                    <Link href="/vendor/products"><Store aria-hidden="true" /><span>Товары</span></Link>
+                                    <Link href="/vendor/orders"><ShoppingBag aria-hidden="true" /><span>Заказы</span></Link>
+                                    <Link href="/vendor/analytics"><ClipboardList aria-hidden="true" /><span>Статистика</span></Link>
+                                    <Link href="/vendor"><Settings aria-hidden="true" /><span>Кабинет</span></Link>
+                                </div>
+                            ) : <Link className="profile-mobile-primary-link" href="/sell">Открыть магазин</Link>}
+                        </section>
+                    )}
+
+                    {mobilePanel === 'settings' && (
+                        <section className="profile-mobile-subpanel">
+                            <div className="profile-mobile-content-head">
+                                <div><strong>Настройки</strong><span>Язык, защита и аккаунт</span></div>
+                                <button type="button" aria-label="Закрыть" onClick={() => setMobilePanel('none')}><X aria-hidden="true" /></button>
+                            </div>
+                            <div className="profile-mobile-language"><span>Язык</span><LanguageSwitcher /></div>
+                            <Link className="profile-mobile-setting-row" href="/safety"><span>Безопасность</span><span>›</span></Link>
+                            <Link className="profile-mobile-setting-row" href="/notifications"><span>Уведомления</span><span>›</span></Link>
+                            <Link className="profile-mobile-setting-row" href="/support"><span>Поддержка</span><span>›</span></Link>
+                            <button className="profile-mobile-logout" type="button" onClick={() => { logout(); router.push('/'); }}><LogOut aria-hidden="true" /> Выйти</button>
+                        </section>
+                    )}
+                </section>
+
+                <div className="hidden md:block">
                 <div className="mb-6 flex items-end justify-between">
                     <h1 className="text-3xl font-black tracking-[-.045em] text-white sm:text-4xl">Профиль</h1>
                     <span className="profile-brand-mark" aria-hidden="true" />
@@ -392,7 +593,11 @@ export default function ProfilePage() {
                     <div className="flex items-start sm:items-center gap-4 sm:gap-5 relative z-10">
                         <label className="profile-avatar group relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 cursor-pointer overflow-hidden" title="Изменить фотографию профиля">
                             {user.avatarUrl ? (
-                                <Image src={user.avatarUrl} alt="Фотография профиля" fill sizes="80px" className="object-cover" />
+                                <img
+                                    src={user.avatarUrl}
+                                    alt="Фотография профиля"
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                />
                             ) : (
                                 <PerklyGlyph name="profile" className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
                             )}
@@ -640,9 +845,10 @@ export default function ProfilePage() {
                         </svg>
                     </div>
                 </Link>
+                </div>
 
                 {/* Tabs */}
-                <div className="profile-tabs -mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-1 sm:py-1">
+                <div className="profile-tabs hidden md:flex -mx-4 mb-6 gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-1 sm:py-1">
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'history' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
@@ -675,6 +881,7 @@ export default function ProfilePage() {
                     </button>
                 </div>
 
+                <div className="profile-desktop-tabs-content">
                 {/* Tab content */}
                 {activeTab === 'history' && (
                     <div className="rounded-2xl overflow-hidden border border-white/[0.06]">
@@ -1097,10 +1304,12 @@ export default function ProfilePage() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                                            <svg viewBox="0 0 24 24" className="w-10 h-10" aria-hidden="true">
-                                                <circle cx="12" cy="12" r="12" fill="#24A1DE" />
-                                                <path fill="#FFFFFF" d="M5.425 11.8711C8.8375 10.3844 11.1133 9.40444 12.2525 8.93111C15.505 7.57778 16.18 7.34222 16.6206 7.33444C16.7175 7.33278 16.9342 7.35611 17.0744 7.46972C17.1928 7.56583 17.2256 7.69556 17.2411 7.78667C17.2567 7.87778 17.2761 8.08556 17.2606 8.24944C17.0839 10.1064 16.3211 14.6 15.9328 16.6783C15.7686 17.5572 15.4444 17.8517 15.1311 17.8806C14.4506 17.9439 13.9339 17.4311 13.275 16.9989C12.2439 16.3228 11.6617 15.9011 10.6617 15.2422C9.50611 14.4811 10.255 14.0617 10.9139 13.3772C11.0864 13.1978 14.0842 10.47 14.1422 10.2228C14.1494 10.1919 14.1561 10.0767 14.0878 10.0161C14.0194 9.95556 13.9183 9.97611 13.845 9.99278C13.7411 10.0161 12.0911 11.1067 8.89222 13.2667C8.42333 13.5883 7.99833 13.745 7.61722 13.7367C7.19722 13.7278 6.38889 13.5 5.78778 13.3044C5.05 13.0644 4.46444 12.9378 4.51556 12.5306C4.54222 12.3183 4.83444 12.1022 5.425 11.8711Z" />
-                                            </svg>
+                                            <img
+                                                src="/brands/telegram.svg"
+                                                alt=""
+                                                className="h-10 w-10"
+                                                aria-hidden="true"
+                                            />
                                         </div>
                                         <div>
                                             <p className="text-white font-medium mb-0.5">Telegram Бот Perkly</p>
@@ -1141,6 +1350,7 @@ export default function ProfilePage() {
                         </button>
                     </div>
                 )}
+                </div>
             </div>
 
             {/* QR Code Modal */}

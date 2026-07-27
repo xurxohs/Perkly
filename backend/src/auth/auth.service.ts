@@ -34,6 +34,7 @@ export interface SessionDevice {
 
 export interface TelegramWidgetData {
   id: string | number;
+  auth_date?: string | number;
   username?: string;
   first_name?: string;
   last_name?: string;
@@ -640,6 +641,7 @@ export class AuthService {
       return false;
     }
     const { hash, ...userData } = data;
+    if (!this.isFreshTelegramAuthDate(userData.auth_date)) return false;
     const secretKey = crypto.createHash('sha256').update(BOT_TOKEN).digest();
     const dataCheckString = Object.keys(userData)
       .sort()
@@ -649,7 +651,7 @@ export class AuthService {
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
-    return hmac === hash;
+    return this.safeHashEquals(hmac, hash);
   }
 
   validateTelegramMiniAppHash(initData: string): TelegramWidgetData | null {
@@ -661,6 +663,9 @@ export class AuthService {
     const urlParams = new URLSearchParams(initData);
     const hash = urlParams.get('hash');
     if (!hash) return null;
+    if (!this.isFreshTelegramAuthDate(urlParams.get('auth_date') ?? undefined)) {
+      return null;
+    }
     urlParams.delete('hash');
     urlParams.sort();
     let dataCheckString = '';
@@ -676,7 +681,7 @@ export class AuthService {
       .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
-    if (hmac === hash) {
+    if (this.safeHashEquals(hmac, hash)) {
       const userStr = urlParams.get('user');
       if (userStr) {
         try {
@@ -694,7 +699,12 @@ export class AuthService {
     const email = telegramData.username
       ? `${telegramData.username}@telegram.local`
       : `${telegramIdStr}@telegram.local`;
-    let user = await this.prisma.user.findUnique({ where: { email } });
+    let user = await this.prisma.user.findUnique({
+      where: { telegramId: telegramIdStr },
+    });
+    if (!user) {
+      user = await this.prisma.user.findUnique({ where: { email } });
+    }
     if (!user) {
       user = await this.prisma.user.create({
         data: {
@@ -714,5 +724,22 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _pw, ...result } = user;
     return result;
+  }
+
+  private isFreshTelegramAuthDate(value: string | number | undefined): boolean {
+    const authDate = Number(value);
+    if (!Number.isFinite(authDate) || authDate <= 0) return false;
+    const ageSeconds = Math.floor(Date.now() / 1_000) - authDate;
+    return ageSeconds >= -300 && ageSeconds <= 24 * 60 * 60;
+  }
+
+  private safeHashEquals(actual: string, expected: string): boolean {
+    if (!/^[a-f0-9]{64}$/i.test(expected)) return false;
+    const actualBuffer = Buffer.from(actual, 'hex');
+    const expectedBuffer = Buffer.from(expected, 'hex');
+    return (
+      actualBuffer.length === expectedBuffer.length &&
+      crypto.timingSafeEqual(actualBuffer, expectedBuffer)
+    );
   }
 }

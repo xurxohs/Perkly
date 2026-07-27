@@ -5,6 +5,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { SquadsModule } from '../squads/squads.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { forwardRef } from '@nestjs/common';
+import { PurchaseRateLimitGuard } from './purchase-rate-limit.guard';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { forwardRef } from '@nestjs/common';
     forwardRef(() => SquadsModule),
   ],
   controllers: [TransactionsController],
-  providers: [TransactionsService],
+  providers: [TransactionsService, PurchaseRateLimitGuard],
   exports: [TransactionsService],
 })
 export class TransactionsModule {}

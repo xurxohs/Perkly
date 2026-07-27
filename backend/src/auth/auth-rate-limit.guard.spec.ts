@@ -1,5 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
+import { RateLimitService } from '../infrastructure/rate-limit.service';
 
 function contextFor(request: Record<string, unknown>): ExecutionContext {
   return {
@@ -10,8 +11,8 @@ function contextFor(request: Record<string, unknown>): ExecutionContext {
 }
 
 describe('AuthRateLimitGuard', () => {
-  it('blocks repeated login attempts for the same ip and email', () => {
-    const guard = new AuthRateLimitGuard();
+  it('blocks repeated login attempts for the same ip and email', async () => {
+    const guard = new AuthRateLimitGuard(new RateLimitService());
     const context = contextFor({
       url: '/auth/login',
       ip: '127.0.0.1',
@@ -20,19 +21,19 @@ describe('AuthRateLimitGuard', () => {
     });
 
     for (let index = 0; index < 10; index += 1) {
-      expect(guard.canActivate(context)).toBe(true);
+      await expect(guard.canActivate(context)).resolves.toBe(true);
     }
 
-    expect(() => guard.canActivate(context)).toThrow(
+    await expect(guard.canActivate(context)).rejects.toThrow(
       'Too many auth attempts, please try again later',
     );
   });
 
-  it('tracks different login emails separately', () => {
-    const guard = new AuthRateLimitGuard();
+  it('tracks different login emails separately', async () => {
+    const guard = new AuthRateLimitGuard(new RateLimitService());
 
     for (let index = 0; index < 10; index += 1) {
-      expect(
+      await expect(
         guard.canActivate(
           contextFor({
             url: '/auth/login',
@@ -41,10 +42,10 @@ describe('AuthRateLimitGuard', () => {
             body: { email: 'first@example.com' },
           }),
         ),
-      ).toBe(true);
+      ).resolves.toBe(true);
     }
 
-    expect(
+    await expect(
       guard.canActivate(
         contextFor({
           url: '/auth/login',
@@ -53,6 +54,6 @@ describe('AuthRateLimitGuard', () => {
           body: { email: 'second@example.com' },
         }),
       ),
-    ).toBe(true);
+    ).resolves.toBe(true);
   });
 });

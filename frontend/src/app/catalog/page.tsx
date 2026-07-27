@@ -77,6 +77,8 @@ function CatalogContent() {
             : null
     );
     const [showFilters, setShowFilters] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const loadedCountRef = useRef(0);
     const [priceFromInput, setPriceFromInput] = useState('');
     const [priceToInput, setPriceToInput] = useState('');
     const [minPrice, setMinPrice] = useState<number | undefined>();
@@ -90,7 +92,7 @@ function CatalogContent() {
         try {
             const filters: OfferFilters = {
                 skip: page * PAGE_SIZE,
-                take: PAGE_SIZE,
+                take: silent && page === 0 ? Math.max(PAGE_SIZE, loadedCountRef.current) : PAGE_SIZE,
                 sort,
             };
             if (category) filters.category = category;
@@ -107,6 +109,7 @@ function CatalogContent() {
 
             const res = await offersApi.list(filters);
             setOffers(res.data);
+            loadedCountRef.current = res.data.length;
             setTotal(res.total);
         } catch (err) {
             console.error('Failed to fetch offers:', err);
@@ -117,6 +120,43 @@ function CatalogContent() {
             if (!silent) setLoading(false);
         }
     }, [page, category, fulfillmentType, sort, search, isFlashDrop, isNearMe, coords, minPrice, maxPrice]);
+
+    const loadMoreOffers = async () => {
+        if (loadingMore || offers.length >= total) return;
+        setLoadingMore(true);
+        setError(null);
+        try {
+            const filters: OfferFilters = {
+                skip: offers.length,
+                take: PAGE_SIZE,
+                sort,
+            };
+            if (category) filters.category = category;
+            if (fulfillmentType) filters.fulfillmentType = fulfillmentType;
+            if (search) filters.search = search;
+            if (isFlashDrop) filters.isFlashDrop = true;
+            if (minPrice !== undefined) filters.minPrice = minPrice;
+            if (maxPrice !== undefined) filters.maxPrice = maxPrice;
+            if (isNearMe && coords) {
+                filters.lat = coords.lat;
+                filters.lng = coords.lng;
+                filters.radiusKm = 3;
+            }
+
+            const res = await offersApi.list(filters);
+            setOffers((current) => {
+                const knownIds = new Set(current.map((offer) => offer.id));
+                const next = [...current, ...res.data.filter((offer) => !knownIds.has(offer.id))];
+                loadedCountRef.current = next.length;
+                return next;
+            });
+            setTotal(res.total);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Не удалось загрузить ещё предложения');
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     useEffect(() => {
         fetchOffers();
@@ -136,6 +176,15 @@ function CatalogContent() {
             document.removeEventListener('keydown', closeSortMenuOnEscape);
         };
     }, []);
+
+    useEffect(() => {
+        if (!showFilters || !window.matchMedia('(max-width: 767px)').matches) return;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [showFilters]);
 
     useEffect(() => {
         const refreshIfVisible = () => {
@@ -234,7 +283,7 @@ function CatalogContent() {
     return (
         <div className="catalog-apple-light min-h-screen max-w-7xl mx-auto px-6 py-10">
             {/* Header */}
-            <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="catalog-mobile-header mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                 <div>
                 <h1 className="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">
                     {isFlashDrop ? (
@@ -263,41 +312,28 @@ function CatalogContent() {
 
             <CatalogShowcase offers={offers} />
 
-            <div className="-mx-6 mb-5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex min-w-max gap-2 pb-1">
-                    {CATEGORIES.map((item) => {
-                        const selected = category === item.value;
-                        return (
-                            <button
-                                key={item.value || 'all'}
-                                onClick={() => { setCategory(item.value); setPage(0); }}
-                                className={`catalog-filter-pill ${selected ? 'catalog-filter-pill-selected' : ''} inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-purple-400/35 bg-purple-500/15 text-white shadow-[0_8px_30px_rgba(168,85,247,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
-                            >
-                                <PerklyGlyph name={item.glyph} className="h-4 w-4" /> {item.label}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
             {/* Search and filters */}
             <div className="catalog-search-surface relative z-20 mb-6 overflow-visible rounded-[28px] border border-white/[0.07] bg-white/[0.025] p-3 backdrop-blur-2xl">
-                <div className="flex flex-col gap-3 lg:flex-row">
-                <form onSubmit={handleSearch} className="min-w-0 flex-1">
+                <div className="catalog-mobile-toolbar flex flex-col gap-3 lg:flex-row">
+                <form onSubmit={handleSearch} className="catalog-search-form min-w-0 flex-1">
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" aria-hidden="true" />
                         <input
                             type="text"
-                            placeholder="Найти промокод, подписку или товар"
+                            placeholder="Найти товары"
+                            aria-label="Поиск товаров в каталоге"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             className="h-12 w-full rounded-2xl border border-white/[0.07] bg-black/20 pl-11 pr-24 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-purple-400/35 focus:bg-white/[0.04]"
                         />
-                        <button type="submit" className="absolute right-1.5 top-1.5 h-9 rounded-xl bg-white px-4 text-xs font-extrabold text-black transition hover:bg-white/90">Найти</button>
+                        <button type="submit" aria-label="Найти" className="catalog-search-submit absolute right-1.5 top-1.5 h-9 rounded-xl bg-white px-4 text-xs font-extrabold text-black transition hover:bg-white/90">
+                            <span className="catalog-search-submit-label">Найти</span>
+                            <Search className="catalog-search-submit-icon hidden h-4 w-4" aria-hidden="true" />
+                        </button>
                     </div>
                 </form>
 
-                <div ref={sortMenuRef} className="relative min-w-[205px]">
+                <div ref={sortMenuRef} className="catalog-sort-control relative min-w-[205px]">
                     <button
                         type="button"
                         onClick={() => setSortOpen((value) => !value)}
@@ -333,15 +369,32 @@ function CatalogContent() {
                 <button
                     onClick={() => setShowFilters((value) => !value)}
                     aria-expanded={showFilters}
-                    className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold transition ${showFilters || activeFilterCount > 0 ? 'border-purple-400/30 bg-purple-500/12 text-white' : 'border-white/[0.07] bg-white/[0.04] text-white/60 hover:text-white'}`}
+                    className={`catalog-filter-control relative inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold transition ${showFilters || activeFilterCount > 0 ? 'border-purple-400/30 bg-purple-500/12 text-white' : 'border-white/[0.07] bg-white/[0.04] text-white/60 hover:text-white'}`}
                 >
-                    <SlidersHorizontal className="h-4 w-4" /> Фильтры
-                    {activeFilterCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-black text-[#1d1d1f] shadow-sm">{activeFilterCount}</span>}
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span className="catalog-filter-label">Фильтры</span>
+                    {activeFilterCount > 0 && <span className="catalog-filter-count flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-black text-[#1d1d1f] shadow-sm">{activeFilterCount}</span>}
                 </button>
                 </div>
 
                 {showFilters && (
-                    <div className="mt-3 border-t border-white/[0.07] px-1 pb-1 pt-5">
+                    <>
+                    <button
+                        type="button"
+                        className="catalog-filter-backdrop hidden"
+                        aria-label="Закрыть фильтры"
+                        onClick={() => setShowFilters(false)}
+                    />
+                    <div className="catalog-filter-panel mt-3 border-t border-white/[0.07] px-1 pb-1 pt-5">
+                        <div className="catalog-filter-sheet-header hidden">
+                            <div>
+                                <p>Настройка выдачи</p>
+                                <strong>Фильтры</strong>
+                            </div>
+                            <button type="button" aria-label="Закрыть фильтры" onClick={() => setShowFilters(false)}>
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
                         <div className="mb-5">
                             <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.14em] text-white/35">Тип предложения</p>
                             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
@@ -367,8 +420,33 @@ function CatalogContent() {
                                 <button onClick={toggleNearMe} className={`inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${isNearMe ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-200' : 'border-white/[0.07] bg-white/[0.035] text-white/45'}`}><MapPin className="h-4 w-4" /> Рядом</button>
                             </div>
                         </div>
+                        <div className="catalog-filter-sheet-actions hidden">
+                            <button type="button" onClick={resetFilters}>Сбросить</button>
+                            <button type="button" onClick={() => setShowFilters(false)}>
+                                Показать {total}
+                            </button>
+                        </div>
                     </div>
+                    </>
                 )}
+            </div>
+
+            <div className="catalog-category-rail -mx-6 mb-5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Категории каталога">
+                <div className="flex min-w-max gap-2 pb-1">
+                    {CATEGORIES.map((item) => {
+                        const selected = category === item.value;
+                        return (
+                            <button
+                                key={item.value || 'all'}
+                                onClick={() => { setCategory(item.value); setPage(0); }}
+                                aria-pressed={selected}
+                                className={`catalog-filter-pill ${selected ? 'catalog-filter-pill-selected' : ''} inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-purple-400/35 bg-purple-500/15 text-white shadow-[0_8px_30px_rgba(168,85,247,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
+                            >
+                                <PerklyGlyph name={item.glyph} className="h-4 w-4" /> {item.label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {error && (
@@ -380,6 +458,14 @@ function CatalogContent() {
                     </button>
                 </div>
             )}
+
+            <div className="catalog-results-heading mb-4 hidden items-end justify-between">
+                <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/35">Для вас</p>
+                    <h2 className="mt-1 text-xl font-extrabold tracking-tight text-white">Предложения</h2>
+                </div>
+                <span className="text-xs font-semibold text-white/35">{total}</span>
+            </div>
 
             {/* Grid */}
             {loading ? (
@@ -434,7 +520,7 @@ function CatalogContent() {
                                     )}
                                 </div>
 
-                                <div className="p-3 sm:p-5 bg-gradient-to-b from-transparent to-black/20">
+                                <div className="catalog-offer-body p-3 sm:p-5 bg-gradient-to-b from-transparent to-black/20">
                                     <div className="mb-1.5 flex items-center gap-1.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider sm:tracking-widest text-white/40">
                                         <span className="truncate">{categoryLabel(offer.category)}</span><span className="hidden sm:block h-1 w-1 shrink-0 rounded-full bg-white/20" /><span className="hidden sm:inline truncate">{productTypeLabel(offer.fulfillmentType)}</span>
                                     </div>
@@ -453,18 +539,30 @@ function CatalogContent() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-10">
-                    {visiblePages.map((pageIndex, position) => (
-                        <div key={pageIndex} className="flex items-center gap-2">
-                            {position > 0 && pageIndex - visiblePages[position - 1] > 1 && <span className="text-white/25">…</span>}
-                            <button
-                                onClick={() => setPage(pageIndex)}
-                                className={`catalog-page-button ${page === pageIndex ? 'catalog-page-button-selected' : ''} w-10 h-10 rounded-xl text-sm font-semibold cursor-pointer border transition-all ${page === pageIndex ? 'text-white bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'text-white/40 hover:text-white bg-white/[0.03]'}`}
-                            >
-                                {pageIndex + 1}
-                            </button>
-                        </div>
-                    ))}
+                <div className="mt-10">
+                    {offers.length < total && (
+                        <button
+                            type="button"
+                            onClick={() => void loadMoreOffers()}
+                            disabled={loadingMore}
+                            className="catalog-load-more mx-auto flex h-12 w-full max-w-sm items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] px-5 text-sm font-extrabold text-white transition disabled:cursor-wait disabled:opacity-60 md:hidden"
+                        >
+                            {loadingMore ? 'Загружаем…' : `Показать ещё · ${Math.min(PAGE_SIZE, total - offers.length)}`}
+                        </button>
+                    )}
+                    <div className="hidden items-center justify-center gap-2 md:flex">
+                        {visiblePages.map((pageIndex, position) => (
+                            <div key={pageIndex} className="flex items-center gap-2">
+                                {position > 0 && pageIndex - visiblePages[position - 1] > 1 && <span className="text-white/25">…</span>}
+                                <button
+                                    onClick={() => setPage(pageIndex)}
+                                    className={`catalog-page-button ${page === pageIndex ? 'catalog-page-button-selected' : ''} w-10 h-10 rounded-xl text-sm font-semibold cursor-pointer border transition-colors ${page === pageIndex ? 'text-white' : 'text-white/40 hover:text-white bg-white/[0.03]'}`}
+                                >
+                                    {pageIndex + 1}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

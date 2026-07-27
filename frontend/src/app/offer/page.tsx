@@ -3,7 +3,6 @@ import {
     ArrowLeft,
     Shield,
     Clock,
-    User,
     Package,
     Flame,
     Crown,
@@ -64,8 +63,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
             canonical: `/offer?id=${encodeURIComponent(id)}`,
         },
         robots: {
-            index: false,
-            follow: false,
+            index: true,
+            follow: true,
         },
         openGraph: {
             title: offer.title,
@@ -92,9 +91,52 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
         : offer.deliveryEstimateMinutes < 60
             ? `Обычно до ${offer.deliveryEstimateMinutes} мин`
             : `Обычно до ${Math.ceil(offer.deliveryEstimateMinutes / 60)} ч`;
+    const canonicalUrl = `https://perkly.uz/offer?id=${encodeURIComponent(id)}`;
+    const productJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        '@id': `${canonicalUrl}#product`,
+        name: offer.title,
+        description: offer.description,
+        image: (offer.images?.length ? offer.images : [offer.imageUrl || offer.vendorLogo]).filter(Boolean),
+        category: CATEGORY_LABELS[offer.category] || offer.category,
+        brand: {
+            '@type': 'Brand',
+            name: 'Perkly',
+        },
+        offers: {
+            '@type': 'Offer',
+            url: canonicalUrl,
+            priceCurrency: 'UZS',
+            price: offer.price,
+            availability:
+                offer.stockQuantity === 0
+                    ? 'https://schema.org/OutOfStock'
+                    : 'https://schema.org/InStock',
+            seller: {
+                '@type': 'Organization',
+                name: offer.seller?.displayName || 'Perkly',
+            },
+        },
+    };
+    const breadcrumbJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://perkly.uz/' },
+            { '@type': 'ListItem', position: 2, name: 'Каталог', item: 'https://perkly.uz/catalog' },
+            { '@type': 'ListItem', position: 3, name: offer.title, item: canonicalUrl },
+        ],
+    };
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify([productJsonLd, breadcrumbJsonLd]).replace(/</g, '\\u003c'),
+                }}
+            />
             {/* Back */}
             <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-white/40 hover:text-white transition mb-8 no-underline">
                 <ArrowLeft className="w-4 h-4" /> Каталог

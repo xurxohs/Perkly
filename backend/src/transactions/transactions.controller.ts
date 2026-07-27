@@ -12,12 +12,13 @@ import {
 import { TransactionsService } from './transactions.service';
 import { AuthGuard } from '@nestjs/passport';
 import { TransactionStatus } from '../common/enums';
+import { PurchaseRateLimitGuard } from './purchase-rate-limit.guard';
 
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), PurchaseRateLimitGuard)
   @Post()
   async purchase(
     @Request() req: { user: { userId: string } },

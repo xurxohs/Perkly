@@ -6,6 +6,7 @@ import {
   Inject,
   forwardRef,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -714,9 +715,20 @@ export class TransactionsService {
 
         if (existing.status === TransactionStatus.COMPLETED) {
           const payout = sellerPayout(existing.price);
-          const seller = await tx.user.update({
-            where: { id: existing.offer.sellerId },
+          const debit = await tx.user.updateMany({
+            where: {
+              id: existing.offer.sellerId,
+              balance: { gte: payout },
+            },
             data: { balance: { decrement: payout } },
+          });
+          if (debit.count !== 1) {
+            throw new ConflictException(
+              'Недостаточно средств продавца для автоматической отмены. Требуется ручная проверка.',
+            );
+          }
+          const seller = await tx.user.findUniqueOrThrow({
+            where: { id: existing.offer.sellerId },
             select: { balance: true },
           });
           await tx.financialEntry.create({

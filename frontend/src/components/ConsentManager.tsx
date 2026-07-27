@@ -136,14 +136,14 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
           aria-labelledby="consent-title"
           className="consent-strip relative z-40 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+5.75rem)] sm:px-6 sm:pb-5 sm:pt-[calc(env(safe-area-inset-top)+6.25rem)]"
         >
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-2xl">
+          <div className="consent-strip-inner mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="consent-strip-copy max-w-2xl">
               <h2 id="consent-title" className="text-sm font-semibold">Cookie на Perkly</h2>
               <p className="mt-1 text-xs leading-5 opacity-60 sm:text-sm">
                 Необходимые cookie обеспечивают вход и безопасность. Аналитика и реклама — только с вашего согласия.
               </p>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="consent-strip-actions flex shrink-0 flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => save({ analytics: true, advertising: true })}
