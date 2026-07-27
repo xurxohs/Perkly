@@ -327,7 +327,9 @@ html[data-perkly-theme="dark"] body {
   .offer-desktop-extras { margin-top: 10px; }
   .offer-desktop-extras .offer-facts { gap: 6px; margin-bottom: 8px; }
   .offer-desktop-extras .offer-facts > div { padding: 7px 11px; }
-  .offer-desktop-extras .offer-seller-card { margin-top: 8px; }
+  .offer-desktop-extras .offer-seller-card {
+    margin-top: clamp(8px, calc(150px - 11.1vw), 33px);
+  }
 }
 
 .offer-description-section {
