@@ -21,6 +21,7 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useTelegram } from "@/hooks/useTelegram";
@@ -617,9 +618,11 @@ function MethodStep({
         disabled={loading}
         className="shadow-telegram-glow flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border-0 bg-telegram-gradient px-4 py-4 text-base font-bold text-white transition-all hover:opacity-90 disabled:opacity-70"
       >
-        <img
+        <Image
           src="/brands/telegram.svg"
           alt=""
+          width={24}
+          height={24}
           className="h-6 w-6 shrink-0"
           aria-hidden="true"
         />

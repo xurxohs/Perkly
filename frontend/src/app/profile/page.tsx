@@ -8,6 +8,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { usersApi, offersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation, SavedOffer, DailyBonusStatus } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import TopUpModal from '@/components/TopUpModal';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
@@ -410,7 +411,7 @@ export default function ProfilePage() {
                     <div className="profile-mobile-person">
                         <label className="profile-mobile-avatar" title="Изменить фотографию профиля">
                             {user.avatarUrl ? (
-                                <img src={user.avatarUrl} alt="Фотография профиля" />
+                                <Image src={user.avatarUrl} alt="Фотография профиля" fill sizes="76px" />
                             ) : (
                                 <PerklyGlyph name="profile" aria-hidden="true" />
                             )}
@@ -593,9 +594,11 @@ export default function ProfilePage() {
                     <div className="flex items-start sm:items-center gap-4 sm:gap-5 relative z-10">
                         <label className="profile-avatar group relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shrink-0 cursor-pointer overflow-hidden" title="Изменить фотографию профиля">
                             {user.avatarUrl ? (
-                                <img
+                                <Image
                                     src={user.avatarUrl}
                                     alt="Фотография профиля"
+                                    fill
+                                    sizes="(min-width: 640px) 80px, 64px"
                                     className="absolute inset-0 h-full w-full object-cover"
                                 />
                             ) : (
@@ -1304,9 +1307,11 @@ export default function ProfilePage() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                                            <img
+                                            <Image
                                                 src="/brands/telegram.svg"
                                                 alt=""
+                                                width={40}
+                                                height={40}
                                                 className="h-10 w-10"
                                                 aria-hidden="true"
                                             />

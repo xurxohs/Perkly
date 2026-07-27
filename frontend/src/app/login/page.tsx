@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { ArrowRight, Lock, Mail, CheckCircle, Loader2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -142,9 +143,11 @@ function LoginForm() {
                         className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-base transition-all cursor-pointer border-0 bg-telegram-gradient shadow-telegram-glow ${loading ? 'opacity-70' : 'opacity-100 hover:opacity-90'}`}
                         title="Войти через Telegram"
                     >
-                        <img
+                        <Image
                             src="/brands/telegram.svg"
                             alt=""
+                            width={24}
+                            height={24}
                             className="w-6 h-6 shrink-0"
                             aria-hidden="true"
                         />
