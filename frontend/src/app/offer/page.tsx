@@ -130,6 +130,25 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
             { '@type': 'ListItem', position: 3, name: offer.title, item: canonicalUrl },
         ],
     };
+    const offerFacts = (
+        <div className="offer-facts">
+            <div><Shield className="w-4 h-4 text-green-400" /><span>Защита сделки</span><strong>Средства под защитой</strong></div>
+            <div><Clock className="w-4 h-4 text-blue-400" /><span>Срок получения</span><strong>{deliveryLabel}</strong></div>
+            {offer.warrantyDays ? <div><RotateCcw className="w-4 h-4 text-purple-300" /><span>Гарантия</span><strong>{offer.warrantyDays} дней</strong></div> : null}
+            {offer.stockQuantity != null ? <div><Boxes className="w-4 h-4 text-white/45" /><span>Доступность</span><strong>{offer.stockQuantity > 0 ? `Осталось ${offer.stockQuantity}` : 'Нет в наличии'}</strong></div> : null}
+        </div>
+    );
+    const sellerCard = offer.seller ? (
+        <div className="offer-seller-card">
+            <div className="offer-seller-avatar">{((offer.seller as UserType).displayName || 'П')[0].toUpperCase()}</div>
+            <div className="offer-seller-copy">
+                <span>Продавец</span>
+                <strong>{(offer.seller as UserType).displayName || 'Продавец Perkly'} <BadgeCheck aria-label="Проверенный продавец" /></strong>
+                <small>Покупка и переписка сохраняются в Perkly</small>
+            </div>
+            <ContactSellerButton sellerId={offer.sellerId} />
+        </div>
+    ) : null;
 
     return (
         <div className="offer-detail-page max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-10">
@@ -153,6 +172,10 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                             <Package className="w-24 h-24 text-white/20" />
                         </div>
                     )}
+                    <div className="offer-desktop-extras">
+                        {offerFacts}
+                        {sellerCard}
+                    </div>
                 </div>
 
                 <div className="offer-info-column">
@@ -231,35 +254,11 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                         <p><ShieldCheck aria-hidden="true" /> Средства переводятся продавцу после подтверждения получения товара</p>
                     </div>
 
-                    <div className="offer-facts">
-                        <div>
-                            <Shield className="w-4 h-4 text-green-400" />
-                            <span>Защита сделки</span><strong>Средства под защитой</strong>
-                        </div>
-                        <div>
-                            <Clock className="w-4 h-4 text-blue-400" />
-                            <span>Срок получения</span><strong>{deliveryLabel}</strong>
-                        </div>
-                        {offer.warrantyDays ? <div><RotateCcw className="w-4 h-4 text-purple-300" /><span>Гарантия</span><strong>{offer.warrantyDays} дней</strong></div> : null}
-                        {offer.stockQuantity != null ? <div><Boxes className="w-4 h-4 text-white/45" /><span>Доступность</span><strong>{offer.stockQuantity > 0 ? `Осталось ${offer.stockQuantity}` : 'Нет в наличии'}</strong></div> : null}
-                    </div>
-
                     {offer.sourceUrl && <a href={offer.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" className="mb-5 inline-flex items-center gap-2 text-xs text-white/35 hover:text-white/60">Источник предложения <ExternalLink className="h-3.5 w-3.5" /></a>}
 
                     {/* Actions */}
                     <OfferActions offer={offer} />
-
-                    {offer.seller && (
-                        <div className="offer-seller-card">
-                            <div className="offer-seller-avatar">{((offer.seller as UserType).displayName || 'П')[0].toUpperCase()}</div>
-                            <div className="offer-seller-copy">
-                                <span>Продавец</span>
-                                <strong>{(offer.seller as UserType).displayName || 'Продавец Perkly'} <BadgeCheck aria-label="Проверенный продавец" /></strong>
-                                <small>Покупка и переписка сохраняются в Perkly</small>
-                            </div>
-                            <ContactSellerButton sellerId={offer.sellerId} />
-                        </div>
-                    )}
+                    <div className="offer-mobile-extras">{offerFacts}{sellerCard}</div>
                 </div>
             </div>
 

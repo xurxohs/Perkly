@@ -16,7 +16,7 @@ function LoginForm() {
     const isRegistered = searchParams.get("registered");
     const requestedNext = searchParams.get("next");
     const nextPath = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
-    const { login } = useAuth();
+    const { login, refreshUser } = useAuth();
     const { initData, isTMA, hapticNotification } = useTelegram();
 
     // Email form state
@@ -39,9 +39,10 @@ function LoginForm() {
                 body: JSON.stringify({ initData }),
             })
                 .then((res) => res.json())
-                .then((data) => {
+                .then(async (data) => {
                     if (data.access_token) {
                         localStorage.setItem('perkly_token', data.access_token);
+                        await refreshUser();
                         hapticNotification('success');
                         setTgStep('done');
                         setTimeout(() => router.push(nextPath), 500);
@@ -50,7 +51,7 @@ function LoginForm() {
                 .catch(() => {})
                 .finally(() => setLoading(false));
         }
-    }, [initData, isTMA, router, hapticNotification, nextPath]);
+    }, [initData, isTMA, router, hapticNotification, nextPath, refreshUser]);
 
     // Clean up polling on unmount
     useEffect(() => {
@@ -73,16 +74,19 @@ function LoginForm() {
     };
 
     const handleTelegramLogin = async () => {
+        const telegramWindow = window.open('about:blank', '_blank');
         setLoading(true);
         setError("");
         try {
             const res = await fetch(`${API_BASE}/auth/telegram-init`);
+            if (!res.ok) throw new Error('Telegram init failed');
             const data = await res.json();
+            if (!data.token || !data.url) throw new Error('Invalid Telegram login response');
             setTgUrl(data.url);
             setTgStep('waiting');
 
-            // Open Telegram in new tab
-            window.open(data.url, '_blank');
+            // Open synchronously-created tab to avoid popup blockers after fetch.
+            if (telegramWindow) telegramWindow.location.href = data.url;
 
             // Start polling
             pollRef.current = setInterval(async () => {
@@ -92,6 +96,8 @@ function LoginForm() {
                     if (pollData.status === 'ok' && pollData.access_token) {
                         clearInterval(pollRef.current!);
                         localStorage.setItem('perkly_token', pollData.access_token);
+                        await refreshUser();
+                        hapticNotification('success');
                         setTgStep('done');
                         setTimeout(() => router.push(nextPath), 800);
                     } else if (pollData.status === 'expired') {
@@ -101,11 +107,12 @@ function LoginForm() {
                     } else if (pollData.status === 'error') {
                         clearInterval(pollRef.current!);
                         setTgStep('idle');
-                        setError(pollData.user?.message || 'Ошибка входа через Telegram. Попробуйте снова.');
+                        setError(pollData.message || 'Ошибка входа через Telegram. Попробуйте снова.');
                     }
                 } catch { /* keep polling */ }
             }, 2000);
         } catch {
+            telegramWindow?.close();
             setError('Не удалось подключиться. Проверьте соединение.');
         } finally {
             setLoading(false);

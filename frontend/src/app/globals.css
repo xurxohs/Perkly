@@ -215,6 +215,8 @@ html[data-perkly-theme="dark"] body {
   opacity: .58;
 }
 .offer-gallery-thumbs button.is-active { border-color: #8b5cf6; opacity: 1; }
+.offer-desktop-extras { margin-top: 14px; }
+.offer-mobile-extras { display: none; }
 .offer-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
 .offer-badges > span {
   padding: 6px 10px;
@@ -273,7 +275,7 @@ html[data-perkly-theme="dark"] body {
 .offer-fulfillment-list span { color: var(--offer-muted); font-size: 11px; line-height: 1.45; }
 .offer-fulfillment-card > p { display: flex; align-items: flex-start; gap: 7px; margin: 12px 2px 0; color: var(--offer-muted); font-size: 11px; line-height: 1.4; }
 .offer-fulfillment-card > p svg { width: 15px; flex: 0 0 15px; color: #10b981; }
-.offer-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-bottom: 18px; }
+.offer-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-bottom: 10px; }
 .offer-facts > div {
   display: grid;
   grid-template-columns: 20px minmax(0,1fr);
@@ -424,6 +426,8 @@ html[data-perkly-theme="dark"] body {
   .offer-gallery-count { right: 10px; bottom: 10px; }
   .offer-gallery-thumbs { margin-top: 8px; }
   .offer-gallery-thumbs button { width: 68px; flex-basis: 68px; border-radius: 12px; }
+  .offer-desktop-extras { display: none; }
+  .offer-mobile-extras { display: block; margin-top: 16px; }
   .offer-badges { margin: 18px 0 10px; }
   .offer-info-column > h1 { margin-bottom: 8px; font-size: 29px; line-height: 1.02; }
   .offer-price-row { margin-bottom: 16px; }
@@ -4803,16 +4807,128 @@ mark { padding: 0; color: inherit; background: color-mix(in srgb, var(--search-a
   }
 }
 
-/* Offer checkout deliberately stays dark in both site themes. */
+/* Offer checkout follows the active site theme instead of forcing a dark sheet. */
+.site-light-commerce .offer-checkout-backdrop {
+  background: rgba(40,40,48,.28);
+}
+.site-light-commerce main .offer-checkout-sheet {
+  border-color: rgba(0,0,0,.09);
+  background: #fff;
+  color: #1d1d1f;
+  box-shadow: 0 32px 100px rgba(35,28,55,.24);
+}
+.site-light-commerce main .offer-checkout-sheet > header button {
+  background: #f1f1f4;
+  color: #515154;
+}
+.site-light-commerce main .offer-checkout-product,
+.site-light-commerce main .offer-checkout-delivery,
+.site-light-commerce main .offer-checkout-gift,
+.site-light-commerce main .offer-checkout-balance {
+  border-color: rgba(0,0,0,.075);
+  background: #f7f7f9;
+}
+.site-light-commerce main .offer-checkout-product span,
+.site-light-commerce main .offer-checkout-delivery span,
+.site-light-commerce main .offer-checkout-gift small,
+.site-light-commerce main .offer-checkout-sheet > footer > p {
+  color: #77777d !important;
+}
+.site-light-commerce main .offer-checkout-input > span {
+  color: #515154;
+}
 .site-light-commerce main .offer-checkout-sheet input,
 .site-light-commerce main .offer-checkout-sheet textarea {
-  border-color: rgba(255,255,255,.1) !important;
-  background: rgba(0,0,0,.25) !important;
-  color: #fff !important;
+  border-color: rgba(0,0,0,.1) !important;
+  background: #f7f7f9 !important;
+  color: #1d1d1f !important;
 }
 .site-light-commerce main .offer-checkout-sheet textarea::placeholder {
-  color: rgba(255,255,255,.28) !important;
+  color: #a1a1a6 !important;
 }
-.site-light-commerce main .offer-checkout-sheet .offer-checkout-gift input {
-  accent-color: #8b5cf6;
+.site-light-commerce main .offer-checkout-sheet > footer {
+  border-color: rgba(0,0,0,.075);
+  background: #fff;
+}
+.site-light-commerce main .offer-checkout-sheet > footer button:first-child {
+  background: #ededf1;
+  color: #515154;
+}
+.site-light-commerce main .offer-checkout-sheet > footer button:last-child,
+.site-light-commerce main .offer-checkout-success a {
+  background: linear-gradient(135deg,#6d28d9,#c026d3);
+  color: #fff !important;
+}
+.site-light-commerce main .offer-checkout-success > span:not(.offer-checkout-success-icon),
+.site-light-commerce main .offer-checkout-success button {
+  color: #77777d;
+}
+.site-light-commerce main .offer-checkout-success code {
+  background: #f1f1f4;
+  color: #1d1d1f;
+}
+
+/* Seller landing uses the same Perkly violet/blue accent in both themes. */
+.sell-hero-glow {
+  background: radial-gradient(circle,rgba(124,58,237,.12) 0%,rgba(37,99,235,.055) 38%,transparent 70%);
+}
+.sell-title-accent,
+.sell-income-value {
+  color: #6d28d9;
+  background: linear-gradient(100deg,#6d28d9 0%,#9d2fd0 48%,#2563eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.site-dark-commerce .sell-title-accent,
+.site-dark-commerce .sell-income-value {
+  background-image: linear-gradient(100deg,#c4b5fd 0%,#e879f9 48%,#60a5fa 100%);
+}
+.sell-primary-cta {
+  border: 0;
+  background: linear-gradient(135deg,#7c3aed,#2563eb);
+  color: #fff !important;
+  box-shadow: 0 14px 34px rgba(109,40,217,.24);
+}
+.sell-calculator {
+  border-color: rgba(109,40,217,.14) !important;
+  background: linear-gradient(135deg,rgba(109,40,217,.08),rgba(37,99,235,.045)) !important;
+}
+.sell-calculator-badge {
+  border: 1px solid rgba(109,40,217,.16);
+  background: rgba(109,40,217,.075);
+  color: #6d28d9;
+}
+.site-dark-commerce .sell-calculator-badge { color: #c4b5fd; }
+.sell-income-range {
+  height: 6px;
+  border-radius: 999px;
+  accent-color: #7c3aed;
+}
+.sell-income-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,#7c3aed,#2563eb);
+}
+.sell-income-range::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #6d28d9;
+  box-shadow: 0 3px 12px rgba(109,40,217,.32);
+  -webkit-appearance: none;
+}
+.sell-income-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,#7c3aed,#2563eb);
+}
+.sell-income-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #6d28d9;
 }

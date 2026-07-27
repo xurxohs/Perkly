@@ -180,17 +180,13 @@ export default function SellPage() {
       {/* Hero */}
       <section className="pt-20 pb-16 text-center w-full relative">
         <div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%)",
-          }}
+          className="sell-hero-glow absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
         />
 
         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-5 leading-[1.05]">
           Продавайте на
           <br />
-          <span className="text-gradient-green">Perkly Маркетплейсе</span>
+          <span className="sell-title-accent">Perkly Маркетплейсе</span>
         </h1>
 
         <p className="text-lg text-white/40 max-w-lg mx-auto mb-10 leading-relaxed">
@@ -201,33 +197,21 @@ export default function SellPage() {
         {isAuthenticated && company?.status === "ACTIVE" && canUseVendorHub ? (
           <Link
             href="/vendor"
-            className="mx-auto px-8 py-4 rounded-xl text-black font-bold flex items-center gap-2 relative z-10 no-underline w-fit"
-            style={{
-              background: "linear-gradient(135deg, #4ade80, #22d3ee)",
-              boxShadow: "0 0 30px rgba(34,197,94,0.25)",
-            }}
+            className="sell-primary-cta mx-auto px-8 py-4 rounded-xl font-bold flex items-center gap-2 relative z-10 no-underline w-fit"
           >
             Открыть кабинет <ArrowRight className="w-5 h-5" />
           </Link>
         ) : isAuthenticated ? (
           <button
             onClick={scrollToApplication}
-            className="mx-auto px-8 py-4 rounded-xl text-black font-bold cursor-pointer border-0 flex items-center gap-2 relative z-10"
-            style={{
-              background: "linear-gradient(135deg, #4ade80, #22d3ee)",
-              boxShadow: "0 0 30px rgba(34,197,94,0.25)",
-            }}
+            className="sell-primary-cta mx-auto px-8 py-4 rounded-xl font-bold cursor-pointer border-0 flex items-center gap-2 relative z-10"
           >
             Подать заявку <ArrowRight className="w-5 h-5" />
           </button>
         ) : (
           <Link
             href="/login"
-            className="mx-auto px-8 py-4 rounded-xl text-black font-bold flex items-center gap-2 relative z-10 no-underline w-fit"
-            style={{
-              background: "linear-gradient(135deg, #4ade80, #22d3ee)",
-              boxShadow: "0 0 30px rgba(34,197,94,0.25)",
-            }}
+            className="sell-primary-cta mx-auto px-8 py-4 rounded-xl font-bold flex items-center gap-2 relative z-10 no-underline w-fit"
           >
             Войти и подать заявку <ArrowRight className="w-5 h-5" />
           </Link>
@@ -237,20 +221,11 @@ export default function SellPage() {
       {/* Calculator */}
       <section className="w-full mb-20">
         <div
-          className="glass-card p-8 md:p-10 flex flex-col md:flex-row items-center gap-10"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(4,120,87,0.1), rgba(6,78,59,0.06))",
-            borderColor: "rgba(34,197,94,0.12)",
-          }}
+          className="sell-calculator glass-card p-8 md:p-10 flex flex-col md:flex-row items-center gap-10"
         >
           <div className="flex-1 relative z-10">
             <div
-              className="inline-flex items-center gap-2 text-green-300 font-semibold text-sm mb-4 px-3 py-1.5 rounded-full"
-              style={{
-                background: "rgba(34,197,94,0.08)",
-                border: "1px solid rgba(34,197,94,0.15)",
-              }}
+              className="sell-calculator-badge inline-flex items-center gap-2 font-semibold text-sm mb-4 px-3 py-1.5 rounded-full"
             >
               <Calculator className="w-4 h-4" /> Калькулятор дохода
             </div>
@@ -272,7 +247,7 @@ export default function SellPage() {
                 step={1_000}
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full accent-green-500 mb-2"
+                className="sell-income-range w-full mb-2"
               />
               <div className="flex justify-between text-xs text-white/30">
                 <span>1 000 сум</span>
@@ -294,7 +269,7 @@ export default function SellPage() {
             <ArrowRight className="w-6 h-6 text-white/20" />
             <div className="text-center">
               <div className="text-sm text-white/40 mb-1">Ваш доход</div>
-              <div className="text-3xl font-extrabold text-gradient-green">
+              <div className="sell-income-value text-3xl font-extrabold">
                 {Math.round(income).toLocaleString("ru-RU")} сум
               </div>
             </div>

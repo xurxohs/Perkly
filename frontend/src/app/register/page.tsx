@@ -196,14 +196,17 @@ export default function RegisterPage() {
   };
 
   const handleTelegramLogin = async () => {
+    const telegramWindow = window.open("about:blank", "_blank");
     setLoading(true);
     setError("");
     try {
       const res = await fetch(`${API_BASE}/auth/telegram-init`);
+      if (!res.ok) throw new Error("Telegram init failed");
       const data = await res.json();
+      if (!data.token || !data.url) throw new Error("Invalid Telegram login response");
       setTgUrl(data.url);
       setTgStep("waiting");
-      window.open(data.url, "_blank");
+      if (telegramWindow) telegramWindow.location.href = data.url;
       pollRef.current = setInterval(async () => {
         try {
           const pollRes = await fetch(
@@ -215,17 +218,22 @@ export default function RegisterPage() {
             pollRef.current = null;
             localStorage.setItem("perkly_token", pollData.access_token);
             await refreshUser();
+            hapticNotification("success");
             setTgStep("idle");
             goTo("birth");
           } else if (pollData.status === "expired") {
             cancelTelegramLogin();
             setError("Время ожидания вышло. Попробуйте снова.");
+          } else if (pollData.status === "error") {
+            cancelTelegramLogin();
+            setError(pollData.message || "Ошибка входа через Telegram. Попробуйте снова.");
           }
         } catch {
           // keep polling
         }
       }, 2000);
     } catch {
+      telegramWindow?.close();
       setError("Не удалось подключиться. Проверьте соединение.");
     } finally {
       setLoading(false);
