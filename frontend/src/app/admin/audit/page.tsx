@@ -46,7 +46,7 @@ export default function AdminAuditPage() {
             <div className="space-y-2">
                 {logs.map((log) => (
                     <article key={log.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07] flex gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
                             <ScrollText className="w-5 h-5" />
                         </div>
                         <div className="min-w-0 flex-1">

@@ -173,7 +173,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
       {children}
 
       {ready && settingsOpen && (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-[#0A0F24]/55 p-4 sm:items-center" role="presentation">
+        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/55 p-4 sm:items-center" role="presentation">
           <section
             role="dialog"
             aria-modal="true"
@@ -255,7 +255,7 @@ function ConsentRow({
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-5 w-5 shrink-0 accent-indigo-500"
+        className="mt-1 h-5 w-5 shrink-0 accent-purple-500"
       />
     </label>
   );

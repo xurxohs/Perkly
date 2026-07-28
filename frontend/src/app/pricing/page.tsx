@@ -60,17 +60,17 @@ const tiers = [
         period: '/мес',
         description: 'Максимальный набор доступных привилегий',
         badge: 'Макс. выгода',
-        gradient: 'from-indigo-400 to-fuchsia-500',
-        borderColor: 'rgba(0,92,255,0.2)',
-        shadowColor: 'rgba(0,92,255,0.12)',
-        iconBg: 'linear-gradient(135deg, #005cff, #4a3aff)',
+        gradient: 'from-purple-400 to-fuchsia-500',
+        borderColor: 'rgba(168,85,247,0.2)',
+        shadowColor: 'rgba(168,85,247,0.12)',
+        iconBg: 'linear-gradient(135deg, #a855f7, #d946ef)',
         features: [
             { text: 'Всё из Gold', included: true },
             { text: '5% кэшбек Perkly Points', included: true },
             { text: '5 бесплатных спинов в день', included: true },
             { text: 'VIP Flash Drops', included: true },
             { text: 'Приоритетная очередь поддержки', included: true },
-            { text: <><span className="inline-flex items-center gap-1"><Gem className="w-4 h-4 text-indigo-400" /> Platinum</span> бейдж профиля</>, included: true },
+            { text: <><span className="inline-flex items-center gap-1"><Gem className="w-4 h-4 text-purple-400" /> Platinum</span> бейдж профиля</>, included: true },
             { text: 'Секретные промокоды', included: true },
             { text: 'Приоритет при покупке', included: true },
         ],
@@ -115,7 +115,7 @@ export default function PricingPage() {
         <div className="flex flex-col items-center px-6 pb-24 max-w-[1200px] mx-auto w-full">
             {/* Hero */}
             <section className="pt-20 pb-16 text-center w-full relative">
-                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(0,92,255,0.1)_0%,transparent_70%)]" />
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(168,85,247,0.1)_0%,transparent_70%)]" />
 
                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter mb-5 leading-[1.05]">
                     Больше привилегий —<br />
@@ -164,7 +164,7 @@ export default function PricingPage() {
                         >
                             {tier.badge && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-                                    <span className={`px-4 py-1 rounded-full text-xs font-bold text-black whitespace-nowrap ${isGold ? 'bg-[linear-gradient(135deg,#fbbf24,#f59e0b)]' : 'bg-[linear-gradient(135deg,#005cff,#4a3aff)]'}`}>
+                                    <span className={`px-4 py-1 rounded-full text-xs font-bold text-black whitespace-nowrap ${isGold ? 'bg-[linear-gradient(135deg,#fbbf24,#f59e0b)]' : 'bg-[linear-gradient(135deg,#a855f7,#d946ef)]'}`}>
                                         {tier.badge}
                                     </span>
                                 </div>
@@ -174,14 +174,14 @@ export default function PricingPage() {
                                 className={`rounded-2xl p-7 h-full flex flex-col relative overflow-hidden border ${
                                     tier.name === 'Silver' ? 'border-[rgba(161,161,170,0.15)] bg-[rgba(255,255,255,0.02)]' :
                                     tier.name === 'Gold' ? 'border-[rgba(251,191,36,0.2)] bg-[rgba(20,15,5,0.95)]' :
-                                    'border-[rgba(0,92,255,0.2)] bg-[rgba(255,255,255,0.02)]'
+                                    'border-[rgba(168,85,247,0.2)] bg-[rgba(255,255,255,0.02)]'
                                 }`}
                             >
                                 {/* Ambient glow */}
                                 <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full pointer-events-none ${
                                     tier.name === 'Silver' ? 'bg-[radial-gradient(circle,rgba(161,161,170,0.06),transparent)]' :
                                     tier.name === 'Gold' ? 'bg-[radial-gradient(circle,rgba(251,191,36,0.1),transparent)]' :
-                                    'bg-[radial-gradient(circle,rgba(0,92,255,0.12),transparent)]'
+                                    'bg-[radial-gradient(circle,rgba(168,85,247,0.12),transparent)]'
                                 }`} />
 
                                 {/* Icon + Name */}
@@ -189,7 +189,7 @@ export default function PricingPage() {
                                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
                                         tier.name === 'Silver' ? 'bg-[linear-gradient(135deg,#a1a1aa,#71717a)] shadow-[0_0_20px_rgba(161,161,170,0.06)]' :
                                         tier.name === 'Gold' ? 'bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] shadow-[0_0_20px_rgba(251,191,36,0.1)]' :
-                                        'bg-[linear-gradient(135deg,#005cff,#4a3aff)] shadow-[0_0_20px_rgba(0,92,255,0.12)]'
+                                        'bg-[linear-gradient(135deg,#a855f7,#d946ef)] shadow-[0_0_20px_rgba(168,85,247,0.12)]'
                                     }`}>
                                         <tier.icon className="w-5 h-5 text-white" />
                                     </div>
@@ -249,7 +249,7 @@ export default function PricingPage() {
                                             : isGold
                                                 ? 'bg-[linear-gradient(135deg,#fbbf24,#f59e0b)] border-transparent text-black shadow-[0_0_25px_rgba(251,191,36,0.2)]'
                                                 : tier.name === 'Platinum'
-                                                    ? 'bg-[linear-gradient(135deg,#005cff,#4a3aff)] border-transparent text-white shadow-[0_0_25px_rgba(0,92,255,0.2)]'
+                                                    ? 'bg-[linear-gradient(135deg,#a855f7,#d946ef)] border-transparent text-white shadow-[0_0_25px_rgba(168,85,247,0.2)]'
                                                     : 'bg-white/[0.06] border-white/10 text-white'
                                     }`}
                                 >
@@ -273,8 +273,8 @@ export default function PricingPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {stats.map((s, i) => (
                         <div key={i} className="glass-card p-6 text-center">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 relative z-10 bg-indigo-400/10">
-                                <s.icon className="w-5 h-5 text-indigo-400" />
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 relative z-10 bg-purple-400/10">
+                                <s.icon className="w-5 h-5 text-purple-400" />
                             </div>
                             <div className="text-2xl font-extrabold text-white mb-1 relative z-10">{s.value}</div>
                             <div className="text-xs text-white/35 relative z-10">{s.label}</div>
@@ -284,11 +284,11 @@ export default function PricingPage() {
             </section>
 
             {/* FAQ / CTA */}
-            <section className="w-full glass-card p-10 text-center bg-[linear-gradient(135deg,rgba(88,28,135,0.15),rgba(30,58,138,0.08))] border-indigo-500/10 relative overflow-hidden">
-                <div className="absolute -right-20 -top-20 w-60 h-60 rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(0,92,255,0.12),transparent)]" />
+            <section className="w-full glass-card p-10 text-center bg-[linear-gradient(135deg,rgba(88,28,135,0.15),rgba(30,58,138,0.08))] border-purple-500/10 relative overflow-hidden">
+                <div className="absolute -right-20 -top-20 w-60 h-60 rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(168,85,247,0.12),transparent)]" />
                 <h2 className="text-2xl font-extrabold text-white mb-3 relative z-10">Остались вопросы?</h2>
                 <p className="text-white/40 mb-6 relative z-10">Свяжитесь с нами в Telegram — обращения рассматриваем по очереди</p>
-                <a href="https://t.me/perkly_support" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold no-underline relative z-10 bg-[linear-gradient(135deg,#005cff,#4a3aff)] shadow-[0_0_25px_rgba(0,92,255,0.3)]">
+                <a href="https://t.me/perkly_support" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold no-underline relative z-10 bg-[linear-gradient(135deg,#a855f7,#ec4899)] shadow-[0_0_25px_rgba(168,85,247,0.3)]">
                     <Zap className="w-4 h-4" />
                     Написать в Telegram
                 </a>

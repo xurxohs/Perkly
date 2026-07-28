@@ -398,7 +398,7 @@ export default function SellPage() {
           </div>
 
           {!isAuthenticated && !loading && (
-            <div className="rounded-2xl p-6 bg-[#0A0F24]/20 border border-white/10">
+            <div className="rounded-2xl p-6 bg-black/20 border border-white/10">
               <h3 className="text-xl font-bold text-white mb-2">
                 Войдите, чтобы подать заявку
               </h3>
@@ -425,7 +425,7 @@ export default function SellPage() {
           {showApplicationForm && (
             <form
               onSubmit={handleSubmit}
-              className="rounded-2xl p-6 bg-[#0A0F24]/20 border border-white/10 space-y-4"
+              className="rounded-2xl p-6 bg-black/20 border border-white/10 space-y-4"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="block">

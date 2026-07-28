@@ -35,12 +35,12 @@ export default function AdminDashboard() {
     const cards = [
         { title: 'Всего пользователей', value: stats.usersCount, sub: `+${stats.newUsersToday} за сегодня`, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10', blob: 'bg-blue-400/20' },
         { title: 'Активных товаров', value: stats.activeOffersCount, icon: ShoppingBag, color: 'text-green-400', bg: 'bg-green-400/10', blob: 'bg-green-400/20' },
-        { title: 'Оборот', value: `${stats.totalVolume.toLocaleString('ru-RU')} сум`, icon: CreditCard, color: 'text-indigo-400', bg: 'bg-indigo-400/10', blob: 'bg-indigo-400/20' },
+        { title: 'Оборот', value: `${stats.totalVolume.toLocaleString('ru-RU')} сум`, icon: CreditCard, color: 'text-purple-400', bg: 'bg-purple-400/10', blob: 'bg-purple-400/20' },
         { title: 'Доход платформы', value: `${stats.platformIncome.toLocaleString('ru-RU')} сум`, sub: '(5% комиссия)', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-400/10', blob: 'bg-amber-400/20' },
         { title: 'Открытых споров', value: stats.openDisputesCount, icon: Scale, color: stats.openDisputesCount > 0 ? 'text-red-400' : 'text-gray-400', bg: stats.openDisputesCount > 0 ? 'bg-red-400/10' : 'bg-white/5', blob: stats.openDisputesCount > 0 ? 'bg-red-400/20' : 'bg-white/10' },
         { title: 'Компании на проверке', value: stats.pendingCompaniesCount, icon: Building2, color: 'text-cyan-400', bg: 'bg-cyan-400/10', blob: 'bg-cyan-400/20' },
         { title: 'Жалобы и апелляции', value: stats.openReportsCount + stats.openAppealsCount, icon: ShieldAlert, color: 'text-orange-400', bg: 'bg-orange-400/10', blob: 'bg-orange-400/20' },
-        { title: 'Повторы ошибок', value: stats.diagnosticOccurrences, icon: Activity, color: 'text-blue-400', bg: 'bg-blue-400/10', blob: 'bg-blue-400/20' },
+        { title: 'Повторы ошибок', value: stats.diagnosticOccurrences, icon: Activity, color: 'text-pink-400', bg: 'bg-pink-400/10', blob: 'bg-pink-400/20' },
     ];
 
     return (
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
                 {/* Recent Transactions */}
                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.05]">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2"><CreditCard className="w-5 h-5 text-indigo-400" /> Последние покупки</h2>
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2"><CreditCard className="w-5 h-5 text-purple-400" /> Последние покупки</h2>
                     </div>
                     <div className="space-y-4">
                         {stats.recentTransactions?.length > 0 ? stats.recentTransactions.map((tx) => (

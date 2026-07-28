@@ -83,7 +83,7 @@ export default function VendorOrdersPage() {
                     <button
                         key={filter.label}
                         onClick={() => { setPage(0); setStatus(filter.value); }}
-                        className={`shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition ${status === filter.value ? 'border-indigo-400/35 bg-indigo-500/15 text-indigo-200' : 'border-white/10 bg-white/[0.03] text-white/45 hover:bg-white/[0.07] hover:text-white/70'}`}
+                        className={`shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition ${status === filter.value ? 'border-purple-400/35 bg-purple-500/15 text-purple-200' : 'border-white/10 bg-white/[0.03] text-white/45 hover:bg-white/[0.07] hover:text-white/70'}`}
                     >
                         {filter.label}
                     </button>

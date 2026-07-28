@@ -18,7 +18,7 @@ export default function TelegramAuthCompletePage() {
   }, []);
 
   return (
-    <main className="min-h-dvh bg-[#EEF2FF] px-6 py-12 text-[#0A0F24] dark:bg-[#0A0F24] dark:text-white">
+    <main className="min-h-dvh bg-[#f5f5f7] px-6 py-12 text-[#1d1d1f] dark:bg-black dark:text-white">
       <section className="mx-auto flex min-h-[70dvh] max-w-md flex-col items-center justify-center text-center">
         <div className="mb-7 grid h-20 w-20 place-items-center rounded-[24px] bg-gradient-to-br from-[#9f4dff] to-[#ed3e9b] text-4xl font-black text-white shadow-xl">
           P
@@ -30,7 +30,7 @@ export default function TelegramAuthCompletePage() {
         <button
           type="button"
           onClick={openApp}
-          className="mt-8 min-h-14 w-full rounded-full bg-[#0A0F24] px-6 text-base font-semibold text-white dark:bg-white dark:text-black"
+          className="mt-8 min-h-14 w-full rounded-full bg-black px-6 text-base font-semibold text-white dark:bg-white dark:text-black"
         >
           {opening ? 'Открываем Perkly…' : 'Открыть Perkly'}
         </button>

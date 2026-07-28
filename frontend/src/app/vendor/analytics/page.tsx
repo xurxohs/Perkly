@@ -16,7 +16,7 @@ export default function VendorAnalyticsPage() {
 
     const cards = [
         { title: 'Зачислено продавцу', value: `${(stats?.totalEarnings ?? 0).toLocaleString('ru-RU')} сум`, icon: Banknote, color: 'text-emerald-300 bg-emerald-500/10' },
-        { title: 'Оборот завершённых сделок', value: `${(stats?.completedVolume ?? 0).toLocaleString('ru-RU')} сум`, icon: ShoppingBag, color: 'text-indigo-300 bg-indigo-500/10' },
+        { title: 'Оборот завершённых сделок', value: `${(stats?.completedVolume ?? 0).toLocaleString('ru-RU')} сум`, icon: ShoppingBag, color: 'text-purple-300 bg-purple-500/10' },
         { title: 'Все продажи', value: String(stats?.totalSales ?? 0), icon: Users, color: 'text-blue-300 bg-blue-500/10' },
         { title: 'Активные товары', value: String(stats?.activeOffers ?? 0), icon: Package, color: 'text-amber-300 bg-amber-500/10' },
         { title: 'События Topka', value: String(stats?.activeEvents ?? 0), icon: CalendarDays, color: 'text-orange-300 bg-orange-500/10' },

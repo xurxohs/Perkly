@@ -1,142 +1,250 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
-  ArrowUpRight,
-  Bookmark,
-  CalendarDays,
-  Clock3,
-  MapPin,
-  Plus,
+  ChevronLeft,
+  FileText,
+  Bell,
   Share2,
   Sparkles,
-  Sun,
-  Ticket,
+  ChevronDown,
+  MessageCircle
 } from 'lucide-react';
 import { Event, eventsApi } from '@/lib/api';
-import { useAuth } from '@/lib/AuthContext';
 import SafeImage from '@/components/SafeImage';
+import { PerklyGlyph } from '@/components/PerklyGlyph';
 import { RichText, toSafeHref } from '@/components/RichText';
+import { useAuth } from '@/lib/AuthContext';
 
 export type FeedEvent = Event;
-type FeedFilter = 'all' | 'today' | 'weekend' | 'free';
-
-const filters = [
-  { id: 'all' as const, label: 'Все', icon: Sparkles },
-  { id: 'today' as const, label: 'Сегодня', icon: CalendarDays },
-  { id: 'weekend' as const, label: 'Выходные', icon: Sun },
-  { id: 'free' as const, label: 'Бесплатно', icon: Ticket },
-];
 
 function isUpcomingEvent(event: FeedEvent) {
   const timestamp = new Date(event.date).getTime();
   return Number.isFinite(timestamp) && timestamp + 86_400_000 >= Date.now();
 }
 
-function matchesFilter(event: FeedEvent, filter: FeedFilter) {
-  if (filter === 'all') return true;
-  const date = new Date(event.date);
-  const now = new Date();
-  if (filter === 'today') return date.toDateString() === now.toDateString();
-  if (filter === 'weekend') return date.getDay() === 0 || date.getDay() === 6;
-  return /бесплат|free|0\s*сум/i.test(`${event.priceText ?? ''} ${event.description}`);
-}
-
+// ===== Category Color Map =====
 function getCategoryColor(category: string): string {
   const map: Record<string, string> = {
-    'Фестиваль': '#005CFF', 'Вечеринка': '#FF6B35', 'Выставка': '#06B6D4',
-    'Фуд-Фест': '#F97316', 'Стендап': '#4A3AFF', 'Концерт': '#7C6CFF',
-    'Спорт': '#22C55E', 'Акция': '#EF4444',
+    'Фестиваль': '#a855f7',
+    'Вечеринка': '#f59e0b',
+    'Выставка': '#06b6d4',
+    'Фуд-Фест': '#f97316',
+    'Стендап': '#ec4899',
+    'Концерт': '#8b5cf6',
+    'Спорт': '#22c55e',
+    'Акция': '#ef4444',
   };
-  return map[category] || '#005CFF';
+  return map[category] || '#a855f7';
 }
 
-function EventCard({ event, index, isBookmarked, isSaving, onToggleSaved }: {
+// ===== Single Event Card =====
+function EventCard({
+  event,
+  index,
+  total,
+  isBookmarked,
+  isSaving,
+  onToggleSaved,
+}: {
   event: FeedEvent;
   index: number;
+  total: number;
   isBookmarked: boolean;
   isSaving: boolean;
   onToggleSaved: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const categoryColor = getCategoryColor(event.category);
-  const eventDate = new Date(event.date);
-  const formattedDate = eventDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   const addressQuery = [event.location, event.address].filter(Boolean).join(', ');
   const mapHref = event.latitude != null && event.longitude != null
     ? `https://yandex.uz/maps/?pt=${event.longitude},${event.latitude}&z=16&l=map`
     : `https://yandex.uz/maps/?text=${encodeURIComponent(addressQuery)}`;
   const ctaHref = toSafeHref(event.ctaUrl) || mapHref;
-  const description = expanded ? (event.fullDescription || event.description) : event.description;
+
+  // Formatting date
+  const eventDate = new Date(event.date);
+  const formattedDate = eventDate.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long'
+  });
 
   const handleShare = async () => {
-    const url = new URL(window.location.href);
-    url.hash = `event-${event.id}`;
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = `event-${event.id}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: event.title, text: event.description, url: url.toString() });
+        await navigator.share({
+          title: event.title,
+          text: event.description,
+          url: shareUrl.toString(),
+        });
         return;
       } catch { return; }
     }
-    await navigator.clipboard?.writeText(url.toString());
+    await navigator.clipboard?.writeText(shareUrl.toString());
   };
 
-  return <article className="feed-post event-screen" id={`event-${event.id}`}>
-    <div className="event-hero">
-      <div className="event-hero-image-wrapper">
-        <SafeImage src={event.imageUrl} fill className="object-cover" alt={event.title} sizes="(max-width: 760px) 100vw, 720px" priority={index < 2} fallbackIcon={<Sparkles className="h-16 w-16 text-white/10" />} />
+  return (
+    <div className="feed-post event-screen" id={`event-${event.id}`}>
+      {/* 1. Hero Image & Vignette */}
+      <div className="event-hero">
+        <div className="event-hero-image-wrapper">
+          <SafeImage
+            src={event.imageUrl}
+            fill
+            className="object-cover"
+            alt={event.title}
+            sizes="100vw"
+            priority={index < 2}
+            fallbackIcon={<Sparkles className="w-16 h-16 text-white/10" />}
+          />
+        </div>
+        {/* Multi-layer vignette for cinematic feel */}
+        <div className="event-vignette" />
+        <div className="event-vignette-top" />
+
+        {/* Back Button */}
+        <Link href="/" className="event-top-action-btn back-btn" aria-label="Назад">
+          <ChevronLeft className="w-6 h-6" />
+        </Link>
+        <Link href="/notifications" className="event-top-action-btn bell-btn" aria-label="Уведомления">
+          <Bell className="w-5 h-5" />
+          <span className="bell-pulse-indicator" />
+        </Link>
+
       </div>
-      <div className="event-vignette" />
-      <div className="event-vignette-top" />
-      <div className="event-card-toolbar">
-        <span style={{ '--cat-color': categoryColor } as CSSProperties}>{event.category}</span>
-        <div>
-          <button type="button" onClick={() => void handleShare()} aria-label="Поделиться событием"><Share2 /></button>
-          <button type="button" onClick={onToggleSaved} disabled={isSaving} aria-label={isBookmarked ? 'Убрать из планов' : 'Сохранить в планы'} aria-pressed={isBookmarked} className={isBookmarked ? 'is-active' : ''}><Bookmark fill={isBookmarked ? 'currentColor' : 'none'} /></button>
+
+      {/* 2. Content Section (over gradient) */}
+      <div className="event-content">
+        {/* Category chip */}
+        <div className="event-header">
+          <span
+            className="event-category-chip"
+            style={{
+              '--cat-color': categoryColor,
+              borderColor: `${categoryColor}40`,
+              background: `${categoryColor}15`,
+            } as React.CSSProperties}
+          >
+            {event.category}
+          </span>
+          <h1 className="event-title">{event.title}</h1>
+        </div>
+
+        <div className="event-meta">
+          <div className="meta-chunk">
+            <span>{formattedDate}</span>
+          </div>
+          <div className="meta-chunk">
+            <span>{event.startTime}</span>
+          </div>
+          <div className="age-badge">{event.ageLimit}</div>
+        </div>
+
+        {/* 4. Main CTAs */}
+        <div className="event-actions-main">
+          <a
+            href={ctaHref}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="cta-btn cta-orange"
+            id={`cta-attend-${event.id}`}
+          >
+            {event.ctaText || 'Сходить'}
+          </a>
+          <a
+            href={mapHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cta-btn cta-dark"
+            id={`cta-address-${event.id}`}
+          >
+            <PerklyGlyph name="location" className="w-4 h-4" />
+            Адрес
+          </a>
+        </div>
+
+        {/* 5. Fast Action Panel */}
+        <div className="event-fast-actions">
+          <div
+            className="fast-action-item"
+            onClick={() => setShowFullDesc(!showFullDesc)}
+          >
+            <div className="action-icon-circle">
+              <FileText className="w-5 h-5" />
+            </div>
+            <span>Подробнее</span>
+          </div>
+          <div
+            className={`fast-action-item ${isBookmarked ? 'active' : ''}`}
+            onClick={onToggleSaved}
+            aria-disabled={isSaving}
+          >
+            <div className="action-icon-circle">
+              <PerklyGlyph name="bookmark" className="w-5 h-5" />
+            </div>
+            <span>Планы</span>
+          </div>
+          <Link href="/chat" className="fast-action-item no-underline text-inherit">
+            <div className="action-icon-circle">
+              <MessageCircle className="w-5 h-5 text-white" />
+            </div>
+            <span>Чат</span>
+          </Link>
+          <div className="fast-action-item" onClick={handleShare}>
+            <div className="action-icon-circle">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <span>Поделиться</span>
+          </div>
+        </div>
+
+        {/* 6. Description / Announcement */}
+        <div className={`event-announcement ${showFullDesc ? 'expanded' : ''}`}>
+          <RichText className="rich-text">
+            {showFullDesc ? (event.fullDescription || event.description) : event.description}
+          </RichText>
         </div>
       </div>
+
+      {/* Side progress dots */}
+      <div className="feed-side-dots">
+        {Array.from({ length: Math.min(total, 8) }).map((_, i) => (
+          <div
+            key={i}
+            className={`feed-dot ${i === index % 8 ? 'feed-dot-active' : ''}`}
+          />
+        ))}
+      </div>
+
+      {/* Scroll hint on first card */}
+      {index === 0 && (
+        <div className="scroll-hint">
+          <ChevronDown className="w-5 h-5 animate-bounce-slow" />
+        </div>
+      )}
     </div>
-
-    <div className="event-content">
-      <div className="event-header">
-        {(event.badges?.length || event.isFeatured) && <div className="event-badges">{event.isFeatured && <span>Выбор Топки</span>}{event.badges?.slice(0, 2).map((badge) => <span key={badge}>{badge}</span>)}</div>}
-        <h2 className="event-title">{event.title}</h2>
-        {event.subtitle && <p className="event-subtitle">{event.subtitle}</p>}
-      </div>
-
-      <div className="event-meta">
-        <span><CalendarDays /> {formattedDate}</span>
-        <span><Clock3 /> {event.startTime}{event.endTime ? `–${event.endTime}` : ''}</span>
-        {event.ageLimit && <span>{event.ageLimit}</span>}
-      </div>
-
-      <div className={`event-announcement ${expanded ? 'expanded' : ''}`}>
-        <RichText className="rich-text">{description}</RichText>
-      </div>
-      {(event.fullDescription || event.description.length > 150) && <button type="button" className="event-description-toggle" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>{expanded ? 'Свернуть' : 'Читать полностью'}</button>}
-
-      <div className="event-card-links">
-        <a href={ctaHref} target="_blank" rel="noopener noreferrer nofollow" className="event-card-link event-card-link-primary">{event.ctaText || 'Подробнее'} <ArrowUpRight /></a>
-        <a href={mapHref} target="_blank" rel="noopener noreferrer" className="event-card-link event-card-link-secondary"><MapPin /> <span>{event.location || 'Адрес'}</span></a>
-      </div>
-    </div>
-  </article>;
+  );
 }
 
+// ===== Main Feed Component =====
 export default function FeedPage({ events }: { events: FeedEvent[] }) {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [feedEvents, setFeedEvents] = useState<FeedEvent[]>(() => events.filter(isUpcomingEvent));
-  const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
+  const [feedEvents, setFeedEvents] = useState<FeedEvent[]>(() =>
+    events.filter(isUpcomingEvent)
+  );
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
-    eventsApi.getSaved().then((items) => setSavedIds(new Set(items.map((item) => item.eventId)))).catch(() => undefined);
+    eventsApi.getSaved()
+      .then((items) => setSavedIds(new Set(items.map((item) => item.eventId))))
+      .catch(() => undefined);
   }, [authLoading, isAuthenticated]);
 
   useEffect(() => {
@@ -160,39 +268,80 @@ export default function FeedPage({ events }: { events: FeedEvent[] }) {
     };
   }, []);
 
-  const visibleEvents = useMemo(() => feedEvents.filter((event) => matchesFilter(event, activeFilter)), [feedEvents, activeFilter]);
-
   const toggleSaved = async (eventId: string) => {
     if (!isAuthenticated) {
       router.push(`/login?next=${encodeURIComponent(`/feed#event-${eventId}`)}`);
       return;
     }
     if (savingIds.has(eventId)) return;
+
     const wasSaved = savedIds.has(eventId);
     setSavingIds((current) => new Set(current).add(eventId));
-    setSavedIds((current) => { const next = new Set(current); if (wasSaved) next.delete(eventId); else next.add(eventId); return next; });
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (wasSaved) next.delete(eventId);
+      else next.add(eventId);
+      return next;
+    });
+
     try {
-      if (wasSaved) await eventsApi.unsave(eventId); else await eventsApi.save(eventId);
+      if (wasSaved) await eventsApi.unsave(eventId);
+      else await eventsApi.save(eventId);
     } catch {
-      setSavedIds((current) => { const next = new Set(current); if (wasSaved) next.add(eventId); else next.delete(eventId); return next; });
+      setSavedIds((current) => {
+        const next = new Set(current);
+        if (wasSaved) next.add(eventId);
+        else next.delete(eventId);
+        return next;
+      });
     } finally {
-      setSavingIds((current) => { const next = new Set(current); next.delete(eventId); return next; });
+      setSavingIds((current) => {
+        const next = new Set(current);
+        next.delete(eventId);
+        return next;
+      });
     }
   };
 
-  return <div className="feed-container">
-    <header className="feed-app-header">
-      <Link href="/" className="feed-header-back" aria-label="Вернуться на главную"><ArrowLeft /></Link>
-      <div><h1>Топка</h1><p>События Ташкента</p></div>
-      <Link href="/sell" className="feed-create-button" aria-label="Добавить событие"><Plus /></Link>
-    </header>
+  if (!feedEvents || feedEvents.length === 0) {
+    return (
+      <div className="feed-empty px-6 text-center">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/[0.04]">
+          <Sparkles className="h-7 w-7 text-white/20" />
+        </div>
+        <h1 className="mb-2 text-2xl font-bold text-white/75">Сейчас нет актуальных событий</h1>
+        <p className="max-w-sm text-sm leading-6 text-white/35">
+          Новые мероприятия появятся здесь после публикации организаторами.
+        </p>
+        <Link
+          href="/catalog"
+          className="mt-7 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-bold text-black no-underline"
+        >
+          Перейти в каталог
+        </Link>
+      </div>
+    );
+  }
 
-    <nav className="feed-filter-rail" aria-label="Фильтры событий">
-      {filters.map((filter) => { const Icon = filter.icon; return <button key={filter.id} type="button" className={activeFilter === filter.id ? 'is-active' : ''} onClick={() => setActiveFilter(filter.id)} aria-pressed={activeFilter === filter.id}><Icon /> {filter.label}</button>; })}
-    </nav>
-
-    <div className="feed-section-heading"><div><h2>Скоро</h2><p>События, которые стоит сохранить в планах</p></div><span>{visibleEvents.length}</span></div>
-
-    {visibleEvents.length ? visibleEvents.map((event, index) => <EventCard key={event.id} event={event} index={index} isBookmarked={savedIds.has(event.id)} isSaving={savingIds.has(event.id)} onToggleSaved={() => void toggleSaved(event.id)} />) : <div className="feed-empty-state"><Sparkles /><h2>Здесь пока тихо</h2><p>Для выбранного фильтра нет актуальных событий.</p><button type="button" onClick={() => setActiveFilter('all')}>Показать все</button></div>}
-  </div>;
+  return (
+    <div className="feed-container">
+      <header className="feed-app-header">
+        <div>
+          <h1>Топка</h1>
+          <p>События Ташкента</p>
+        </div>
+      </header>
+      {feedEvents.map((event, i) => (
+        <EventCard
+          key={event.id}
+          event={event}
+          index={i}
+          total={feedEvents.length}
+          isBookmarked={savedIds.has(event.id)}
+          isSaving={savingIds.has(event.id)}
+          onToggleSaved={() => void toggleSaved(event.id)}
+        />
+      ))}
+    </div>
+  );
 }

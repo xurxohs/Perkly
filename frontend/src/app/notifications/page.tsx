@@ -23,7 +23,7 @@ const NOTIFICATIONS = [
         message: 'Skyline Gala начнется уже через 3 часа. Не забудьте билеты.',
         time: '1 час назад',
         icon: Ticket,
-        color: 'from-indigo-500 to-blue-500',
+        color: 'from-purple-500 to-pink-500',
         action: 'Билет'
     },
     {
@@ -60,9 +60,9 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0A0F24] pb-28">
+        <div className="min-h-screen bg-black pb-28">
             {/* Navbar */}
-            <div className="sticky top-0 z-50 bg-[#0A0F24]/80 backdrop-blur-md border-b border-white/5 pt-safe px-4 py-3 flex items-center justify-between">
+            <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/5 pt-safe px-4 py-3 flex items-center justify-between">
                 <button 
                     onClick={() => router.back()} 
                     className="p-2 -ml-2 rounded-full hover:bg-white/10 transition text-white/70"

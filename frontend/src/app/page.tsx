@@ -1,13 +1,11 @@
 export const dynamic = 'force-dynamic';
 
-import { ArrowRight, Check, Flame, ShieldCheck, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { Event, Offer } from '@/lib/api';
 import SafeImage from '@/components/SafeImage';
 import { PerklyGlyph, type PerklyGlyphName } from '@/components/PerklyGlyph';
 import { QuickServicePanel } from '@/components/QuickServicePanel';
-import { BrandButton } from '@/components/BrandButton';
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
@@ -46,7 +44,9 @@ async function getOffers() {
 
 async function hasUpcomingEvents() {
   try {
-    const response = await fetch(`${API_BASE}/events?take=20`, { cache: 'no-store' });
+    const response = await fetch(`${API_BASE}/events?take=20`, {
+      cache: 'no-store',
+    });
     if (!response.ok) return false;
     const payload = (await response.json()) as { data?: Event[] };
     return (payload.data ?? []).some((event) => {
@@ -61,79 +61,37 @@ async function hasUpcomingEvents() {
 const actionLabel = (offer: Offer) => offer.price === 0 ? 'Получить' : offer.fulfillmentType === 'LINK' ? 'Открыть' : 'Купить';
 
 export default async function Home() {
-  const [{ popularOffers, flashOffers }, showTopka] = await Promise.all([getOffers(), hasUpcomingEvents()]);
+  const [{ popularOffers, flashOffers }, showTopka] = await Promise.all([
+    getOffers(),
+    hasUpcomingEvents(),
+  ]);
 
-  return <div className="brand-home mx-auto flex w-full max-w-[1320px] flex-col px-4 pb-20 sm:px-6 lg:px-8">
-    <section className="brand-hero" aria-labelledby="hero-title">
-      <div className="brand-hero-grid" aria-hidden="true" />
-      <div className="brand-hero-copy">
-        <div className="brand-eyebrow"><span /> Digital marketplace · Uzbekistan</div>
-        <h1 id="hero-title">Выгода, которая<br /><em>движется с вами.</em></h1>
-        <p>Промокоды, подписки и локальные предложения — в одном точном интерфейсе. Цена, ограничения и способ получения понятны до оплаты.</p>
-        <div className="brand-hero-actions">
-          <BrandButton href="/catalog">Открыть каталог</BrandButton>
-          <BrandButton href="/sell" variant="secondary">Стать продавцом</BrandButton>
-        </div>
-        <ul className="brand-trust-list" aria-label="Преимущества Perkly">
-          <li><Check aria-hidden="true" /> Цены в UZS</li>
-          <li><Check aria-hidden="true" /> Проверка условий</li>
-          <li><Check aria-hidden="true" /> История операций</li>
-        </ul>
-      </div>
-
-      <div className="brand-hero-art" aria-hidden="true">
-        <div className="brand-orbit brand-orbit-one" />
-        <div className="brand-orbit brand-orbit-two" />
-        <div className="brand-chevron-plane brand-chevron-plane-back" />
-        <div className="brand-chevron-plane brand-chevron-plane-front">
-          <Image src="/perkly-logo.svg" alt="" width={180} height={134} priority className="brand-hero-logo" />
-        </div>
-        <div className="brand-signal-card brand-signal-card-top"><span>Доступ</span><strong>24/7</strong></div>
-        <div className="brand-signal-card brand-signal-card-bottom"><ShieldCheck /><span>Условия<br /><strong>проверены</strong></span></div>
+  return <div className="mx-auto flex w-full max-w-[1200px] flex-col px-4 pb-16 sm:px-6">
+    <section className="relative flex min-h-[520px] items-center overflow-hidden py-16 text-center sm:min-h-[600px] sm:py-20">
+      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[720px] max-w-[95vw] -translate-x-1/2 rounded-full bg-purple-600/[0.12] blur-[110px]" />
+      <div className="relative mx-auto max-w-4xl">
+        <h1 className="text-balance text-4xl font-black leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">Покупайте понятнее.<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Условия — до оплаты.</span></h1>
+        <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Промокоды, подписки и локальные предложения Узбекистана. Цена, ограничения и способ получения видны в карточке.</p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/catalog" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-bold text-black no-underline transition hover:scale-[1.02]">Смотреть предложения <ArrowRight className="h-4 w-4" /></Link><Link href="/sell" className="inline-flex h-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-7 font-semibold text-white/75 no-underline hover:bg-white/[0.07]">Стать продавцом</Link></div>
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-white/35"><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="shield" className="h-4 w-4 text-emerald-400" /> История операции и споры</span><span className="inline-flex items-center gap-1.5"><PerklyGlyph name="catalog" className="h-4 w-4 text-purple-300" /> Способ выдачи указан заранее</span><span>Цены только в UZS</span></div>
       </div>
     </section>
 
-    <div className="brand-reveal"><QuickServicePanel /></div>
+    <QuickServicePanel />
 
-    <section className="brand-section brand-reveal">
-      <SectionHeading eyebrow="Навигация" title="Найдите нужное быстрее" href="/catalog" linkLabel="Весь каталог" />
-      <div className="brand-category-grid">{categories.map((category, index) => <Link key={category.title} href={category.href} className="brand-category-card">
-        <span className="brand-category-index">0{index + 1}</span>
-        <PerklyGlyph name={category.icon} className="brand-category-icon" />
-        <div><h3>{category.title}</h3><p>{category.detail}</p></div>
-        <ArrowRight className="brand-card-arrow" aria-hidden="true" />
-      </Link>)}</div>
+    <section className="mb-14">
+      <div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Что ищете?</h2><Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline hover:text-white">Весь каталог →</Link></div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{categories.map((category) => <Link key={category.title} href={category.href} className="group rounded-3xl border border-white/[0.07] bg-white/[0.025] p-4 no-underline transition-colors hover:border-purple-400/25 hover:bg-purple-500/[0.06]"><div className="mb-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/55 transition-colors group-hover:bg-purple-500/15 group-hover:text-purple-200"><PerklyGlyph name={category.icon} className="h-5 w-5" /></div><h3 className="text-sm font-bold text-white">{category.title}</h3><p className="mt-1 text-xs leading-4 text-white/30">{category.detail}</p></Link>)}</div>
     </section>
 
-    {showTopka && <section className="brand-section brand-reveal"><Link href="/feed" className="brand-topka-banner">
-      <div><span className="brand-topka-label"><Flame /> Live · Topka</span><h2>Город в вашем ритме.</h2><p>Актуальные события и места — в быстрой вертикальной ленте.</p></div>
-      <span className="brand-topka-action">Открыть Topka <ArrowRight /></span>
-      <div className="brand-topka-chevron" aria-hidden="true" />
-    </Link></section>}
+    {showTopka && <section className="mb-14"><Link href="/feed" className="group relative block overflow-hidden rounded-[2rem] border border-orange-400/10 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.025] to-purple-500/[0.06] p-6 no-underline sm:p-8"><div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div><span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-300"><Flame className="h-3.5 w-3.5" /> Topka</span><h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Что происходит сегодня</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/40">Актуальные события и места города в вертикальной ленте.</p></div><span className="inline-flex h-12 w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 text-sm font-bold text-white/70 transition group-hover:bg-white/10 group-hover:text-white">Открыть Topka <ArrowRight className="h-4 w-4" /></span></div></Link></section>}
 
-    {flashOffers.length > 0 && <section className="brand-section brand-reveal">
-      <SectionHeading eyebrow="Ограничено" title="Успейте забрать" href="/catalog?isFlashDrop=true" linkLabel="Все акции" />
-      <div className="brand-offer-grid brand-offer-grid-four">{flashOffers.map((offer) => <OfferCard key={offer.id} offer={offer} urgent />)}</div>
-    </section>}
+    {flashOffers.length > 0 && <section className="mb-14"><div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Успейте забрать</h2><Link href="/catalog?isFlashDrop=true" className="text-sm font-semibold text-white/45 no-underline">Все акции →</Link></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{flashOffers.map((offer) => <OfferCard key={offer.id} offer={offer} urgent />)}</div></section>}
 
-    <section className="brand-section brand-reveal">
-      <SectionHeading eyebrow="Подборка" title="Стоит посмотреть" href={popularOffers.length ? '/catalog' : undefined} linkLabel="Смотреть все" />
-      {popularOffers.length ? <div className="brand-offer-grid">{popularOffers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div> : <div className="brand-empty-state">
-        <div className="brand-empty-icon"><Sparkles /></div>
-        <div><h3>Только проверенные предложения</h3><p>Мы не заполняем каталог вымышленными карточками. Новые предложения появятся после модерации, а пока можно изучить правила безопасной покупки.</p></div>
-        <BrandButton href="/guides">Читать руководства</BrandButton>
-      </div>}
-    </section>
+    <section><div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-black text-white">Стоит посмотреть</h2>{popularOffers.length > 0 && <Link href="/catalog" className="text-sm font-semibold text-white/45 no-underline">Смотреть все →</Link>}</div>{popularOffers.length ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{popularOffers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div> : <div className="rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-7 sm:p-9"><h3 className="text-xl font-black text-white">Публикуем только проверенные предложения</h3><p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">Сейчас в открытом каталоге нет товаров, прошедших модерацию. Мы скрыли тестовые карточки и не подменяем их вымышленными предложениями. Пока можно изучить правила безопасной покупки или подать заявку продавца.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link href="/guides" className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-black no-underline">Читать руководства</Link><Link href="/sell" className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-white/70 no-underline">Для продавцов</Link></div></div>}</section>
   </div>;
 }
 
-function SectionHeading({ eyebrow, title, href, linkLabel }: { eyebrow: string; title: string; href?: string; linkLabel: string }) {
-  return <div className="brand-section-heading"><div><span>{eyebrow}</span><h2>{title}</h2></div>{href && <Link href={href}>{linkLabel}<ArrowRight /></Link>}</div>;
-}
-
 function OfferCard({ offer, urgent = false }: { offer: Offer; urgent?: boolean }) {
-  return <Link href={`/offer?id=${offer.id}`} className="brand-offer-card">
-    <div className="brand-offer-media"><SafeImage src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-cover" alt={offer.title} />{urgent && <span className="brand-urgent"><Flame /> Скоро закончится</span>}</div>
-    <div className="brand-offer-body"><p className="brand-offer-category">{CATEGORY_NAMES[offer.category] || 'Предложение'}</p><h3>{offer.title}</h3><div className="brand-offer-meta"><strong>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</strong><span>{actionLabel(offer)} <ArrowRight /></span></div></div>
-  </Link>;
+  return <Link href={`/offer?id=${offer.id}`} className="group overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.025] no-underline transition-colors hover:border-white/[0.13]"><div className="relative aspect-[4/3] overflow-hidden bg-white/[0.035]"><SafeImage src={offer.imageUrl || offer.vendorLogo || ''} fill className="object-cover" alt={offer.title} />{urgent && <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-orange-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white"><Flame className="h-3 w-3" /> Скоро закончится</span>}</div><div className="p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{CATEGORY_NAMES[offer.category] || 'Предложение'}</p><h3 className="mt-2 line-clamp-2 min-h-10 text-sm font-bold leading-5 text-white">{offer.title}</h3><div className="mt-4 flex items-end justify-between gap-2"><span className={`text-base font-black ${offer.price === 0 ? 'text-emerald-300' : 'text-white'}`}>{offer.price === 0 ? 'Бесплатно' : `${offer.price.toLocaleString('ru-RU')} сум`}</span><span className="text-xs font-bold text-purple-300">{actionLabel(offer)} →</span></div></div></Link>;
 }

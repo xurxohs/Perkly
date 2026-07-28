@@ -19,8 +19,8 @@ const SLIDES = [
         icon: Ticket,
         title: 'Строй планы',
         description: 'Сохраняй билеты, ставь напоминания и обсуждай с друзьями куда пойти на этих выходных.',
-        color: '#005cff', // Electric blue
-        glow: 'rgba(0,92,255, 0.5)'
+        color: '#a855f7', // Purple
+        glow: 'rgba(168, 85, 247, 0.5)'
     },
     {
         id: 'chat',
@@ -75,7 +75,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     const Icon = slide.icon;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-[#0A0F24] text-white flex flex-col items-center justify-between overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center justify-between overflow-hidden">
             {/* Background effects */}
             <div 
                 className="absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-40 mix-blend-screen pointer-events-none"
@@ -102,7 +102,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
             `}>
                 <div 
                     className="w-24 h-24 rounded-3xl flex items-center justify-center mb-8 shadow-2xl relative"
-                    style={{ background: `linear-gradient(135deg, ${slide.color}, #0A0F24)` }}
+                    style={{ background: `linear-gradient(135deg, ${slide.color}, #000)` }}
                 >
                     <div className="absolute inset-0 rounded-3xl opacity-50" style={{ boxShadow: `0 0 30px ${slide.color}` }} />
                     <Icon className="w-12 h-12 text-white relative z-10 drop-shadow-md" />

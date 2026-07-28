@@ -48,7 +48,7 @@ export default function CouponsPage() {
         <div className="flex flex-col items-center px-6 pb-24 max-w-[1200px] mx-auto w-full">
             {/* Header */}
             <section className="pt-20 pb-10 text-center w-full relative">
-                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(74,58,255,0.08)_0%,transparent_70%)]" />
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(236,72,153,0.08)_0%,transparent_70%)]" />
 
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
                     Купоны и <span className="text-gradient">Скидки</span>
@@ -82,7 +82,7 @@ export default function CouponsPage() {
             <section className="w-full">
                 {loading ? (
                     <div className="text-center py-20">
-                        <div className="w-8 h-8 mx-auto rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+                        <div className="w-8 h-8 mx-auto rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
                         <p className="text-white/30 text-sm mt-4">Загрузка купонов...</p>
                     </div>
                 ) : filtered.length === 0 ? (
@@ -115,20 +115,20 @@ export default function CouponsPage() {
 
                                             {/* Flash Drop badge */}
                                             {offer.isFlashDrop && (
-                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 z-10 bg-[#0A0F24]/70 border border-amber-500/30">
+                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 z-10 bg-black/70 border border-amber-500/30">
                                                     <Zap className="w-3 h-3" /> Flash
                                                 </div>
                                             )}
 
                                             {/* Exclusive badge */}
                                             {offer.isExclusive && (
-                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-indigo-300 z-10 bg-[#0A0F24]/70 border border-indigo-500/30">
+                                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-purple-300 z-10 bg-black/70 border border-purple-500/30">
                                                     <Star className="w-3 h-3" /> VIP
                                                 </div>
                                             )}
 
                                             {/* Category */}
-                                            <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold text-white/80 z-10 bg-[#0A0F24]/60 backdrop-blur-md">
+                                            <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold text-white/80 z-10 bg-black/60 backdrop-blur-md">
                                                 {categoryFilters.find(c => c.key === offer.category)?.label || offer.category}
                                             </div>
                                         </div>
@@ -156,7 +156,7 @@ export default function CouponsPage() {
 
                                             {/* Seller */}
                                             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.05]">
-                                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500" />
+                                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
                                                 <span className="text-xs text-white/30">{offer.seller?.displayName || 'Perkly'}</span>
                                             </div>
                                         </div>

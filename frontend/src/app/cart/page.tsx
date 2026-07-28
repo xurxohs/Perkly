@@ -117,7 +117,7 @@ export default function CartPage() {
                             )}
                         </div>
                     ))}
-                    <Link href="/profile" className="inline-flex items-center gap-2 mt-4 text-indigo-400 text-sm no-underline">
+                    <Link href="/profile" className="inline-flex items-center gap-2 mt-4 text-purple-400 text-sm no-underline">
                         Перейти в профиль <ArrowRight className="w-4 h-4" />
                     </Link>
                 </div>
@@ -127,7 +127,7 @@ export default function CartPage() {
                 <div className="text-center py-20">
                     <ShoppingCart className="w-16 h-16 text-white/10 mx-auto mb-4" />
                     <p className="text-white/30 text-lg mb-4">Корзина пуста</p>
-                    <Link href="/catalog" className="text-indigo-400 no-underline text-sm">
+                    <Link href="/catalog" className="text-purple-400 no-underline text-sm">
                         Перейти в каталог →
                     </Link>
                 </div>
@@ -155,7 +155,7 @@ export default function CartPage() {
                                                         item.category === 'GAMES' ? <Gamepad2 className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                                             </div>
                                             <div className="min-w-0 pr-2">
-                                                <Link href={`/offer/?id=${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-indigo-400 transition block truncate">
+                                                <Link href={`/offer/?id=${item.offerId}`} className="text-sm font-semibold text-white no-underline hover:text-purple-400 transition block truncate">
                                                     {item.title}
                                                 </Link>
                                                 <div className="text-xs text-white/30">Товар Perkly</div>
@@ -183,7 +183,7 @@ export default function CartPage() {
                                     {isAuthenticated && (
                                         <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2">
                                             <div className="flex items-center gap-2 text-xs text-white/45 shrink-0">
-                                                <Tag className="w-4 h-4 text-indigo-300" />
+                                                <Tag className="w-4 h-4 text-purple-300" />
                                                 Промокод
                                             </div>
                                             <select
@@ -193,7 +193,7 @@ export default function CartPage() {
                                                     [item.offerId]: event.target.value,
                                                 }))}
                                                 disabled={itemPromocodes.length === 0}
-                                                className="w-full min-h-10 rounded-lg bg-[#0A0F24]/30 border border-white/10 text-white text-sm px-3 outline-none disabled:opacity-50"
+                                                className="w-full min-h-10 rounded-lg bg-black/30 border border-white/10 text-white text-sm px-3 outline-none disabled:opacity-50"
                                                 aria-label="Выбрать промокод"
                                             >
                                                 <option value="">

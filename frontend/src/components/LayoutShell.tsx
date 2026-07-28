@@ -29,7 +29,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         document.documentElement.dataset.perklyTheme = theme;
-        const browserChromeColor = theme === 'light' ? '#EEF2FF' : '#0A0F24';
+        const browserChromeColor = theme === 'light' ? '#f5f5f7' : '#000000';
         document.documentElement.style.backgroundColor = browserChromeColor;
         document.documentElement.style.colorScheme = theme;
         document.body.style.backgroundColor = browserChromeColor;

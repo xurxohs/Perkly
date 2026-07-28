@@ -22,8 +22,8 @@ const PRIZES: Prize[] = [
     { label: '75 Points', shortLabel: '75', color: '#eab308', icon: '🪙', probability: 18, value: '75pp', description: 'Начислено 75 Perkly Points!' },
     { label: '100 Points', shortLabel: '100', color: '#22c55e', icon: '👑', probability: 12, value: '100pp', description: 'Отлично! 100 Perkly Points!' },
     { label: '150 Points', shortLabel: '150', color: '#3b82f6', icon: '💎', probability: 7, value: '150pp', description: 'Здорово! 150 Perkly Points!' },
-    { label: '200 Points', shortLabel: '200', color: '#005cff', icon: '🔥', probability: 4, value: '200pp', description: 'Прекрасно! 200 Perkly Points!' },
-    { label: '300 Points', shortLabel: '300', color: '#4a3aff', icon: '🏆', probability: 1, value: '300pp', description: '🎉 ДЖЕКПОТ! 300 Perkly Points!' },
+    { label: '200 Points', shortLabel: '200', color: '#a855f7', icon: '🔥', probability: 4, value: '200pp', description: 'Прекрасно! 200 Perkly Points!' },
+    { label: '300 Points', shortLabel: '300', color: '#ec4899', icon: '🏆', probability: 1, value: '300pp', description: '🎉 ДЖЕКПОТ! 300 Perkly Points!' },
     { label: 'Попробуйте ещё', shortLabel: '🔄', color: '#f59e0b', icon: '🔄', probability: 4, value: 'retry', description: 'Не повезло... Попробуйте завтра!' },
 ];
 
@@ -204,7 +204,7 @@ export default function FortuneWheel() {
                     className={`w-full py-4 rounded-2xl text-white font-bold text-lg cursor-pointer transition-all duration-300 ${
                         isSpinning ? 'bg-white/5 opacity-50 cursor-not-allowed' :
                         spinsLeft <= 0 ? 'bg-white/10 opacity-50 cursor-not-allowed' :
-                        'bg-primary-gradient shadow-[0_0_30_rgba(0,92,255,0.3),0_0_60_rgba(0,92,255,0.1)] hover:opacity-90'
+                        'bg-primary-gradient shadow-[0_0_30_rgba(168,85,247,0.3),0_0_60_rgba(168,85,247,0.1)] hover:opacity-90'
                     }`}
                     title={isSpinning ? "Колесо крутится" : spinsLeft <= 0 ? "Приходите завтра" : "Крутить бесплатно"}
                 >
@@ -221,8 +221,8 @@ export default function FortuneWheel() {
 
             {/* ======== PRIZE MODAL ======== */}
             {showModal && prize && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A0F24]/80 backdrop-blur-md">
-                    <div className="relative max-w-sm w-full rounded-3xl p-8 text-center bg-[#0A0F24b2] border border-[#005cff20] shadow-[0_0_60px_rgba(0,92,255,0.15)]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <div className="relative max-w-sm w-full rounded-3xl p-8 text-center bg-[#0a0a0ab2] border border-[#a855f720] shadow-[0_0_60px_rgba(168,85,247,0.15)]">
                         <button 
                             onClick={() => setShowModal(false)} 
                             className="absolute top-4 right-4 text-white/30 hover:text-white transition cursor-pointer bg-transparent border-0"
@@ -257,7 +257,7 @@ export default function FortuneWheel() {
                                 ) : prize.value === 'coffee' ? (
                                     <Coffee className="w-5 h-5 text-green-400" />
                                 ) : (
-                                    <Ticket className="w-5 h-5 text-indigo-400" />
+                                    <Ticket className="w-5 h-5 text-purple-400" />
                                 )}
                                 <span className="font-bold text-white">{prize.label}</span>
                             </div>

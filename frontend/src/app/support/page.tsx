@@ -27,7 +27,7 @@ export default function SupportPage() {
   return (
     <main className="min-h-screen bg-[#07070a] px-5 py-16 text-white">
       <article className="mx-auto max-w-3xl">
-        <Link href="/" className="text-sm text-indigo-300 no-underline">
+        <Link href="/" className="text-sm text-purple-300 no-underline">
           ← На главную
         </Link>
 
@@ -89,10 +89,10 @@ export default function SupportPage() {
         </section>
 
         <div className="mt-10 flex flex-wrap gap-5 text-sm">
-          <Link href="/privacy" className="text-indigo-300 no-underline">
+          <Link href="/privacy" className="text-purple-300 no-underline">
             Политика конфиденциальности
           </Link>
-          <Link href="/terms" className="text-indigo-300 no-underline">
+          <Link href="/terms" className="text-purple-300 no-underline">
             Пользовательское соглашение
           </Link>
         </div>

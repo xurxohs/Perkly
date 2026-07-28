@@ -17,7 +17,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderClass: string; glowClass: string }> = {
     SILVER: { bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', borderClass: 'border-slate-400/30', glowClass: 'bg-[radial-gradient(circle,_rgba(148,163,184,0.2),_transparent_70%)]' },
     GOLD: { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-500', borderClass: 'border-yellow-500/30', glowClass: 'bg-[radial-gradient(circle,_rgba(234,179,8,0.2),_transparent_70%)]' },
-    PLATINUM: { bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', borderClass: 'border-indigo-500/30', glowClass: 'bg-[radial-gradient(circle,_rgba(0,92,255,0.2),_transparent_70%)]' },
+    PLATINUM: { bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', borderClass: 'border-purple-500/30', glowClass: 'bg-[radial-gradient(circle,_rgba(168,85,247,0.2),_transparent_70%)]' },
 };
 
 const PROMOCODE_ACTIVATION_META: Record<string, { label: string; className: string }> = {
@@ -27,7 +27,7 @@ const PROMOCODE_ACTIVATION_META: Record<string, { label: string; className: stri
     },
     COPIED: {
         label: 'Скопирован',
-        className: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+        className: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
     },
     USED: {
         label: 'Использован',
@@ -604,7 +604,7 @@ export default function ProfilePage() {
                             ) : (
                                 <PerklyGlyph name="profile" className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
                             )}
-                            <span className="absolute inset-0 flex items-center justify-center bg-[#0A0F24]/50 opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                                 {avatarUploading ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : <Camera className="h-5 w-5 text-white" />}
                             </span>
                             <input type="file" accept="image/jpeg,image/png,image/webp" disabled={avatarUploading} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleAvatarFile(file); event.currentTarget.value = ''; }} />
@@ -644,7 +644,7 @@ export default function ProfilePage() {
                                         href="/vendor"
                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/70 transition-colors hover:text-white group w-fit no-underline bg-white/[0.04] border border-white/[0.07]"
                                     >
-                                        <Store className="w-3.5 h-3.5 text-indigo-400 group-hover:text-white transition-colors" />
+                                        <Store className="w-3.5 h-3.5 text-purple-400 group-hover:text-white transition-colors" />
                                         <span className="tracking-wide">Кабинет Продавца</span>
                                     </Link>
                                 ) : (
@@ -839,7 +839,7 @@ export default function ProfilePage() {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white mb-0.5">Личные сообщения</h3>
-                            <p className="text-sm text-indigo-200/60">Чаты с продавцами и системные уведомления</p>
+                            <p className="text-sm text-purple-200/60">Чаты с продавцами и системные уведомления</p>
                         </div>
                     </div>
                     <div className="profile-action-chevron w-8 h-8 flex items-center justify-center">
@@ -854,31 +854,31 @@ export default function ProfilePage() {
                 <div className="profile-tabs hidden md:flex -mx-4 mb-6 gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-1 sm:py-1">
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'history' ? 'text-white bg-indigo-500/15' : 'text-white/40 bg-transparent'}`}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'history' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
                         <span className="flex items-center justify-center gap-1.5"><ClipboardList className="w-4 h-4" /> История</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('subscriptions')}
-                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'subscriptions' ? 'text-white bg-indigo-500/15' : 'text-white/40 bg-transparent'}`}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'subscriptions' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
                         <span className="flex items-center justify-center gap-1.5"><Key className="w-4 h-4" /> Подписки</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('saved')}
-                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'saved' ? 'text-white bg-indigo-500/15' : 'text-white/40 bg-transparent'}`}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'saved' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
                         <span className="flex items-center justify-center gap-1.5"><Bookmark className="w-4 h-4" /> Сохранённые</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('promocodes')}
-                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'promocodes' ? 'text-white bg-indigo-500/15' : 'text-white/40 bg-transparent'}`}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'promocodes' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
                         <span className="flex items-center justify-center gap-1.5"><Ticket className="w-4 h-4" /> Промокоды</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('settings')}
-                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'settings' ? 'text-white bg-indigo-500/15' : 'text-white/40 bg-transparent'}`}
+                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'settings' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
                     >
                         <span className="flex items-center justify-center gap-1.5"><Settings className="w-4 h-4" /> Настройки</span>
                     </button>
@@ -892,7 +892,7 @@ export default function ProfilePage() {
                             <div className="p-12 text-center">
                                 <ShoppingBag className="w-12 h-12 text-white/10 mx-auto mb-3" />
                                 <p className="text-white/30 mb-3">Покупок пока нет</p>
-                                <Link href="/catalog" className="text-indigo-400 text-sm no-underline">Перейти в каталог →</Link>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Перейти в каталог →</Link>
                             </div>
                         ) : (
                             <>
@@ -913,7 +913,7 @@ export default function ProfilePage() {
                                                     <td className="py-3 px-4">
                                                         <span className="text-sm text-white font-medium">{tx.offer?.title || 'Товар'}</span>
                                                         <div className="text-xs text-white/30">{tx.offer?.category}</div>
-                                                        {tx.isGift && <div className="text-[10px] text-blue-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
+                                                        {tx.isGift && <div className="text-[10px] text-pink-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
                                                     </td>
                                                     <td className="py-3 px-4 text-sm font-semibold text-white">{tx.price.toLocaleString('ru-RU')} сум</td>
                                                     <td className="py-3 px-4">
@@ -942,7 +942,7 @@ export default function ProfilePage() {
                                                             {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
                                                                 <button
                                                                     onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
-                                                                    className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-indigo-500/15 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}
+                                                                    className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}
                                                                 >
                                                                     {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />}
                                                                     {revealedKeys[tx.id] ? 'Скрыть' : offerAccessLabel(tx)}
@@ -962,7 +962,7 @@ export default function ProfilePage() {
                                                                 </Link>
                                                             ) : (tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && (
                                                                 <>
-                                                                    <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
+                                                                    <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
                                                                         <MessageCircle className="w-3.5 h-3.5" /> Написать
                                                                     </button>
                                                                     <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
@@ -979,7 +979,7 @@ export default function ProfilePage() {
                                                                         hapticNotification('success');
                                                                         alert('Ссылка на подарок скопирована!');
                                                                     }}
-                                                                    className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-blue-500/10 text-blue-400"
+                                                                    className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-pink-500/10 text-pink-400"
                                                                 >
                                                                     <Copy className="w-3 h-3" /> Ссылка
                                                                 </button>
@@ -988,11 +988,11 @@ export default function ProfilePage() {
                                                     </td>
                                                 </tr>
                                                 {revealedKeys[tx.id] && tx.offer?.hiddenData && (
-                                                    <tr className="border-t border-indigo-500/10">
+                                                    <tr className="border-t border-purple-500/10">
                                                         <td colSpan={5} className="px-4 py-3">
-                                                            <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-indigo-500/5 border border-indigo-500/15 shadow-[inset_0_0_20px_rgba(0,92,255,0.05)]">
-                                                                <Key className="w-4 h-4 text-indigo-400 shrink-0" />
-                                                                <code className="flex-1 text-sm text-indigo-300 font-mono break-all select-all">
+                                                            <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-purple-500/5 border border-purple-500/15 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]">
+                                                                <Key className="w-4 h-4 text-purple-400 shrink-0" />
+                                                                <code className="flex-1 text-sm text-purple-300 font-mono break-all select-all">
                                                                     {tx.offer?.hiddenData}
                                                                 </code>
                                                                 <button
@@ -1002,7 +1002,7 @@ export default function ProfilePage() {
                                                                         setTimeout(() => setCopiedId(null), 2000);
                                                                         analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ transactionId: tx.id, offerTitle: tx.offer?.title }) }).catch(() => {});
                                                                     }}
-                                                                    className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-indigo-400'}`}
+                                                                    className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-purple-400'}`}
                                                                     title="Копировать"
                                                                 >
                                                                     {copiedId === tx.id ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -1024,7 +1024,7 @@ export default function ProfilePage() {
                                                 <div className="pr-2 text-wrap">
                                                     <div className="text-sm text-white font-medium leading-tight mb-1 break-words">{tx.offer?.title || 'Товар'}</div>
                                                     <div className="text-xs text-white/30">{tx.offer?.category}</div>
-                                                    {tx.isGift && <div className="text-[10px] text-blue-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
+                                                    {tx.isGift && <div className="text-[10px] text-pink-400 font-bold uppercase mt-0.5">🎁 Подарок</div>}
                                                 </div>
                                                 <div className="text-sm font-semibold text-white shrink-0 block">{tx.price.toLocaleString('ru-RU')} сум</div>
                                             </div>
@@ -1041,7 +1041,7 @@ export default function ProfilePage() {
                                                     </button>
                                                 )}
                                                 {(tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && tx.offer?.hiddenData && !tx.isGift && (
-                                                    <button onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))} className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-indigo-500/15 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                                    <button onClick={() => setRevealedKeys(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))} className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 ${revealedKeys[tx.id] ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
                                                         {revealedKeys[tx.id] ? <EyeOff className="w-3 h-3" /> : <Key className="w-3 h-3" />} {revealedKeys[tx.id] ? 'Скрыть' : offerAccessLabel(tx)}
                                                     </button>
                                                 )}
@@ -1054,7 +1054,7 @@ export default function ProfilePage() {
                                                             hapticNotification('success');
                                                             alert('Ссылка скопирована!');
                                                         }}
-                                                        className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-blue-500/10 text-blue-400"
+                                                        className="text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer border-0 bg-pink-500/10 text-pink-400"
                                                     >
                                                         <Copy className="w-3 h-3" /> Ссылка на подарок
                                                     </button>
@@ -1070,7 +1070,7 @@ export default function ProfilePage() {
                                                     </Link>
                                                 ) : (tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'ESCROW') && (
                                                     <>
-                                                        <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
+                                                        <button onClick={() => handleStartChat(tx.offer?.sellerId)} className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
                                                             <MessageCircle className="w-3.5 h-3.5" /> Написать
                                                         </button>
                                                         <button onClick={() => handleOpenDispute(tx.id)} className="text-xs text-gray-400 hover:text-red-400 font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer">
@@ -1080,10 +1080,10 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                             {revealedKeys[tx.id] && tx.offer?.hiddenData && (
-                                                <div className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 bg-indigo-500/5 border border-indigo-500/15 shadow-[inset_0_0_20px_rgba(0,92,255,0.05)] overflow-hidden">
-                                                    <Key className="w-4 h-4 text-indigo-400 shrink-0" />
-                                                    <code className="flex-1 text-sm text-indigo-300 font-mono break-all select-all">{tx.offer?.hiddenData}</code>
-                                                    <button onClick={() => { navigator.clipboard.writeText(tx.offer?.hiddenData || ''); setCopiedId(tx.id); setTimeout(() => setCopiedId(null), 2000); analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ transactionId: tx.id, offerTitle: tx.offer?.title }) }).catch(() => {}); }} className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-indigo-400'}`} title="Копировать">
+                                                <div className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 bg-purple-500/5 border border-purple-500/15 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)] overflow-hidden">
+                                                    <Key className="w-4 h-4 text-purple-400 shrink-0" />
+                                                    <code className="flex-1 text-sm text-purple-300 font-mono break-all select-all">{tx.offer?.hiddenData}</code>
+                                                    <button onClick={() => { navigator.clipboard.writeText(tx.offer?.hiddenData || ''); setCopiedId(tx.id); setTimeout(() => setCopiedId(null), 2000); analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ transactionId: tx.id, offerTitle: tx.offer?.title }) }).catch(() => {}); }} className={`shrink-0 p-2 rounded-lg transition-all cursor-pointer border-0 ${copiedId === tx.id ? 'bg-green-500/15 text-green-500' : 'bg-white/5 text-purple-400'}`} title="Копировать">
                                                         {copiedId === tx.id ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                                     </button>
                                                 </div>
@@ -1102,7 +1102,7 @@ export default function ProfilePage() {
                             <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
                                 <Key className="w-12 h-12 text-white/10 mx-auto mb-3" />
                                 <p className="text-white/30 mb-3">У вас пока нет активных подписок</p>
-                                <Link href="/catalog" className="text-indigo-400 text-sm no-underline">Найти в каталоге →</Link>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Найти в каталоге →</Link>
                             </div>
                         ) : (
                             subscriptions.map(tx => {
@@ -1113,8 +1113,8 @@ export default function ProfilePage() {
                                 return (
                                     <div key={tx.id} className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between group">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-500/10 border border-indigo-500/20`}>
-                                                <Store className="w-6 h-6 text-indigo-400" />
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/10 border border-purple-500/20`}>
+                                                <Store className="w-6 h-6 text-purple-400" />
                                             </div>
                                             <div>
                                                 <h4 className="text-white font-bold mb-0.5">{tx.offer?.title}</h4>
@@ -1145,7 +1145,7 @@ export default function ProfilePage() {
                     <div className="space-y-4">
                         {savedOffersLoading ? (
                             <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-                                <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4" />
+                                <div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
                                 <p className="text-white/30">Загружаем сохранённые...</p>
                             </div>
                         ) : savedOffersError ? (
@@ -1156,7 +1156,7 @@ export default function ProfilePage() {
                             <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
                                 <Bookmark className="w-12 h-12 text-white/10 mx-auto mb-3" />
                                 <p className="text-white/30 mb-3">Сохранённых офферов пока нет</p>
-                                <Link href="/catalog" className="text-indigo-400 text-sm no-underline">Перейти в каталог →</Link>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Перейти в каталог →</Link>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1165,7 +1165,7 @@ export default function ProfilePage() {
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="min-w-0">
                                                 <p className="text-[10px] text-white/30 uppercase font-semibold mb-1">{savedOffer.offer.category}</p>
-                                                <Link href={`/offer/?id=${savedOffer.offerId}`} className="text-white font-bold no-underline hover:text-indigo-300 transition-colors line-clamp-2">
+                                                <Link href={`/offer/?id=${savedOffer.offerId}`} className="text-white font-bold no-underline hover:text-purple-300 transition-colors line-clamp-2">
                                                     {savedOffer.offer.title}
                                                 </Link>
                                                 <p className="text-sm text-white/40 mt-2 line-clamp-2">{savedOffer.offer.description}</p>
@@ -1198,7 +1198,7 @@ export default function ProfilePage() {
                     <div className="space-y-4">
                         {promocodesLoading ? (
                             <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-                                <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4" />
+                                <div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
                                 <p className="text-white/30">Загружаем промокоды...</p>
                             </div>
                         ) : promocodeError ? (
@@ -1209,7 +1209,7 @@ export default function ProfilePage() {
                             <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
                                 <Ticket className="w-12 h-12 text-white/10 mx-auto mb-3" />
                                 <p className="text-white/30 mb-3">Активированных промокодов пока нет</p>
-                                <Link href="/catalog" className="text-indigo-400 text-sm no-underline">Перейти в каталог →</Link>
+                                <Link href="/catalog" className="text-purple-400 text-sm no-underline">Перейти в каталог →</Link>
                             </div>
                         ) : (
                             promocodeActivations.map((activation) => {
@@ -1223,8 +1223,8 @@ export default function ProfilePage() {
                                     <div key={activation.id} className="rounded-2xl p-5 bg-white/[0.02] border border-white/[0.06]">
                                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                             <div className="flex items-start gap-4 min-w-0">
-                                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-indigo-500/10 border border-indigo-500/20">
-                                                    <Ticket className="w-6 h-6 text-indigo-400" />
+                                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-purple-500/10 border border-purple-500/20">
+                                                    <Ticket className="w-6 h-6 text-purple-400" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -1248,9 +1248,9 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div className="md:text-right shrink-0">
-                                                <div className="rounded-xl px-4 py-3 bg-[#0A0F24]/20 border border-white/5 mb-3 md:min-w-[180px]">
+                                                <div className="rounded-xl px-4 py-3 bg-black/20 border border-white/5 mb-3 md:min-w-[180px]">
                                                     <p className="text-[10px] text-white/30 uppercase font-bold mb-1">Код</p>
-                                                    <code className="block text-sm text-indigo-300 font-mono break-all select-all">
+                                                    <code className="block text-sm text-purple-300 font-mono break-all select-all">
                                                         {activation.codeSnapshot ?? 'Будет создан при копировании'}
                                                     </code>
                                                 </div>
@@ -1258,7 +1258,7 @@ export default function ProfilePage() {
                                                     <button
                                                         onClick={() => handleCopyPromocode(activation)}
                                                         disabled={!activation.codeSnapshot || activation.status === 'USED' || isExpired}
-                                                        className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${copied ? 'bg-green-500/15 text-green-400 border-green-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20'}`}
+                                                        className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${copied ? 'bg-green-500/15 text-green-400 border-green-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20'}`}
                                                     >
                                                         {copied ? 'Скопировано' : 'Копировать'}
                                                     </button>
@@ -1362,7 +1362,7 @@ export default function ProfilePage() {
             {
                 qrModalData && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setQrModalData(null)}>
-                        <div className="absolute inset-0 bg-[#0A0F24]/70 backdrop-blur-sm" />
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
                         <div
                             className="relative rounded-3xl p-8 flex flex-col items-center gap-6 max-w-sm w-full bg-[#141928]/90 backdrop-blur-[40px] border border-white/10 shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]"
                             onClick={(e) => e.stopPropagation()}
@@ -1394,7 +1394,7 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="w-full rounded-xl px-4 py-3 text-center bg-white/[0.05] border border-white/[0.08]">
-                                <code className="text-sm text-indigo-300 font-mono break-all select-all">{qrModalData.data}</code>
+                                <code className="text-sm text-purple-300 font-mono break-all select-all">{qrModalData.data}</code>
                             </div>
 
                             <button
@@ -1404,7 +1404,7 @@ export default function ProfilePage() {
                                     setTimeout(() => setCopiedId(null), 2000);
                                     analyticsApi.trackEvent({ eventType: 'copy_code', metadata: JSON.stringify({ source: 'qr_modal' }) }).catch(() => {});
                                 }}
-                                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all ${copiedId === 'qr-modal' ? 'bg-green-500/15 text-green-500 border border-green-500/30' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'}`}
+                                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all ${copiedId === 'qr-modal' ? 'bg-green-500/15 text-green-500 border border-green-500/30' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}
                             >
                                 {copiedId === 'qr-modal' ? <><CheckCircle className="w-4 h-4" /> Скопировано!</> : <><Copy className="w-4 h-4" /> Копировать код</>}
                             </button>
@@ -1423,13 +1423,13 @@ export default function ProfilePage() {
             {/* Redeem Gift Modal */}
             {redeemModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setRedeemModalOpen(false)}>
-                    <div className="absolute inset-0 bg-[#0A0F24]/70 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
                     <div
                         className="relative rounded-3xl p-8 flex flex-col items-center gap-6 max-w-sm w-full bg-[#141928]/90 backdrop-blur-[40px] border border-white/10 shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="text-center">
-                            <Key className="w-10 h-10 text-indigo-400 mx-auto mb-3" />
+                            <Key className="w-10 h-10 text-purple-400 mx-auto mb-3" />
                             <h3 className="text-xl font-bold text-white mb-1">Активация подарка</h3>
                             <p className="text-sm text-white/40">Введите 8-значный код вашего подарка</p>
                         </div>
@@ -1438,7 +1438,7 @@ export default function ProfilePage() {
                             value={redeemCode}
                             onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                             placeholder="Например: A1B2C3D4"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-xl font-mono tracking-widest text-white outline-none focus:border-indigo-500/50 transition-all uppercase"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-xl font-mono tracking-widest text-white outline-none focus:border-purple-500/50 transition-all uppercase"
                             maxLength={8}
                         />
 
@@ -1452,7 +1452,7 @@ export default function ProfilePage() {
                             <button
                                 onClick={handleRedeemGift}
                                 disabled={redeeming || redeemCode.length < 4}
-                                className="flex-2 py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold border-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                className="flex-2 py-3 px-6 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold border-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                             >
                                 {redeeming ? 'Загрузка...' : 'Активировать'}
                             </button>

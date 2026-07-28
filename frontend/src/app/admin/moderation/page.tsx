@@ -161,7 +161,7 @@ export default function AdminModerationPage() {
                                         {report ? `${report.targetType}: ${report.category}` : `${appeal?.subjectType} ${appeal?.subjectId ?? ''}`}
                                     </h2>
                                     <p className="text-sm text-white/60 whitespace-pre-wrap">{report?.description ?? appeal?.reason}</p>
-                                    {report?.targetSnapshot && <pre className="mt-3 max-h-32 overflow-auto rounded-xl bg-[#0A0F24]/20 p-3 text-xs text-white/40">{JSON.stringify(report.targetSnapshot, null, 2)}</pre>}
+                                    {report?.targetSnapshot && <pre className="mt-3 max-h-32 overflow-auto rounded-xl bg-black/20 p-3 text-xs text-white/40">{JSON.stringify(report.targetSnapshot, null, 2)}</pre>}
                                     <p className="text-xs text-white/30 mt-3">{user?.displayName || user?.email || 'Пользователь не найден'}</p>
                                     {entry.item.resolution && <p className="text-sm text-emerald-300 mt-3">Решение: {entry.item.resolution}</p>}
                                 </div>

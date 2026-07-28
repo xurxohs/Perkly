@@ -62,7 +62,7 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
   // The stored Perkly theme is applied before paint below. A single initial
   // color prevents Safari from choosing its dark chrome from the OS theme.
-  themeColor: '#EEF2FF',
+  themeColor: '#f5f5f7',
 };
 
 export default function RootLayout({
@@ -78,7 +78,7 @@ export default function RootLayout({
             __html: `(() => {
               try {
                 const theme = localStorage.getItem('perkly-theme') === 'dark' ? 'dark' : 'light';
-                const color = theme === 'dark' ? '#0A0F24' : '#EEF2FF';
+                const color = theme === 'dark' ? '#000000' : '#f5f5f7';
                 const root = document.documentElement;
                 root.dataset.perklyTheme = theme;
                 root.style.backgroundColor = color;

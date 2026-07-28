@@ -34,7 +34,7 @@ export function ContactSellerButton({ sellerId }: { sellerId: string }) {
             type="button"
             onClick={handleOpenChat}
             disabled={loading}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-indigo-500/15 px-3.5 text-xs font-extrabold text-indigo-300 border border-indigo-500/30 transition-all hover:bg-indigo-500/25 active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-purple-500/15 px-3.5 text-xs font-extrabold text-purple-300 border border-purple-500/30 transition-all hover:bg-purple-500/25 active:scale-95 disabled:opacity-50 cursor-pointer"
         >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
             Чат с продавцом
