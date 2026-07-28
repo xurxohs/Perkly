@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
     LayoutDashboard, PackageSearch, ShoppingBag, ChartNoAxesCombined,
-    TicketPercent, Settings, LogOut, ChevronRight, Store,
+    TicketPercent, Settings, LogOut, ChevronRight,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -38,7 +38,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     return <div className="vendor-workspace min-h-screen">
         <aside className="vendor-sidebar hidden lg:flex">
             <Link href="/vendor" className="vendor-brand no-underline">
-                <span className="vendor-brand-mark"><Store className="h-5 w-5" /></span>
+                <span className="vendor-brand-mark"><Image src="/perkly-logo.svg" alt="" width={28} height={24} className="h-6 w-7 object-contain" /></span>
                 <span><strong>Perkly</strong><small>Для продавцов</small></span>
             </Link>
 

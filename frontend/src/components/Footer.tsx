@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Mail, MapPin, MessageCircle } from 'lucide-react';
 import { useTelegram } from '@/hooks/useTelegram';
 
@@ -44,7 +45,9 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-3 text-white no-underline">
-              <span className="h-9 w-9 shrink-0 rounded-full bg-primary-gradient" aria-hidden="true" />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-gradient" aria-hidden="true">
+                <Image src="/perkly-logo.svg" alt="" width={24} height={20} className="h-5 w-6 object-contain" />
+              </span>
               <span className="text-xl font-semibold tracking-tight">Perkly</span>
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-6 text-white/45">Каталог предложений и цифровых товаров для Узбекистана. Цена, ограничения и способ получения должны быть понятны до покупки.</p>

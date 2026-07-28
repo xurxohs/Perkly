@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { LogOut, X, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -52,7 +53,9 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
         >
             <div className="flex items-center gap-1 shrink-0">
                 <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-                    <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary-gradient shadow-primary-glow shrink-0" aria-hidden="true" />
+                    <span className="flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary-gradient shadow-primary-glow shrink-0" aria-hidden="true">
+                        <Image src="/perkly-logo.svg" alt="" width={24} height={18} className="h-4 w-5 sm:h-[18px] sm:w-6 object-contain" />
+                    </span>
                     <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
                 </Link>
                 {showThemeToggle && (
