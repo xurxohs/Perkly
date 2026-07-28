@@ -137,7 +137,7 @@ export default function AdminUsers() {
                                     <td className="py-4 px-6 text-right space-x-2">
                                         <button
                                             onClick={() => handleMessageUser(user.id)}
-                                            className="p-2 rounded-xl bg-white/5 text-purple-400 hover:text-white hover:bg-purple-500/20 transition-all border-0 cursor-pointer"
+                                            className="p-2 rounded-xl bg-white/5 text-indigo-400 hover:text-white hover:bg-indigo-500/20 transition-all border-0 cursor-pointer"
                                             title="Написать"
                                         >
                                             <MessageCircle className="w-4 h-4" />
@@ -164,7 +164,7 @@ export default function AdminUsers() {
             {/* Edit Modal */}
             {editingUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setEditingUser(null)}>
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-[#0A0F24]/60 backdrop-blur-sm" />
                     <div
                         className="relative w-full max-w-md bg-[#161b2e] border border-white/10 rounded-3xl p-6 shadow-2xl"
                         onClick={e => e.stopPropagation()}

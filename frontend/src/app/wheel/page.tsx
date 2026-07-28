@@ -37,7 +37,7 @@ export default function WheelPage() {
                         { icon: <Tag className="w-6 h-6 text-green-500" />, label: 'Скидка 5%', rarity: 'Часто' },
                         { icon: <Coins className="w-6 h-6 text-yellow-500" />, label: '25 Points', rarity: 'Средне' },
                         { icon: <Coffee className="w-6 h-6 text-amber-600" />, label: 'Бесплатный кофе', rarity: 'Редко' },
-                        { icon: <Gem className="w-6 h-6 text-purple-400" />, label: '50 Points', rarity: 'Редко' },
+                        { icon: <Gem className="w-6 h-6 text-indigo-400" />, label: '50 Points', rarity: 'Редко' },
                         { icon: <Flame className="w-6 h-6 text-orange-500" />, label: 'Скидка 15%', rarity: 'Очень редко' },
                         { icon: <Crown className="w-6 h-6 text-yellow-400" />, label: '100 Points', rarity: 'Легенда' },
                         { icon: <RefreshCcw className="w-6 h-6 text-slate-400" />, label: 'Попробуй ещё', rarity: 'Редко' },

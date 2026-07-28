@@ -87,7 +87,7 @@ export default function AdminDisputes() {
                                         <div className="font-medium text-white text-sm mb-1">{dispute.reason}</div>
                                         <div className="flex flex-col gap-1 text-xs">
                                             <div className="text-blue-400 flex items-center gap-1"><User className="w-3 h-3" /> Покупатель: {dispute.transaction?.buyer?.email}</div>
-                                            <div className="text-purple-400 flex items-center gap-1"><Store className="w-3 h-3" /> Продавец: {dispute.transaction?.offer?.seller?.email}</div>
+                                            <div className="text-indigo-400 flex items-center gap-1"><Store className="w-3 h-3" /> Продавец: {dispute.transaction?.offer?.seller?.email}</div>
                                         </div>
                                     </td>
                                     <td className="py-4 px-6">
@@ -112,7 +112,7 @@ export default function AdminDisputes() {
                                                 </button>
                                                 <button
                                                     onClick={() => resolveDispute(dispute.id, 'SELLER')}
-                                                    className="px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all border border-purple-500/20 cursor-pointer flex items-center gap-1 text-xs font-medium"
+                                                    className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-all border border-indigo-500/20 cursor-pointer flex items-center gap-1 text-xs font-medium"
                                                 >
                                                     <CheckCircle2 className="w-3 h-3" /> В пользу Продавца
                                                 </button>

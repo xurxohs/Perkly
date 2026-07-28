@@ -129,7 +129,7 @@ function LoginForm() {
         <div className="glass-card w-full max-w-md p-8 relative flex flex-col">
             {/* Decorative glows */}
             <div className="absolute -top-6 -left-6 w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full blur-2xl opacity-40 z-0 pointer-events-none" />
-            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 z-0 pointer-events-none" />
+            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-tr from-indigo-500 to-indigo-500 rounded-full blur-3xl opacity-30 z-0 pointer-events-none" />
 
             {/* Header */}
             <div className="z-10 text-center mb-8">

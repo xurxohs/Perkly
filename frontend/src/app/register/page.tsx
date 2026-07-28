@@ -273,8 +273,8 @@ export default function RegisterPage() {
 
   return (
     <div className="relative flex min-h-[80vh] w-full items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:py-12">
-      <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-purple-400/30 to-transparent" />
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(168,85,247,0.075)_0%,rgba(236,72,153,0.035)_32%,rgba(0,0,0,0)_70%)]" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent" />
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(0,92,255,0.075)_0%,rgba(74,58,255,0.035)_32%,rgba(0,0,0,0)_70%)]" />
 
       <section className="grid w-full max-w-5xl gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
         <PerklyPass
@@ -438,7 +438,7 @@ function PerklyPass({
           </span>
         </div>
 
-        <div className="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-[linear-gradient(135deg,rgba(168,85,247,0.38),rgba(236,72,153,0.2)_52%,rgba(34,211,238,0.18))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-[linear-gradient(135deg,rgba(0,92,255,0.38),rgba(74,58,255,0.2)_52%,rgba(34,211,238,0.18))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
           <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-white/10 blur-3xl" />
           <div className="relative z-10 flex min-h-[230px] flex-col justify-between">
             <div className="flex items-start justify-between gap-4">
@@ -450,7 +450,7 @@ function PerklyPass({
                   Silver
                 </h2>
               </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-black/25 ring-1 ring-white/15">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A0F24]/25 ring-1 ring-white/15">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -464,7 +464,7 @@ function PerklyPass({
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-black">
                   {vibe.code}
                 </span>
-                <span className="rounded-full border border-white/15 bg-black/20 px-3 py-1 text-xs font-bold text-white/70">
+                <span className="rounded-full border border-white/15 bg-[#0A0F24]/20 px-3 py-1 text-xs font-bold text-white/70">
                   +50 welcome points
                 </span>
               </div>
@@ -476,7 +476,7 @@ function PerklyPass({
       <div className="relative z-10 grid gap-3">
         <div className="rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/[0.06]">
           <div className="mb-2 flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-purple-300" />
+            <CalendarDays className="h-4 w-4 text-indigo-300" />
             <p className="text-sm font-bold text-white">{vibe.title}</p>
           </div>
           <p className="text-xs leading-5 text-white/42">{vibe.text}</p>
@@ -509,7 +509,7 @@ function MobilePass({
   selectedInterestLabels: string[];
 }) {
   return (
-    <div className="mb-6 rounded-[1.25rem] bg-[linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.12),rgba(34,211,238,0.1))] p-4 ring-1 ring-white/10 md:hidden">
+    <div className="mb-6 rounded-[1.25rem] bg-[linear-gradient(135deg,rgba(0,92,255,0.25),rgba(74,58,255,0.12),rgba(34,211,238,0.1))] p-4 ring-1 ring-white/10 md:hidden">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/45">
@@ -563,7 +563,7 @@ function IntroStep({ onNext }: { onNext: () => void }) {
         Уже есть аккаунт?{" "}
         <Link
           href="/login"
-          className="font-semibold text-purple-300 transition-colors hover:text-purple-200"
+          className="font-semibold text-indigo-300 transition-colors hover:text-indigo-200"
         >
           Войти
         </Link>
@@ -777,13 +777,13 @@ function BirthStep({
         </label>
       </div>
 
-      <div className="rounded-[1.25rem] border border-purple-400/15 bg-[linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.08),rgba(255,255,255,0.025))] p-5">
+      <div className="rounded-[1.25rem] border border-indigo-400/15 bg-[linear-gradient(135deg,rgba(0,92,255,0.12),rgba(74,58,255,0.08),rgba(255,255,255,0.025))] p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-300" />
+            <Sparkles className="h-5 w-5 text-indigo-300" />
             <p className="text-sm font-black text-gradient">{vibe.code}</p>
           </div>
-          <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-bold text-white/45">
+          <span className="rounded-full border border-white/10 bg-[#0A0F24]/20 px-3 py-1 text-xs font-bold text-white/45">
             {vibe.signal}
           </span>
         </div>
@@ -838,7 +838,7 @@ function InterestsStep({
               onClick={() => onToggle(interest.id)}
               className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-left transition-all ${
                 active
-                  ? "border-purple-400/35 bg-purple-500/15 text-white shadow-[0_0_24px_rgba(168,85,247,0.12)]"
+                  ? "border-indigo-400/35 bg-indigo-500/15 text-white shadow-[0_0_24px_rgba(0,92,255,0.12)]"
                   : "border-white/10 bg-white/[0.035] text-white/60 hover:bg-white/[0.06]"
               }`}
             >
@@ -911,7 +911,7 @@ function SuccessStep({
 }
 
 const fieldClassName =
-  "w-full rounded-2xl border border-white/10 bg-white/[0.045] py-3.5 pl-11 pr-4 font-medium text-white outline-none transition-all placeholder:text-white/30 focus:border-purple-400/35 focus:bg-white/[0.07] focus:ring-2 focus:ring-purple-500/20";
+  "w-full rounded-2xl border border-white/10 bg-white/[0.045] py-3.5 pl-11 pr-4 font-medium text-white outline-none transition-all placeholder:text-white/30 focus:border-indigo-400/35 focus:bg-white/[0.07] focus:ring-2 focus:ring-indigo-500/20";
 
 function FieldIcon({
   icon,

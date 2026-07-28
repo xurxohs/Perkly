@@ -161,7 +161,7 @@ function DisputeContent() {
                                 <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                                     <div className="flex items-end gap-2 mb-1">
                                         {!isMine && (
-                                            <div className={`text-xs px-2 py-0.5 rounded text-white mb-1 ${isAdmin ? 'bg-red-500/80' : isSeller ? 'bg-purple-500/80' : 'bg-blue-500/80'}`}>
+                                            <div className={`text-xs px-2 py-0.5 rounded text-white mb-1 ${isAdmin ? 'bg-red-500/80' : isSeller ? 'bg-indigo-500/80' : 'bg-blue-500/80'}`}>
                                                 {isAdmin ? 'Администратор' : isSeller ? 'Продавец' : 'Покупатель'}
                                             </div>
                                         )}
@@ -169,7 +169,7 @@ function DisputeContent() {
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
-                                    <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${isMine ? 'bg-purple-600 text-white rounded-br-sm' :
+                                    <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${isMine ? 'bg-indigo-600 text-white rounded-br-sm' :
                                         isAdmin ? 'bg-red-500/20 border border-red-500/30 text-white rounded-bl-sm' :
                                             isSeller ? 'bg-white/10 border border-white/5 text-white rounded-bl-sm' :
                                                 'bg-blue-500/20 border border-blue-500/30 text-white rounded-bl-sm'
@@ -184,7 +184,7 @@ function DisputeContent() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-white/10 bg-black/40">
+                <div className="p-4 border-t border-white/10 bg-[#0A0F24]/40">
                     {isClosed ? (
                         <div className="text-center text-gray-400 py-3 bg-white/5 rounded-xl">
                             Этот спор был закрыт. Вы больше не можете отправлять сообщения.
@@ -196,13 +196,13 @@ function DisputeContent() {
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder="Введи сообщение..."
-                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
                                 disabled={isSending}
                             />
                             <button
                                 type="submit"
                                 disabled={isSending || !newMessage.trim()}
-                                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2"
+                                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2"
                             >
                                 {isSending ? <Clock className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             </button>

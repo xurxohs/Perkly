@@ -38,7 +38,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     return <div className="vendor-workspace min-h-screen">
         <aside className="vendor-sidebar hidden lg:flex">
             <Link href="/vendor" className="vendor-brand no-underline">
-                <span className="vendor-brand-mark"><Image src="/perkly-logo.svg" alt="" width={28} height={24} className="h-6 w-7 object-contain" /></span>
+                <span className="vendor-brand-mark"><Image src="/perkly-logo.svg" alt="" width={28} height={24} className="brand-logo h-6 w-7 object-contain" /></span>
                 <span><strong>Perkly</strong><small>Для продавцов</small></span>
             </Link>
 

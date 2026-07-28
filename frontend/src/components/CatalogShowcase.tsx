@@ -77,7 +77,7 @@ export function CatalogShowcase({ offers }: { offers: Offer[] }) {
     return (
         <section className="catalog-showcase mb-7" aria-label="Рекомендуем в каталоге">
             {banner ? <div
-                className="catalog-showcase-banner group relative overflow-hidden rounded-[30px] bg-black"
+                className="catalog-showcase-banner group relative overflow-hidden rounded-[30px] bg-[#0A0F24]"
                 style={{ aspectRatio: `${banner.width} / ${banner.height}` }}
                 onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
                 onTouchEnd={(event) => {

@@ -134,7 +134,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
         <div className="offer-facts">
             <div><Shield className="w-4 h-4 text-green-400" /><span>Защита сделки</span><strong>Средства под защитой</strong></div>
             <div><Clock className="w-4 h-4 text-blue-400" /><span>Срок получения</span><strong>{deliveryLabel}</strong></div>
-            {offer.warrantyDays ? <div><RotateCcw className="w-4 h-4 text-purple-300" /><span>Гарантия</span><strong>{offer.warrantyDays} дней</strong></div> : null}
+            {offer.warrantyDays ? <div><RotateCcw className="w-4 h-4 text-indigo-300" /><span>Гарантия</span><strong>{offer.warrantyDays} дней</strong></div> : null}
             {offer.stockQuantity != null ? <div><Boxes className="w-4 h-4 text-white/45" /><span>Доступность</span><strong>{offer.stockQuantity > 0 ? `Осталось ${offer.stockQuantity}` : 'Нет в наличии'}</strong></div> : null}
         </div>
     );
@@ -210,7 +210,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                     {/* Block: What the buyer receives */}
                     <div className="offer-fulfillment-card">
                         <h2>
-                            <PackageCheck className="w-5 h-5 text-purple-400" />
+                            <PackageCheck className="w-5 h-5 text-indigo-400" />
                             Что получит покупатель после покупки
                         </h2>
 

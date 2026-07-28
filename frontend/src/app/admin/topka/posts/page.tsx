@@ -125,7 +125,7 @@ export default function TopkaPostsPage() {
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img src={post.media.poster3x4Url || post.media.originalUrl || ''} alt="" className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-orange-500/30 to-purple-500/20" />
+                                                    <div className="w-full h-full bg-gradient-to-br from-orange-500/30 to-indigo-500/20" />
                                                 )}
                                             </div>
                                             <div>

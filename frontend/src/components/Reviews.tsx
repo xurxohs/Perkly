@@ -107,7 +107,7 @@ export function Reviews({ offerId }: { offerId: string }) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
                     <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
-                        <MessageCircle className="w-6 h-6 text-purple-400" />
+                        <MessageCircle className="w-6 h-6 text-indigo-400" />
                         Отзывы покупателей
                     </h2>
                     <p className="mt-1 text-xs text-white/40 flex items-center gap-1.5">
@@ -160,12 +160,12 @@ export function Reviews({ offerId }: { offerId: string }) {
                                 value={comment}
                                 onChange={e => setComment(e.target.value)}
                                 placeholder="Расскажите о покупке и работе товара"
-                                className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-white/30 outline-none min-h-[100px] resize-y focus:border-purple-500/50 transition-colors"
+                                className="w-full bg-[#0A0F24]/50 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-white/30 outline-none min-h-[100px] resize-y focus:border-indigo-500/50 transition-colors"
                             />
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="absolute bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg px-4 py-2 text-xs font-bold flex items-center justify-center cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-50 gap-1.5"
+                                className="absolute bottom-4 right-4 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-lg px-4 py-2 text-xs font-bold flex items-center justify-center cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-50 gap-1.5"
                                 title="Отправить отзыв"
                                 aria-label="Отправить отзыв"
                             >
@@ -223,7 +223,7 @@ export function Reviews({ offerId }: { offerId: string }) {
                                             <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1 font-bold">
                                                 <ShieldCheck className="w-3 h-3" /> Купил
                                             </span>
-                                            {review.author.tier === 'PLATINUM' && <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30 flex items-center gap-1 w-max"><Gem className="w-3 h-3" /> PRO</span>}
+                                            {review.author.tier === 'PLATINUM' && <span className="text-xs bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30 flex items-center gap-1 w-max"><Gem className="w-3 h-3" /> PRO</span>}
                                             {review.author.tier === 'GOLD' && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30 flex items-center gap-1 w-max"><Medal className="w-3 h-3" /> Gold</span>}
                                         </div>
                                         <div className="text-xs text-white/30 mt-0.5">

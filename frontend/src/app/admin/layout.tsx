@@ -57,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Top Navbar */}
             <header className="fixed top-0 left-0 right-0 h-[72px] bg-[#0d1326]/80 backdrop-blur-xl border-b border-white/5 z-50 flex items-center justify-between px-8">
                 <Link href="/" className="flex items-center gap-3 no-underline group" title="На главную">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-transform group-hover:scale-105">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-transform group-hover:scale-105">
                         <Sparkles className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex flex-col">
@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Sidebar Desktop */}
             <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-white/5 bg-[#0d1326]/50 backdrop-blur-xl h-[calc(100vh-72px)] sticky top-[72px] overflow-y-auto">
                 <div className="p-6">
-                    <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-pink-500 mb-1">Superadmin</h2>
+                    <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-500 mb-1">Superadmin</h2>
                     <p className="text-xs text-white/40">Управление платформой</p>
                 </div>
 

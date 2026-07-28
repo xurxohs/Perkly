@@ -308,7 +308,7 @@ export default function ChatPage() {
 
     if (loading || (isAuthenticated && isLoadingRooms)) {
         return (
-            <div className="chat-marketplace min-h-screen bg-black flex items-center justify-center text-white/50">
+            <div className="chat-marketplace min-h-screen bg-[#0A0F24] flex items-center justify-center text-white/50">
                 <Loader2 className="w-6 h-6 animate-spin" />
             </div>
         );
@@ -336,7 +336,7 @@ export default function ChatPage() {
 
                         <div className="relative mb-3">
                             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
-                            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти диалог" className="h-11 w-full rounded-2xl border border-white/[0.07] bg-white/[0.045] pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/28 focus:border-purple-400/30" />
+                            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти диалог" className="h-11 w-full rounded-2xl border border-white/[0.07] bg-white/[0.045] pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/28 focus:border-indigo-400/30" />
                         </div>
 
                         <div className="flex gap-2">
@@ -372,7 +372,7 @@ export default function ChatPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <p className={`min-w-0 flex-1 truncate text-xs ${room.unreadCount ? 'font-semibold text-white/75' : 'text-white/35'}`}>{lastMessage ? `${lastMessage.senderId === user?.id ? 'Вы: ' : ''}${lastMessage.content}` : room.transactionId ? 'Чат по заказу' : 'Начните диалог'}</p>
-                                            {!!room.unreadCount && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#a855f7] px-1 text-[10px] font-extrabold">{room.unreadCount}</span>}
+                                            {!!room.unreadCount && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#005cff] px-1 text-[10px] font-extrabold">{room.unreadCount}</span>}
                                         </div>
                                     </div>
                                 </button>
@@ -398,7 +398,7 @@ export default function ChatPage() {
 
                             {activeRoom.transaction?.offer && (
                                 <Link href={`/offer/?id=${activeRoom.transaction.offer.id}`} className="mx-3 mt-3 flex items-center gap-3 rounded-[18px] border border-white/[0.07] bg-white/[0.035] p-3 text-white no-underline xl:hidden">
-                                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]"><Package className="h-5 w-5 text-purple-300" /></div>
+                                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]"><Package className="h-5 w-5 text-indigo-300" /></div>
                                     <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold">{activeRoom.transaction.offer.title}</p><p className="mt-0.5 text-[11px] text-white/35">{activeRoom.transaction.price.toLocaleString('ru-RU')} сум · {TRANSACTION_STATUS_LABELS[activeRoom.transaction.status] ?? activeRoom.transaction.status}</p></div>
                                     <ChevronRight className="h-4 w-4 text-white/25" />
                                 </Link>
@@ -417,7 +417,7 @@ export default function ChatPage() {
                                         <div key={message.id} className={`mb-2.5 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[84%] sm:max-w-[72%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
                                                 {showAuthor && <span className="mb-1 ml-2 text-[11px] font-semibold text-white/38">{authorName}</span>}
-                                                <div className={`px-3.5 py-2.5 text-[14px] leading-relaxed shadow-sm ${isMine ? 'rounded-[20px] rounded-br-[7px] bg-[#7c3cff] text-white' : 'rounded-[20px] rounded-bl-[7px] bg-[#1b1b1f] text-white/88'}`}>
+                                                <div className={`px-3.5 py-2.5 text-[14px] leading-relaxed shadow-sm ${isMine ? 'rounded-[20px] rounded-br-[7px] bg-[#005cff] text-white' : 'rounded-[20px] rounded-bl-[7px] bg-[#1b1b1f] text-white/88'}`}>
                                                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                                                     <span className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${isMine ? 'text-white/60' : 'text-white/28'}`}>{getMessageTime(message.createdAt)}{isMine && (message.isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}</span>
                                                 </div>
@@ -430,7 +430,7 @@ export default function ChatPage() {
 
                             <div className="border-t border-white/[0.07] bg-[#0d0d0f]/94 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-2xl md:pb-3">
                                 <form onSubmit={handleSend} className="mx-auto flex max-w-3xl items-end gap-2">
-                                    <textarea value={input} onChange={(event) => handleInputChange(event.target.value)} placeholder={activeRoom.type === 'SYSTEM' ? 'Системный чат только для чтения' : 'Напишите сообщение'} disabled={activeRoom.type === 'SYSTEM'} rows={1} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSend(event); } }} className="min-h-12 max-h-28 flex-1 resize-none rounded-[20px] border border-white/[0.07] bg-white/[0.055] px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/25 focus:border-purple-400/30 disabled:opacity-45" />
+                                    <textarea value={input} onChange={(event) => handleInputChange(event.target.value)} placeholder={activeRoom.type === 'SYSTEM' ? 'Системный чат только для чтения' : 'Напишите сообщение'} disabled={activeRoom.type === 'SYSTEM'} rows={1} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void handleSend(event); } }} className="min-h-12 max-h-28 flex-1 resize-none rounded-[20px] border border-white/[0.07] bg-white/[0.055] px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/25 focus:border-indigo-400/30 disabled:opacity-45" />
                                     <button type="submit" disabled={!input.trim() || isSending || activeRoom.type === 'SYSTEM'} className="grid h-12 w-12 shrink-0 place-items-center rounded-[17px] border-0 bg-white text-black transition disabled:bg-white/[0.06] disabled:text-white/20" aria-label="Отправить">{isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <PerklyGlyph name="send" className="h-5 w-5" />}</button>
                                 </form>
                             </div>

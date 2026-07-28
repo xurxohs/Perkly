@@ -31,11 +31,11 @@ type MapPlace = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Фестиваль: '#a855f7',
+  Фестиваль: '#005cff',
   Вечеринка: '#f59e0b',
   Выставка: '#06b6d4',
   'Фуд-Фест': '#f97316',
-  Стендап: '#ec4899',
+  Стендап: '#4a3aff',
   Концерт: '#8b5cf6',
   Спорт: '#22c55e',
   Акция: '#ef4444',
@@ -62,7 +62,7 @@ function eventToPlace(event: Event): MapPlace | null {
       month: 'short',
     }),
     time: event.startTime || 'Время уточняется',
-    color: CATEGORY_COLORS[event.category] || '#a855f7',
+    color: CATEGORY_COLORS[event.category] || '#005cff',
     lat: event.latitude,
     lng: event.longitude,
   };

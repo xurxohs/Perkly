@@ -46,7 +46,7 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={!loading ? onClose : undefined} />
+            <div className="absolute inset-0 bg-[#0A0F24]/70 backdrop-blur-sm" onClick={!loading ? onClose : undefined} />
             <div
                 className="relative rounded-3xl p-8 flex flex-col gap-6 max-w-sm w-full bg-[#141928]/90 backdrop-blur-[40px] border border-white/10 shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]"
             >
@@ -112,7 +112,7 @@ export default function TopUpModal({ isOpen, onClose, onTopUp }: TopUpModalProps
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.02] border-0 bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)] ${loading ? 'opacity-70' : 'opacity-100'}`}
+                        className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.02] border-0 bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)] ${loading ? 'opacity-70' : 'opacity-100'}`}
                     >
                         {loading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />

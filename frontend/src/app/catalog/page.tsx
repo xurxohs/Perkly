@@ -303,7 +303,7 @@ function CatalogContent() {
                         productTypeLabel(fulfillmentType)
                     ) : category ? (
                         <span className="flex items-center gap-2">
-                            <PerklyGlyph name={CATEGORIES.find(c => c.value === category)?.glyph || 'catalog'} className="w-8 h-8 text-purple-400" />
+                            <PerklyGlyph name={CATEGORIES.find(c => c.value === category)?.glyph || 'catalog'} className="w-8 h-8 text-indigo-400" />
                             {CATEGORIES.find(c => c.value === category)?.label || 'Каталог'}
                         </span>
                     ) : (
@@ -335,7 +335,7 @@ function CatalogContent() {
                             aria-label="Поиск товаров в каталоге"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            className="h-12 w-full rounded-2xl border border-white/[0.07] bg-black/20 pl-11 pr-24 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-purple-400/35 focus:bg-white/[0.04]"
+                            className="h-12 w-full rounded-2xl border border-white/[0.07] bg-[#0A0F24]/20 pl-11 pr-24 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-indigo-400/35 focus:bg-white/[0.04]"
                         />
                         <button type="submit" aria-label="Найти" className="catalog-search-submit absolute right-1.5 top-1.5 h-9 rounded-xl bg-white px-4 text-xs font-extrabold text-black transition hover:bg-white/90">
                             <span className="catalog-search-submit-label">Найти</span>
@@ -380,11 +380,11 @@ function CatalogContent() {
                 <button
                     onClick={() => setShowFilters((value) => !value)}
                     aria-expanded={showFilters}
-                    className={`catalog-filter-control relative inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold transition ${showFilters || activeFilterCount > 0 ? 'border-purple-400/30 bg-purple-500/12 text-white' : 'border-white/[0.07] bg-white/[0.04] text-white/60 hover:text-white'}`}
+                    className={`catalog-filter-control relative inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold transition ${showFilters || activeFilterCount > 0 ? 'border-indigo-400/30 bg-indigo-500/12 text-white' : 'border-white/[0.07] bg-white/[0.04] text-white/60 hover:text-white'}`}
                 >
                     <SlidersHorizontal className="h-4 w-4" />
                     <span className="catalog-filter-label">Фильтры</span>
-                    {activeFilterCount > 0 && <span className="catalog-filter-count flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-black text-[#1d1d1f] shadow-sm">{activeFilterCount}</span>}
+                    {activeFilterCount > 0 && <span className="catalog-filter-count flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-black text-[#0A0F24] shadow-sm">{activeFilterCount}</span>}
                 </button>
                 </div>
 
@@ -413,8 +413,8 @@ function CatalogContent() {
                                     const Icon = type.icon;
                                     const selected = fulfillmentType === type.value;
                                     return (
-                                        <button key={type.value || 'all'} onClick={() => { setFulfillmentType(type.value); setPage(0); }} className={`flex min-h-20 items-center gap-3 rounded-2xl border p-3 text-left transition ${selected ? 'border-purple-400/30 bg-purple-500/12' : 'border-white/[0.06] bg-black/15 hover:bg-white/[0.04]'}`}>
-                                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-purple-500 text-white' : 'bg-white/[0.05] text-white/45'}`}><Icon className="h-4.5 w-4.5" /></span>
+                                        <button key={type.value || 'all'} onClick={() => { setFulfillmentType(type.value); setPage(0); }} className={`flex min-h-20 items-center gap-3 rounded-2xl border p-3 text-left transition ${selected ? 'border-indigo-400/30 bg-indigo-500/12' : 'border-white/[0.06] bg-[#0A0F24]/15 hover:bg-white/[0.04]'}`}>
+                                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-indigo-500 text-white' : 'bg-white/[0.05] text-white/45'}`}><Icon className="h-4.5 w-4.5" /></span>
                                             <span className="min-w-0"><span className="block text-sm font-bold text-white/90">{type.label}</span><span className="mt-0.5 block text-[11px] leading-tight text-white/30">{type.description}</span></span>
                                         </button>
                                     );
@@ -423,8 +423,8 @@ function CatalogContent() {
                         </div>
 
                         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto]">
-                            <label className="rounded-2xl border border-white/[0.06] bg-black/15 px-4 py-2"><span className="block text-[10px] font-bold uppercase tracking-wider text-white/30">Цена от</span><input inputMode="numeric" value={priceFromInput} onChange={(e) => setPriceFromInput(e.target.value.replace(/\D/g, ''))} placeholder="0 сум" className="mt-1 w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/20" /></label>
-                            <label className="rounded-2xl border border-white/[0.06] bg-black/15 px-4 py-2"><span className="block text-[10px] font-bold uppercase tracking-wider text-white/30">Цена до</span><input inputMode="numeric" value={priceToInput} onChange={(e) => setPriceToInput(e.target.value.replace(/\D/g, ''))} placeholder="Без ограничения" className="mt-1 w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/20" /></label>
+                            <label className="rounded-2xl border border-white/[0.06] bg-[#0A0F24]/15 px-4 py-2"><span className="block text-[10px] font-bold uppercase tracking-wider text-white/30">Цена от</span><input inputMode="numeric" value={priceFromInput} onChange={(e) => setPriceFromInput(e.target.value.replace(/\D/g, ''))} placeholder="0 сум" className="mt-1 w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/20" /></label>
+                            <label className="rounded-2xl border border-white/[0.06] bg-[#0A0F24]/15 px-4 py-2"><span className="block text-[10px] font-bold uppercase tracking-wider text-white/30">Цена до</span><input inputMode="numeric" value={priceToInput} onChange={(e) => setPriceToInput(e.target.value.replace(/\D/g, ''))} placeholder="Без ограничения" className="mt-1 w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/20" /></label>
                             <button onClick={applyPriceFilter} className="h-14 rounded-2xl border border-white/10 bg-white/[0.06] px-5 text-sm font-bold text-white transition hover:bg-white/[0.1]">Применить цену</button>
                             <div className="flex gap-2">
                                 <button onClick={() => { setIsFlashDrop(!isFlashDrop); setPage(0); }} className={`inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${isFlashDrop ? 'border-orange-400/30 bg-orange-500/15 text-orange-200' : 'border-white/[0.07] bg-white/[0.035] text-white/45'}`}><Flame className="h-4 w-4" /> Срочные</button>
@@ -451,7 +451,7 @@ function CatalogContent() {
                                 key={item.value || 'all'}
                                 onClick={() => { setCategory(item.value); setPage(0); }}
                                 aria-pressed={selected}
-                                className={`catalog-filter-pill ${selected ? 'catalog-filter-pill-selected' : ''} inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-purple-400/35 bg-purple-500/15 text-white shadow-[0_8px_30px_rgba(168,85,247,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
+                                className={`catalog-filter-pill ${selected ? 'catalog-filter-pill-selected' : ''} inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition ${selected ? 'border-indigo-400/35 bg-indigo-500/15 text-white shadow-[0_8px_30px_rgba(0,92,255,0.12)]' : 'border-white/[0.07] bg-white/[0.035] text-white/50 hover:bg-white/[0.07] hover:text-white'}`}
                             >
                                 <PerklyGlyph name={item.glyph} className="h-4 w-4" /> {item.label}
                             </button>
@@ -489,7 +489,7 @@ function CatalogContent() {
                 activeFilterCount > 0 || search ? (
                     <div className="text-center py-20">
                         <p className="text-white/45 text-lg mb-4">По выбранным условиям предложений нет</p>
-                        <button onClick={resetFilters} className="text-purple-300 cursor-pointer bg-transparent border-0 text-sm underline underline-offset-4">
+                        <button onClick={resetFilters} className="text-indigo-300 cursor-pointer bg-transparent border-0 text-sm underline underline-offset-4">
                             Сбросить фильтры
                         </button>
                     </div>

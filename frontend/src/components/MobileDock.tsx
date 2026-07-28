@@ -32,8 +32,8 @@ function DockIcon({ item, isActive, onTap, light = false }: {
 }) {
     const { t } = useLanguage();
     const [pressed, setPressed] = useState(false);
-    const activeColor = light ? '#7b2cbf' : '#d8a4ff';
-    const inactiveColor = light ? '#6e6e73' : '#8e8e93';
+    const activeColor = light ? '#005CFF' : '#7DA6FF';
+    const inactiveColor = light ? '#536078' : '#98A5C1';
 
     const handlePointerDown = useCallback(() => {
         setPressed(true);

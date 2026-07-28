@@ -35,7 +35,7 @@ export default function AdminLogin() {
         <div className="min-h-screen bg-[#0a0f1c] flex flex-col items-center justify-center p-4 relative overflow-hidden">
             {/* Background elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-pink-500/10 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
 
             <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors no-underline">
                 <ArrowLeft className="w-4 h-4" /> На главную
@@ -43,10 +43,10 @@ export default function AdminLogin() {
 
             <div className="w-full max-w-md relative z-10 animate-fade-in fade-in-up">
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-red-500/20 to-pink-500/20 border border-red-500/30 mb-6 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-red-500/20 to-blue-500/20 border border-red-500/30 mb-6 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
                         <Shield className="w-10 h-10 text-red-400" />
                     </div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-pink-500 mb-2">Superadmin</h1>
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-500 mb-2">Superadmin</h1>
                     <p className="text-white/40">Доступ только для администраторов</p>
                 </div>
 

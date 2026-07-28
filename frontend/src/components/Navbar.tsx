@@ -49,20 +49,18 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
 
     return (
         <nav 
-            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-[1.65rem] sm:rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
+            className="brand-nav fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-3 sm:px-5 py-2 flex items-center justify-between transition-all duration-300 top-safe"
         >
             <div className="flex items-center gap-1 shrink-0">
-                <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
-                    <span className="flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary-gradient shadow-primary-glow shrink-0" aria-hidden="true">
-                        <Image src="/perkly-logo.svg" alt="" width={24} height={18} className="h-4 w-5 sm:h-[18px] sm:w-6 object-contain" />
-                    </span>
+                <Link href="/" className="brand-wordmark flex items-center gap-2.5 no-underline shrink-0" aria-label="Perkly — главная">
+                    <Image src="/perkly-logo.svg" alt="" width={29} height={22} className="brand-logo h-[22px] w-[29px] object-contain" />
                     <span className="hidden min-[360px]:inline text-xl font-bold tracking-tight text-white">Perkly</span>
                 </Link>
                 {showThemeToggle && (
                     <button
                         type="button"
                         onClick={onToggleTheme}
-                        className="theme-toggle ml-0.5 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border-0 bg-transparent transition-colors cursor-pointer"
+                        className="theme-toggle ml-1 flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent transition-colors cursor-pointer"
                         aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
                         title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
                     >
@@ -81,7 +79,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t('Поиск купонов, подписок, товаров...')}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-full text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
+                        className="brand-nav-search w-full pl-10 pr-4 py-2.5 rounded-md text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
                     />
                 </form>
             </div>
@@ -106,7 +104,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                         hapticImpact('light');
                         setSearchOpen(!searchOpen);
                     }} 
-                    className="md:hidden p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
+                    className="md:hidden p-2 rounded-md hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
                     title={searchOpen ? "Закрыть поиск" : "Открыть поиск"}
                 >
                     {searchOpen ? <X className="w-5 h-5 text-white/70" /> : <PerklyGlyph name="search" className="w-5 h-5 text-white/70" />}
@@ -118,7 +116,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
 
                 {isAuthenticated ? (
                     <>
-                        <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-full hover:bg-white/5 transition no-underline text-white/70">
+                        <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-white/5 transition no-underline text-white/70">
                             <PerklyGlyph name="profile" className="w-4 h-4" />
                             <span
                                 className="hidden sm:inline font-bold"
@@ -137,7 +135,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                                 hapticImpact('medium');
                                 logout();
                             }} 
-                            className="p-2 rounded-full hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
+                            className="p-2 rounded-md hover:bg-white/5 transition cursor-pointer bg-transparent border-0"
                             title="Выйти"
                         >
                             <LogOut className="w-4 h-4 text-white/40" />
@@ -145,10 +143,10 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                     </>
                 ) : (
                     <>
-                        <Link href="/login" className="hidden sm:flex px-4 py-2 text-sm font-medium rounded-full border border-white/10 hover:bg-white/5 transition items-center text-white no-underline">
+                        <Link href="/login" className="brand-nav-login hidden sm:flex px-4 py-2 text-sm font-medium rounded-md border border-white/10 hover:bg-white/5 transition items-center text-white no-underline">
                             {t('Войти')}
                         </Link>
-                        <Link href="/register" className="px-4 py-2 text-sm font-medium rounded-full bg-white text-black hover:bg-white/90 transition flex items-center no-underline shadow-white-glow">
+                        <Link href="/register" className="brand-nav-cta px-4 py-2 text-sm font-semibold rounded-md transition flex items-center no-underline">
                             {t('Начать')}
                         </Link>
                     </>
@@ -157,7 +155,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
 
             {/* Mobile search overlay */}
             {searchOpen && (
-                <div className="absolute top-full left-0 w-full p-4 md:hidden bg-black/95 border-b border-white/[0.06]">
+                <div className="brand-mobile-search absolute top-[calc(100%+8px)] left-0 w-full p-3 md:hidden border border-white/[0.06]">
                     <form onSubmit={handleSearch} className="relative">
                         <PerklyGlyph name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                         <input
@@ -165,7 +163,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('Поиск купонов, подписок, товаров...')}
-                            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
+                            className="w-full pl-10 pr-4 py-3 rounded-md text-sm text-white placeholder-white/30 outline-none bg-white/[0.04] border border-white/[0.08]"
                             autoFocus
                         />
                     </form>

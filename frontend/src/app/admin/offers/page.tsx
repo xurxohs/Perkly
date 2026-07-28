@@ -155,7 +155,7 @@ export default function AdminOffers() {
                                 <tr key={offer.id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="py-4 px-6">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center shrink-0 border border-white/5">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-500/20 flex items-center justify-center shrink-0 border border-white/5">
                                                 <ShoppingBag className="w-5 h-5 text-indigo-400" />
                                             </div>
                                             <div>
@@ -204,7 +204,7 @@ export default function AdminOffers() {
                                             <button
                                                 onClick={() => openEdit(offer)}
                                                 title="Редактировать"
-                                                className="p-2 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all border-0 cursor-pointer"
+                                                className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-all border-0 cursor-pointer"
                                             >
                                                 <Pencil className="w-4 h-4" />
                                             </button>
@@ -236,7 +236,7 @@ export default function AdminOffers() {
 
             {editing && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <button aria-label="Закрыть" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditing(null)} />
+                    <button aria-label="Закрыть" className="absolute inset-0 bg-[#0A0F24]/70 backdrop-blur-sm" onClick={() => setEditing(null)} />
                     <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#141928] border border-white/10 p-6 space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-bold text-white">Редактировать оффер</h2>
@@ -263,7 +263,7 @@ export default function AdminOffers() {
                             <input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} />
                             Показывать в каталоге
                         </label>
-                        <button disabled={loading || !form.title.trim() || !form.description.trim()} onClick={() => void saveEdit()} className="w-full py-4 rounded-xl bg-purple-600 text-white font-bold disabled:opacity-40">
+                        <button disabled={loading || !form.title.trim() || !form.description.trim()} onClick={() => void saveEdit()} className="w-full py-4 rounded-xl bg-indigo-600 text-white font-bold disabled:opacity-40">
                             Сохранить изменения
                         </button>
                     </div>

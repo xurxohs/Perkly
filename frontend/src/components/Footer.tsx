@@ -40,14 +40,12 @@ export function Footer() {
   if (isTMA) return null;
 
   return (
-    <footer className="relative mt-auto w-full border-t border-white/[0.06] bg-[#08080b] text-white">
-      <div className="mx-auto max-w-7xl px-6 py-14">
+    <footer className="brand-footer relative mt-auto w-full text-white">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr]">
           <div>
-            <Link href="/" className="inline-flex items-center gap-3 text-white no-underline">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-gradient" aria-hidden="true">
-                <Image src="/perkly-logo.svg" alt="" width={24} height={20} className="h-5 w-6 object-contain" />
-              </span>
+            <Link href="/" className="brand-footer-wordmark inline-flex items-center gap-3 text-white no-underline">
+              <Image src="/perkly-logo.svg" alt="" width={32} height={24} className="h-6 w-8 object-contain" />
               <span className="text-xl font-semibold tracking-tight">Perkly</span>
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-6 text-white/45">Каталог предложений и цифровых товаров для Узбекистана. Цена, ограничения и способ получения должны быть понятны до покупки.</p>
@@ -63,7 +61,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/[0.06] pt-7 text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-4 border-t border-white/[0.12] pt-7 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Perkly. Информация о предложении проверяется перед покупкой.</p>
           <div className="flex flex-wrap gap-x-5 gap-y-2"><Link href="/privacy" className="text-inherit no-underline hover:text-white">Конфиденциальность</Link><Link href="/terms" className="text-inherit no-underline hover:text-white">Условия использования</Link><button type="button" onClick={() => window.dispatchEvent(new Event('perkly-open-privacy-settings'))} className="border-0 bg-transparent p-0 text-inherit hover:text-white">Настройки конфиденциальности</button></div>
         </div>

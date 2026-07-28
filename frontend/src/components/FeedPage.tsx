@@ -25,16 +25,16 @@ function isUpcomingEvent(event: FeedEvent) {
 // ===== Category Color Map =====
 function getCategoryColor(category: string): string {
   const map: Record<string, string> = {
-    'Фестиваль': '#a855f7',
+    'Фестиваль': '#005cff',
     'Вечеринка': '#f59e0b',
     'Выставка': '#06b6d4',
     'Фуд-Фест': '#f97316',
-    'Стендап': '#ec4899',
+    'Стендап': '#4a3aff',
     'Концерт': '#8b5cf6',
     'Спорт': '#22c55e',
     'Акция': '#ef4444',
   };
-  return map[category] || '#a855f7';
+  return map[category] || '#005cff';
 }
 
 // ===== Single Event Card =====

@@ -90,7 +90,7 @@ function SquadContent() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px]">
-                <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
                 <p className="text-white/40 mt-4 font-medium italic">Загружаем ваш сквад...</p>
             </div>
         );
@@ -100,20 +100,20 @@ function SquadContent() {
         return (
             <div className="max-w-2xl mx-auto px-6 py-12">
                 <div className="text-center mb-12">
-                    <div className="w-20 h-20 bg-purple-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-primary-glow">
-                        <Users className="w-10 h-10 text-purple-400" />
+                    <div className="w-20 h-20 bg-indigo-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-primary-glow">
+                        <Users className="w-10 h-10 text-indigo-400" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-white mb-4">Командные Цели ✨</h1>
                     <p className="text-white/50 leading-relaxed max-w-md mx-auto">
                         Объединяйтесь с друзьями в сквад (до 5 человек). 
-                        Достигайте общей цели по тратам и получайте <span className="text-purple-400 font-bold">Mega Perk</span> — кешбэк 15% на следующую покупку!
+                        Достигайте общей цели по тратам и получайте <span className="text-indigo-400 font-bold">Mega Perk</span> — кешбэк 15% на следующую покупку!
                     </p>
                 </div>
 
                 <div className="space-y-6">
                     <div className="rounded-2xl p-8 bg-white/[0.02] border border-white/[0.08] backdrop-blur-sm shadow-xl">
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <UserPlus className="w-5 h-5 text-purple-400" /> Создать свой сквад
+                            <UserPlus className="w-5 h-5 text-indigo-400" /> Создать свой сквад
                         </h2>
                         <div className="space-y-4">
                             <input
@@ -121,12 +121,12 @@ function SquadContent() {
                                 value={squadName}
                                 onChange={(e) => setSquadName(e.target.value)}
                                 placeholder="Название сквада (например: Элита)"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white outline-none focus:border-purple-500/50 transition-all font-medium"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white outline-none focus:border-indigo-500/50 transition-all font-medium"
                             />
                             <button
                                 onClick={handleCreateSquad}
                                 disabled={actionLoading || !squadName.trim()}
-                                className="w-full py-4 rounded-xl font-extrabold text-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 bg-primary-gradient text-white shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 border-0 cursor-pointer"
+                                className="w-full py-4 rounded-xl font-extrabold text-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 bg-primary-gradient text-white shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 border-0 cursor-pointer"
                                 title="Создать сквад"
                             >
                                 {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : '🚀 Создать Сквад'}
@@ -148,17 +148,17 @@ function SquadContent() {
     return (
         <div className="max-w-4xl mx-auto px-6 py-12">
             {/* Squad Header */}
-            <div className="rounded-3xl p-8 mb-8 relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-white/[0.08] backdrop-blur-md shadow-2xl">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+            <div className="rounded-3xl p-8 mb-8 relative overflow-hidden bg-gradient-to-br from-indigo-900/20 to-blue-900/20 border border-white/[0.08] backdrop-blur-md shadow-2xl">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
                 
                 <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 relative z-10">
                     <div className="text-center md:text-left">
                         <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
-                            <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center shadow-lg border border-purple-500/30">
-                                <Users className="w-8 h-8 text-purple-400" />
+                            <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center shadow-lg border border-indigo-500/30">
+                                <Users className="w-8 h-8 text-indigo-400" />
                             </div>
                             <div>
-                                <span className="text-[10px] uppercase tracking-widest text-purple-400 font-extrabold mb-1 block">Ваш Сквад</span>
+                                <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-extrabold mb-1 block">Ваш Сквад</span>
                                 <h1 className="text-3xl font-extrabold text-white leading-tight">{squad.name}</h1>
                             </div>
                         </div>
@@ -204,13 +204,13 @@ function SquadContent() {
                     </div>
                     <div className="text-right">
                         <div className="text-2xl font-extrabold text-white">{(squad.currentSpending).toLocaleString()} / 1,000,000</div>
-                        <div className="text-xs text-purple-400 font-bold uppercase tracking-widest">UZS</div>
+                        <div className="text-xs text-indigo-400 font-bold uppercase tracking-widest">UZS</div>
                     </div>
                 </div>
 
                 <div className="relative h-6 bg-white/[0.03] rounded-full overflow-hidden border border-white/10 p-1 mb-8 shadow-inner">
                     <div
-                        className="h-full bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(168,85,247,0.5)] [width:var(--progress)]"
+                        className="h-full bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(0,92,255,0.5)] [width:var(--progress)]"
                         style={{ '--progress': `${progressPercentage}%` } as React.CSSProperties}
                     />
                     {isGoalReached && (
@@ -259,12 +259,12 @@ function SquadContent() {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {squad.members.map((member) => (
-                        <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] group hover:border-purple-500/30 transition-all cursor-default">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110 relative overflow-hidden">
+                        <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] group hover:border-indigo-500/30 transition-all cursor-default">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/10 to-blue-500/10 flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110 relative overflow-hidden">
                                 {member.avatarUrl ? (
                                     <Image src={member.avatarUrl} alt={member.displayName || 'Avatar'} fill className="object-cover" />
                                 ) : (
-                                    <div className="text-xl font-extrabold text-purple-400 capitalize">
+                                    <div className="text-xl font-extrabold text-indigo-400 capitalize">
                                         {(member.displayName || 'U')[0]}
                                     </div>
                                 )}
@@ -274,7 +274,7 @@ function SquadContent() {
                                 <div className="text-[10px] text-white/30 uppercase tracking-widest font-extrabold">Участник</div>
                             </div>
                             {member.id === user?.id && (
-                                <span className="px-2 py-1 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase">Вы</span>
+                                <span className="px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase">Вы</span>
                             )}
                         </div>
                     ))}
@@ -282,17 +282,17 @@ function SquadContent() {
                     {squad.members.length < 5 && (
                         <button
                             onClick={copyInviteLink}
-                            className="flex items-center gap-4 p-4 rounded-2xl bg-purple-500/5 border border-dashed border-purple-500/30 group hover:border-purple-400/50 hover:bg-purple-500/10 transition-all cursor-pointer"
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-dashed border-indigo-500/30 group hover:border-indigo-400/50 hover:bg-indigo-500/10 transition-all cursor-pointer"
                             title="Пригласить друга"
                         >
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                                <UserPlus className="w-6 h-6 text-purple-400" />
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors">
+                                <UserPlus className="w-6 h-6 text-indigo-400" />
                             </div>
                             <div className="text-left flex-1">
-                                <div className="text-sm font-bold text-purple-400">Пригласить друга</div>
-                                <div className="text-[10px] text-purple-400/40 font-medium">Ещё есть свободные места!</div>
+                                <div className="text-sm font-bold text-indigo-400">Пригласить друга</div>
+                                <div className="text-[10px] text-indigo-400/40 font-medium">Ещё есть свободные места!</div>
                             </div>
-                            <ArrowRight className="w-4 h-4 text-purple-400/30 group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-indigo-400/30 group-hover:translate-x-1 transition-all" />
                         </button>
                     )}
                 </div>
@@ -314,7 +314,7 @@ export default function SquadPage() {
     return (
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[400px]">
-                <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
             </div>
         }>
             <SquadContent />

@@ -86,7 +86,7 @@ export default function VendorDashboardPage() {
     const dashboardCards = [
         { title: 'Зачислено продавцу', value: `${(sellerStats?.totalEarnings ?? 0).toLocaleString('ru-RU')} сум`, icon: TrendingUp, color: 'from-emerald-500 to-emerald-400' },
         { title: 'Все продажи', value: String(sellerStats?.totalSales ?? 0), icon: ShoppingBag, color: 'from-blue-500 to-blue-400' },
-        { title: 'Активные товары', value: String(sellerStats?.activeOffers ?? offers.filter((offer) => offer.isActive).length), icon: Package, color: 'from-purple-500 to-purple-400' },
+        { title: 'Активные товары', value: String(sellerStats?.activeOffers ?? offers.filter((offer) => offer.isActive).length), icon: Package, color: 'from-indigo-500 to-indigo-400' },
         { title: 'События Topka', value: String(sellerStats?.activeEvents ?? 0), icon: CalendarDays, color: 'from-orange-500 to-orange-400' },
     ];
 
@@ -179,7 +179,7 @@ export default function VendorDashboardPage() {
                         <h3 className="text-xl font-bold text-white mb-1">Последние заказы</h3>
                         <p className="text-sm text-white/50">Фактические сделки из backend</p>
                     </div>
-                    <Link href="/vendor/orders" className="text-sm font-medium text-purple-400 bg-purple-400/10 px-4 py-2 rounded-xl hover:bg-purple-400/20 transition-colors flex items-center gap-2 no-underline">
+                    <Link href="/vendor/orders" className="text-sm font-medium text-indigo-400 bg-indigo-400/10 px-4 py-2 rounded-xl hover:bg-indigo-400/20 transition-colors flex items-center gap-2 no-underline">
                         Все заказы <ArrowUpRight className="w-4 h-4" />
                     </Link>
                 </div>
@@ -204,7 +204,7 @@ export default function VendorDashboardPage() {
 
             {/* Feature Modal */}
             {selectedOffer && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-[12px]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A0F24]/70 backdrop-blur-[12px]">
                     <div className="w-full max-w-md rounded-3xl p-6 relative bg-[#0f0a19]/97 border border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.5)]">
                         <button onClick={() => setSelectedOffer(null)}
                             title="Закрыть"

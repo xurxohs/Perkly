@@ -55,7 +55,7 @@ const emptyPost: TopkaPostInput = {
     expiresAt: null,
     media: {},
     dominantColor: '#f97316',
-    fallbackGradient: 'linear-gradient(135deg, #f97316, #7c3aed)',
+    fallbackGradient: 'linear-gradient(135deg, #f97316, #005cff)',
 };
 
 export default function TopkaPostEditor() {
@@ -319,7 +319,7 @@ export default function TopkaPostEditor() {
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5">
-                                <div className="rounded-3xl bg-black/30 border border-white/10 p-4">
+                                <div className="rounded-3xl bg-[#0A0F24]/30 border border-white/10 p-4">
                                     <div className="relative mx-auto max-w-[360px] aspect-[3/4] overflow-hidden rounded-[42px] bg-white/5">
                                         {(sourceDataUrl || form.media?.poster3x4Url || form.media?.originalUrl) ? (
                                             // eslint-disable-next-line @next/next/no-img-element
@@ -398,7 +398,7 @@ export default function TopkaPostEditor() {
 
                 <div className="sticky top-24 rounded-3xl border border-white/5 bg-[#101524]/70 p-5">
                     <div className="text-sm font-bold text-white/60 mb-4">Live iOS preview</div>
-                    <div className="mx-auto max-w-[340px] aspect-[3/4] rounded-[48px] overflow-hidden bg-black relative shadow-2xl">
+                    <div className="mx-auto max-w-[340px] aspect-[3/4] rounded-[48px] overflow-hidden bg-[#0A0F24] relative shadow-2xl">
                         {form.media?.poster3x4Url || form.media?.originalUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={form.media.poster3x4Url || form.media.originalUrl || ''} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -412,7 +412,7 @@ export default function TopkaPostEditor() {
                             ))}
                             {form.priceText && <span className="px-3 h-7 inline-flex items-center rounded-full bg-green-500/85 text-white text-[11px] font-black">{form.priceText}</span>}
                         </div>
-                        <button className="absolute right-5 top-5 w-10 h-10 rounded-full bg-black/35 border border-white/15 flex items-center justify-center text-white">
+                        <button className="absolute right-5 top-5 w-10 h-10 rounded-full bg-[#0A0F24]/35 border border-white/15 flex items-center justify-center text-white">
                             <Bookmark className="w-5 h-5" />
                         </button>
                         <div className="absolute left-6 right-6 bottom-6">
