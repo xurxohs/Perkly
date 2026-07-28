@@ -25,6 +25,7 @@ import OfferActions from '@/components/OfferActions';
 import { OfferGallery } from '@/components/OfferGallery';
 import { ReportOfferButton } from '@/components/ReportOfferButton';
 import { ContactSellerButton } from '@/components/ContactSellerButton';
+import { RichText } from '@/components/RichText';
 
 const CATEGORY_LABELS: Record<string, string> = {
     RESTAURANTS: 'Рестораны и Кафе',
@@ -247,7 +248,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                                     <i>
                                         <CheckCircle2 className="w-4 h-4" />
                                     </i>
-                                    <section><strong>Инструкция от продавца</strong><span className="whitespace-pre-wrap">{offer.usageInstructions}</span></section>
+                                    <section><strong>Инструкция от продавца</strong><RichText className="rich-text whitespace-pre-wrap">{offer.usageInstructions}</RichText></section>
                                 </div>
                             )}
                         </div>
@@ -267,7 +268,7 @@ export default async function OfferDetailPage({ searchParams }: { searchParams: 
                     <span>О предложении</span>
                     <h2>Описание и условия</h2>
                 </div>
-                <p>{offer.description}</p>
+                <p><RichText className="rich-text">{offer.description}</RichText></p>
             </section>
 
             <div className="offer-reviews-section">

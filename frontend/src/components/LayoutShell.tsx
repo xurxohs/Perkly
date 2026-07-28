@@ -5,6 +5,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { MobileDock } from '@/components/MobileDock';
 import { Footer } from '@/components/Footer';
+import { SwipeBackGesture } from '@/components/SwipeBackGesture';
 
 // Pages where we hide the desktop navbar and footer (app-style fullscreen pages)
 const IMMERSIVE_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
@@ -60,6 +61,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
     return (
         <div className={`site-shell min-h-screen flex flex-col ${shellThemeClass}`}>
+            <SwipeBackGesture />
             {!isImmersive && (
                 <div className="desktop-site-navbar">
                     <Navbar theme={theme} onToggleTheme={toggleTheme} showThemeToggle />

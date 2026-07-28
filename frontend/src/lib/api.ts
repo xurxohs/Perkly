@@ -1256,6 +1256,12 @@ export const eventsApi = {
     },
     getById: (id: string) =>
         request<Event>(`/events/${id}`),
+    getSaved: () =>
+        request<Array<{ id: string; eventId: string; createdAt: string }>>('/events/saved'),
+    save: (id: string) =>
+        request<{ id: string; eventId: string; createdAt: string }>(`/events/${id}/save`, { method: 'POST' }),
+    unsave: (id: string) =>
+        request<{ deleted: boolean }>(`/events/${id}/save`, { method: 'DELETE' }),
 };
 
 
