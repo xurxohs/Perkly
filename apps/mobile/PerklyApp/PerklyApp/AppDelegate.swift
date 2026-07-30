@@ -1,3 +1,5 @@
+// Мост между SwiftUI и системным жизненным циклом iOS.
+// Отвечает за APNs-токен, категории уведомлений и переходы по push-уведомлениям.
 import UIKit
 import SwiftUI
 import UserNotifications

@@ -1,3 +1,5 @@
+// Главная серверная страница Perkly.
+// Получает публичные офферы и события из backend и собирает из них витрину продукта.
 export const dynamic = 'force-dynamic';
 
 import { ArrowRight, Flame } from 'lucide-react';

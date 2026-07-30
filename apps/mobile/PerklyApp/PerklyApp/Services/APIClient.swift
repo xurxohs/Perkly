@@ -1,3 +1,5 @@
+// Единый HTTP-клиент iOS-приложения.
+// Добавляет авторизацию и данные устройства, отправляет запросы и преобразует ответы backend в Swift-модели.
 import Foundation
 import CryptoKit
 import Network
@@ -53,6 +55,7 @@ enum APIError: LocalizedError {
 }
 
 final class APIClient {
+    // Shared используется сервисами предметных областей: AuthService, EventsService, OffersService и другими.
     static let shared = APIClient()
     
     private let session: URLSession

@@ -1,3 +1,5 @@
+// Единый контракт frontend с Perkly Backend.
+// В файле собраны публичные TypeScript-типы и функции запросов, используемые страницами и контекстами.
 import { getSessionId, hasAnalyticsConsent } from '@/hooks/useSessionId';
 
 // Type Definitions

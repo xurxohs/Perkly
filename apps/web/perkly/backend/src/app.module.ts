@@ -1,3 +1,5 @@
+// Корневой модуль backend: единое место, где собираются все функции Perkly.
+// TopkaAdminModule и EventsModule являются внутренними модулями этого же приложения.
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';

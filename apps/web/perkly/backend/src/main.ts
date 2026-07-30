@@ -1,3 +1,5 @@
+// Точка запуска Perkly Backend.
+// Настраивает Fastify, CORS, защитные заголовки, валидацию DTO, раздачу uploads и HTTP-порт.
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -11,6 +13,7 @@ import fastifyStatic from '@fastify/static';
 import helmet from '@fastify/helmet';
 
 async function bootstrap() {
+  // AppModule ниже подключает все бизнес-модули; здесь остаётся только инфраструктура HTTP-сервера.
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ bodyLimit: 25 * 1024 * 1024 }),

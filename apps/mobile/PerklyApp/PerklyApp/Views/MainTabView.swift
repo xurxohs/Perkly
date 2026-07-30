@@ -1,3 +1,5 @@
+// Основная навигация авторизованного пользователя.
+// Каждая вкладка хранит собственный NavigationPath; Topka является встроенной вкладкой Perkly.
 import SwiftUI
 
 struct MainTabView: View {
@@ -46,6 +48,7 @@ struct MainTabView: View {
                     selectedTab = previousTab == 3 ? 0 : previousTab
                 }
             }
+            // Topka — контент и события внутри Perkly, а не отдельное приложение.
             .tabItem {
                 Label("Топка", systemImage: "flame.fill")
             }

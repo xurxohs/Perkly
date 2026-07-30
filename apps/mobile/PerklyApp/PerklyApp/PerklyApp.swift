@@ -1,3 +1,5 @@
+// Главная точка входа iOS-приложения.
+// Здесь выбирается стартовый экран, подключается глобальное состояние и применяется блокировка по биометрии.
 import SwiftUI
 import UserNotifications
 
@@ -17,6 +19,7 @@ struct PerklyApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
+                // UI-тест Topka открывает ленту напрямую; обычный запуск проходит через авторизацию.
                 if isTopkaUITestMode {
                     NavigationStack {
                         FeedView()
@@ -67,6 +70,7 @@ struct PerklyApp: App {
 }
 
 private struct BiometricLockScreen: View {
+    // Защитный экран поверх приложения, когда авторизованная сессия заблокирована.
     @ObservedObject var manager: BiometricLockManager
 
     var body: some View {

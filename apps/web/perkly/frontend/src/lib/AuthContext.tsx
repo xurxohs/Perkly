@@ -1,5 +1,6 @@
 'use client';
 
+// Глобальная клиентская сессия Web: вход, регистрация, Telegram-авторизация и восстановление пользователя.
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi, usersApi } from './api';
 import { useTelegram } from '@/hooks/useTelegram';

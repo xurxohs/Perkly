@@ -1,3 +1,5 @@
+// Сетевой слой событий и Topka-контента.
+// Экраны не обращаются к URL напрямую: они используют этот сервис, а он делегирует запросы APIClient.
 import Foundation
 
 final class EventsService {

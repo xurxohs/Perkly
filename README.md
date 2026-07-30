@@ -18,6 +18,17 @@ start_all.sh                 # Локальный запуск web + backend
 deploy.sh                    # Развёртывание на сервере
 ```
 
+## Карты разделов
+
+- [`apps`](apps/README.md) — все исполняемые части продукта.
+- [`iOS`](apps/mobile/PerklyApp/README.md) — SwiftUI-приложение и Widget.
+- [`Web`](apps/web/perkly/README.md) — frontend, backend и инфраструктура.
+- [`Frontend source`](apps/web/perkly/frontend/src/README.md) — страницы, компоненты и клиентское состояние.
+- [`Backend source`](apps/web/perkly/backend/src/README.md) — карта NestJS-модулей.
+- [`Topka`](docs/TOPKA.md) — встроенная функция контента и событий.
+- [`Документация`](docs/README.md) — продуктовые и релизные материалы.
+- [`Общие ресурсы`](shared/README.md) — брендовые assets и mock data.
+
 ## Архитектура
 
 ```mermaid
