@@ -1,14 +1,32 @@
-node_modules/
-.env
-dist/
-backend/dist/
-backend/node_modules/
-frontend/node_modules/
-frontend/.next/
-backend/uploads/
-backend/prisma/*.db
-backend/prisma/*.db.*
-backend/prisma/dev.db.before_*
-*.log
+# macOS and editors
 .DS_Store
 ._*
+.obsidian/workspace.json
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output
+node_modules/
+.next/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Runtime data
+uploads/
+!**/uploads/
+!**/uploads/**/
+!**/uploads/**/.gitkeep
+*.log
+*.db
+*.db.*
+
+# Local backup created during monorepo migration
+.history/

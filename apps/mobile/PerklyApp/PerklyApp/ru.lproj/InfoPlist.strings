@@ -1,0 +1,6 @@
+"CFBundleDisplayName" = "Perkly";
+"NSLocationWhenInUseUsageDescription" = "Мы используем вашу локацию для поиска скидок рядом с вами.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Приложению нужен доступ к локации в фоновом режиме, чтобы уведомлять вас о скидках, когда вы проходите мимо заведений.";
+"NSLocationAlwaysUsageDescription" = "Это позволит вам не пропускать выгодные предложения рядом с вами.";
+"NSCameraUsageDescription" = "Камера нужна для AR-поиска предложений рядом с вами.";
+"NSFaceIDUsageDescription" = "Face ID защищает доступ к вашему профилю, покупкам и сообщениям Perkly.";

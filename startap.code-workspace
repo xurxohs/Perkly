@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "name": "📂 STARTAP (Root & Scripts)",
+      "path": "."
+    },
+    {
+      "name": "🌐 Perkly Web (NestJS + Next.js)",
+      "path": "apps/web/perkly"
+    },
+    {
+      "name": "📱 Perkly iOS App",
+      "path": "apps/mobile/PerklyApp"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "apps/web/perkly": true,
+      "apps/mobile/PerklyApp": true
+    }
+  }
+}

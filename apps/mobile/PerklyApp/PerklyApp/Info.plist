@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Perkly</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Камера нужна для AR-поиска предложений рядом с вами.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID защищает доступ к вашему профилю, покупкам и сообщениям Perkly.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Приложению нужен доступ к локации в фоновом режиме, чтобы уведомлять вас о скидках, когда вы проходите мимо заведений.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Это позволит вам не пропускать выгодные предложения рядом с вами.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Мы используем вашу локацию для поиска скидок рядом с вами.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Движение устройства используется только для визуального перелива карты баллов Perkly.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>

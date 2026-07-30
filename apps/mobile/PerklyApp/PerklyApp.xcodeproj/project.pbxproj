@@ -1,0 +1,1188 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		050BACECD2145D50A881910B /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C3E52C9B40128EC3E04F570 /* Navigation.swift */; };
+		06E6593CDDF983614C2D1DD5 /* TopkaExperienceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DF69CA3DB8479BA94DFFFE0 /* TopkaExperienceUITests.swift */; };
+		080263779CB793DB174D3A7D /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F5E92D1D21E29B0D01FBBB6 /* OfferDetailView.swift */; };
+		0C35AE6544877695E0351012 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 86FE1CA4FC12FD30BC6BF0B7 /* PrivacyInfo.xcprivacy */; };
+		0D6991B82D9E56E53677C426 /* DisputesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 868A3666E762AF1C52648951 /* DisputesService.swift */; };
+		115263D79639DEF0DA3293A6 /* ChatListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7177368582993601D477184 /* ChatListView.swift */; };
+		12A6DDEC471CC00C8CF7A986 /* GradientText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9F62803BCB528463C8FDE41 /* GradientText.swift */; };
+		133FEA04C83C360AD17B94A0 /* SellerDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6D1275E9C1D3FE5C0B70BCA /* SellerDashboardView.swift */; };
+		13A8FAF28F167F93844D659F /* CartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A884CF39D417114B7A39F672 /* CartViewModel.swift */; };
+		1A87CAEF14909EB64DFED11D /* FortuneWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2401511B078A15ACE75404E2 /* FortuneWheelView.swift */; };
+		1ADE7550A92E81E6C6D67A38 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F46EA8EFFB035BC94995EB3E /* ChatService.swift */; };
+		1D7712BD8A3F545DC4DA76BA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C2B9D95B788214263B1AE8B5 /* PrivacyInfo.xcprivacy */; };
+		2216743BEE133B0A2940D822 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AEE7C6FADB472A00E52D665 /* Localization.swift */; };
+		269B8736B4FF8A1D85F42D34 /* NextGenProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B255992C4566B350A9DF45 /* NextGenProfileView.swift */; };
+		281C35813F682A7F9A9EE182 /* UsersService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C87A93016E0D1BE877CDBAF /* UsersService.swift */; };
+		291C01E10DA96CCF3F5AB466 /* Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596AF716711633E4B2B338F4 /* Transaction.swift */; };
+		3107446E7DF5CE3FE18897A2 /* TierBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804328AC5CE4B9754C6FC297 /* TierBadge.swift */; };
+		311CDBFE9A129FF3DA3BE753 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A265EBF4E683D9CEC67626F /* Chat.swift */; };
+		326568295BA30FF35D381E69 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B806DBF3BA02608AF7B8033A /* HomeView.swift */; };
+		32F05A0152A638A86316AB49 /* RichLinkText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF20F1478A0A49A9F30D6FE /* RichLinkText.swift */; };
+		3D8CF232FA29AEAE0A258C67 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 530BBE2EDF2E6F3E9AC4ADCA /* AnalyticsService.swift */; };
+		4164BBB56E8FCDF2BB94F56A /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD52A2354870D8B77F3EF3A /* User.swift */; };
+		425492F50FFBC31798FC4B10 /* CartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7FC116896054193419125BB /* CartView.swift */; };
+		4524AA3FF432E8E1D880C650 /* OffersService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A9A6DA1EB6C55DA4EA064E /* OffersService.swift */; };
+		484A9EE8728DC158A9E95B60 /* WidgetDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2D0153D866D6C6C0BFE1F4 /* WidgetDataManager.swift */; };
+		4B1BA57BA64F34AE3700E19B /* Colors+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC68DEFAF73FE9AEF329E5F9 /* Colors+Extension.swift */; };
+		4DF2F62AA40AD50E1567FFB6 /* SafetyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C305C73D994E18BA40D85D /* SafetyService.swift */; };
+		4E29440837E0F89C3F77A789 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 318E6B39FBE52AD48374B89E /* LocationManager.swift */; };
+		4EFF5AA78C891500FDE6A12C /* Review.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0B6E0652B6B6FA693CE292 /* Review.swift */; };
+		522464F45F282BA6CE13E922 /* CountdownTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E52CD5BD13341849C24392A /* CountdownTimer.swift */; };
+		54876591051C9A950501BBEF /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 732D938C7EACC3414BB1A494 /* RegisterView.swift */; };
+		5570A3A62BCB6AA3184F66F8 /* PerklyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37549E64AEA91B958B49CD4 /* PerklyButton.swift */; };
+		5644B58D616BA98F4166C5FB /* PurchasedPromocodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DE368568B3B47F9E24D935 /* PurchasedPromocodeView.swift */; };
+		5672FA5A37F67BAE3F86BB4C /* RemoteImageURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = F591A85A2E5D0B8B47D45478 /* RemoteImageURL.swift */; };
+		58D01561D7EAC71D272B27DB /* OfferRecommendationSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7423F53D4A6F755FBABEBD /* OfferRecommendationSection.swift */; };
+		5DC53AF23C877F163A6944A5 /* SellerOfferEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFFA822921680069774E31CD /* SellerOfferEditSheet.swift */; };
+		63FD154E8DBB72476701EEED /* CatalogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA391876E0FDEC57E341873B /* CatalogViewModel.swift */; };
+		65331B7F878E3FCD7B1C1B78 /* CartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB93CD922B68C6864CCA75A2 /* CartService.swift */; };
+		665593979750124C433B39D6 /* FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD17DD3B1EE23DF0018B7E3 /* FeedView.swift */; };
+		69F46D803103A3FAE85C1FF5 /* AdminAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226F258EF9EB1295891C8C9A /* AdminAnalyticsView.swift */; };
+		6C901539C879FFB47EC94FD4 /* SquadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EC40D9F621CDC5E01725C5 /* SquadViewModel.swift */; };
+		7007C9D549CE2C1C344210BF /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C7712881404B22601264BA6 /* ChatViewModel.swift */; };
+		75E698D1B607AD137272E203 /* Squad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB11CD46BD5E9BC59DF2E9A /* Squad.swift */; };
+		7654641CDC28368416044EE8 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE8D331E67F0D558F7F83177 /* LoginView.swift */; };
+		770664325663D3091642CA51 /* TransactionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12C760E7A1F2E78E5DDCD6A /* TransactionsService.swift */; };
+		7928473E0936587C661F049C /* PerklyWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E1F6DA7B1F1EAB99B52F46A /* PerklyWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7FCC71EA298B6D7DAE4B2D48 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA449057FA8A30D2613AE78 /* AppDelegate.swift */; };
+		80CF19916980D8E5759E379F /* AdminModerationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC0006682157A2E8DFED7FD /* AdminModerationView.swift */; };
+		83C9D7067818344F5398EDFF /* PerklyWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277C2DAE5F7C04FAB8631A5B /* PerklyWidgets.swift */; };
+		8463F9738C26AF82DAB7ED64 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4506FC01266884972AE07A99 /* ProfileView.swift */; };
+		85C8D8CB3DA755A4D1DFE200 /* CreateOfferSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1439E33A4E734CB4DAA462B /* CreateOfferSheet.swift */; };
+		8B44BF9865D997D879678072 /* Dispute.swift in Sources */ = {isa = PBXBuildFile; fileRef = B76204B7F203557FE07DDD1B /* Dispute.swift */; };
+		8D50616F8DCAB63C9E7B767B /* GiftCodesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97550D59A608DEEC0F42E609 /* GiftCodesView.swift */; };
+		8DA6AF0365B348B1C4E88F34 /* EditEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39811269D35957E87C8478ED /* EditEventSheet.swift */; };
+		90B2238E0F6F92AF219A741C /* PerklyAuthEntryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11924D5493E322BF7FB3D06B /* PerklyAuthEntryComponents.swift */; };
+		954F62BB650B454AE24F65C7 /* ReviewsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A190A5B4A6D73CAED695A79 /* ReviewsService.swift */; };
+		97E1727EF144C33193D068CE /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFDF3F68855FF15876CACB3E /* KeychainHelper.swift */; };
+		99CDC56B04233EBAF07B4C6D /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC78DE51D3063B06EB64704D /* Event.swift */; };
+		9E7B5501892A719616BD03C5 /* AppearanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10ECB0994AA0683180CAE06 /* AppearanceSettingsView.swift */; };
+		A18C36C2DEFD5D63A2E74BE6 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7251BAB82CEB8623D41221B /* AppAppearance.swift */; };
+		A1A2D6D9680B6F9B57975599 /* WheelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF8952F4BC37074B1DC483A /* WheelService.swift */; };
+		A4C7BC1DF49BABEE5C97BF46 /* DisputeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633320E3E5CC72F3A0245D23 /* DisputeViews.swift */; };
+		A57FCE2EC07E8C4F889CFA1A /* AdminOfferEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154EB0BEA9F8B6ED57858A38 /* AdminOfferEditSheet.swift */; };
+		A5C165E6ED8EB7F86B0F21BD /* NotificationsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E041C18AF6FE89F3F58D25D /* NotificationsService.swift */; };
+		A61984DA51A62E85FCD44293 /* PerklyPointsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33E511F24679AFC1DFF722D2 /* PerklyPointsCard.swift */; };
+		A78FAD3ABE4308401B0C0504 /* RecommendationsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D34E17096F29D3710BD46AB /* RecommendationsService.swift */; };
+		A89A54B6F3166B7B9C2D808C /* HomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDD8C1B30B38DB61B6A3E0C /* HomeFeed.swift */; };
+		AA9B1EE9093C065E4EDADC39 /* HomeFeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C866DCDF4DE3617E8CBD23CC /* HomeFeedService.swift */; };
+		ABA2A862B7350E7527A00EBE /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887C92FE35639957BC549C1C /* APIClient.swift */; };
+		AD38914E32DC19F7AE1D35C2 /* SellerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA38892A45BA925CDAB1255 /* SellerService.swift */; };
+		B050C2C60F1DD598C1C3D1EA /* AdminModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A942A5C1CA6172B0D469CF /* AdminModels.swift */; };
+		B1D398EE70FAA5E8CD48730D /* ARDiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F346065C47CCAEEC1C86AE90 /* ARDiscoveryView.swift */; };
+		B54F819521EA408562FC4E79 /* PerklyBrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD5520CE4522EB48F83E2A5 /* PerklyBrandMark.swift */; };
+		B781F29183F3AC87B8A38D4B /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F36FEF6934B13BA3FAE75BCD /* HomeViewModel.swift */; };
+		BF5327A527D3655C225FD734 /* CatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BB5965950D2642CDA28CB5C /* CatalogView.swift */; };
+		BF85F047B63A55DC58DD2004 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A403B36F74B3362FEC3ED9 /* HapticManager.swift */; };
+		BFC38EF816E6EF6CD0B69DD2 /* TopkaExperienceSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A1B335F76AC53665E4DBA1 /* TopkaExperienceSupport.swift */; };
+		C3581E087D96C52B1C6D2378 /* SubscriptionCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A89DF22BABB93AC0BE144029 /* SubscriptionCenterView.swift */; };
+		C64301DDB1DB35CCBA645BB6 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D38035CE2EC5EDCCC4FDDBA3 /* Localizable.strings */; };
+		C65368EBC14F0875F77102E6 /* SellerStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE8563F25E66458F2726F31 /* SellerStats.swift */; };
+		CA71C04A73D78CBD3D868FFA /* Offer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542582F02A5468CB7C0F5904 /* Offer.swift */; };
+		D0476C477BBB9D7D872BD756 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 280B435405CBD71FB2FEDCF4 /* Constants.swift */; };
+		D4F368C5BA451A9278E2300F /* PerklyMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E5305AE3A6A2FA2A1D46AA /* PerklyMoney.swift */; };
+		D8369BC4B0DBD7AB3D3A6282 /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07677B5C5061278257EFC868 /* EventsService.swift */; };
+		DD9B7D73E58BC7326189D669 /* NextGenEditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF49B8686317EB5D7470500F /* NextGenEditProfileView.swift */; };
+		DDD9042D0FF1CC4006200E48 /* WheelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4198E89E2D33AB3253C47071 /* WheelViewModel.swift */; };
+		E0264C016C917E03440BB47D /* PerklyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63D598D37BC6D6AE9320BE4 /* PerklyApp.swift */; };
+		E215C0BBF6F04E49B40F4A43 /* UserReviewsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E492DA390D244D6648032B4 /* UserReviewsView.swift */; };
+		E2A544CE5C16094AD253D7A5 /* SellerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D741C0D24B78E4932772B404 /* SellerViewModel.swift */; };
+		E33CB268037F06E50D0FF113 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991E173A3E492C5354D60E4A /* GlassCard.swift */; };
+		E370A80765BA0CD103ED24FD /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C446C7E2FD4644F286561DC7 /* AuthViewModel.swift */; };
+		EDF85C810EE76E959FDCDDB9 /* AdminCompaniesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C710CE4B32AB2BACAA86C98 /* AdminCompaniesView.swift */; };
+		EE343DC7C231A45551C32E7B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C4FB8FFBA1A0245E5C356383 /* Assets.xcassets */; };
+		EF4A49D7A2D52A276967C5AA /* SquadsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A4230D554C2574C4A88949 /* SquadsService.swift */; };
+		EF9698A7D72BDC09298E35C7 /* OfferDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512B6A4EC936B35BAF89294E /* OfferDetailViewModel.swift */; };
+		F01D083516B9B6747A6CFE44 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 692B2AB4683D0ECF5E16103E /* ProfileViewModel.swift */; };
+		F0B021E30C7D829879633628 /* AdminDisputeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C4DEB8F14BED42824B6632 /* AdminDisputeDetailView.swift */; };
+		F35F6E5A1E9CFD7C2D8D26BD /* SquadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD325CA389EF024FF138E8C /* SquadView.swift */; };
+		F5EAD4FD19EDB8F4A956E1CE /* ChatRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A96F0A73274CEA725AFA531 /* ChatRoomView.swift */; };
+		F649B7E6AAE9D848CCCFF3A8 /* PhotoDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CCCD7911080AC5ED1942739 /* PhotoDetailScreen.swift */; };
+		F7278022AEDBB5CC0F240F04 /* PhotoPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0F8F743A15DFB78B32B428 /* PhotoPreviewCard.swift */; };
+		F86674A436FF397CA45F0666 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE75C96DFB1B13B8E0E8802 /* AuthService.swift */; };
+		F8821CB0787903952759C2CD /* TopkaExperienceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDEAAF911B6BF12FFC87A986 /* TopkaExperienceView.swift */; };
+		F8F7700880E4703228C6640C /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A3663EC64E41342A0E8442 /* MainTabView.swift */; };
+		F9AB38F3C060B3CA55BD1A92 /* MapDiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7CB86C046E0F6969AD9420 /* MapDiscoveryView.swift */; };
+		FA6E860ACCC52668805315AA /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F2A7A5EB0B7545BEA88930 /* FeedViewModel.swift */; };
+		FA73BDAC107D444F64DFD65A /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 282EC127671BD20D1768B6D3 /* InfoPlist.strings */; };
+		FE860CB0D9136B764EEF45AE /* PaymentsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B85CA10F98738A52DE017A /* PaymentsService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		66B7813DEBE6157B3C0E39D3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1183B5071AAF2B3C47BDDDA2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0EB79A98544520937FC63ED6;
+			remoteInfo = PerklyApp;
+		};
+		FAF3D5D6F830B4FAC38F7FFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1183B5071AAF2B3C47BDDDA2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AF22AD7ABF38447C7C441641;
+			remoteInfo = PerklyWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		ABF70472847BF95C2DA46F3D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7928473E0936587C661F049C /* PerklyWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		022CA2E4D3F17544CF206B30 /* PerklyWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PerklyWidgets.entitlements; sourceTree = "<group>"; };
+		052BFEA82261B91680ECA320 /* uz */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uz; path = uz.lproj/Localizable.strings; sourceTree = "<group>"; };
+		07677B5C5061278257EFC868 /* EventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsService.swift; sourceTree = "<group>"; };
+		0D34E17096F29D3710BD46AB /* RecommendationsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationsService.swift; sourceTree = "<group>"; };
+		0E1F6DA7B1F1EAB99B52F46A /* PerklyWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PerklyWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		11924D5493E322BF7FB3D06B /* PerklyAuthEntryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyAuthEntryComponents.swift; sourceTree = "<group>"; };
+		154EB0BEA9F8B6ED57858A38 /* AdminOfferEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminOfferEditSheet.swift; sourceTree = "<group>"; };
+		1A190A5B4A6D73CAED695A79 /* ReviewsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewsService.swift; sourceTree = "<group>"; };
+		1BB5965950D2642CDA28CB5C /* CatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogView.swift; sourceTree = "<group>"; };
+		1C3E52C9B40128EC3E04F570 /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
+		1EC0006682157A2E8DFED7FD /* AdminModerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminModerationView.swift; sourceTree = "<group>"; };
+		21C4DEB8F14BED42824B6632 /* AdminDisputeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDisputeDetailView.swift; sourceTree = "<group>"; };
+		226F258EF9EB1295891C8C9A /* AdminAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAnalyticsView.swift; sourceTree = "<group>"; };
+		23AC8B79CCE98C85880BC567 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2401511B078A15ACE75404E2 /* FortuneWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneWheelView.swift; sourceTree = "<group>"; };
+		277C2DAE5F7C04FAB8631A5B /* PerklyWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyWidgets.swift; sourceTree = "<group>"; };
+		280B435405CBD71FB2FEDCF4 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		2EF15316E67FDA462AF3E407 /* PerklyAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PerklyAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F7423F53D4A6F755FBABEBD /* OfferRecommendationSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferRecommendationSection.swift; sourceTree = "<group>"; };
+		318E6B39FBE52AD48374B89E /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		33E511F24679AFC1DFF722D2 /* PerklyPointsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyPointsCard.swift; sourceTree = "<group>"; };
+		37A1B335F76AC53665E4DBA1 /* TopkaExperienceSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopkaExperienceSupport.swift; sourceTree = "<group>"; };
+		37A9A6DA1EB6C55DA4EA064E /* OffersService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OffersService.swift; sourceTree = "<group>"; };
+		39811269D35957E87C8478ED /* EditEventSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditEventSheet.swift; sourceTree = "<group>"; };
+		3C87A93016E0D1BE877CDBAF /* UsersService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersService.swift; sourceTree = "<group>"; };
+		3DF8952F4BC37074B1DC483A /* WheelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WheelService.swift; sourceTree = "<group>"; };
+		3E2D0153D866D6C6C0BFE1F4 /* WidgetDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataManager.swift; sourceTree = "<group>"; };
+		4198E89E2D33AB3253C47071 /* WheelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WheelViewModel.swift; sourceTree = "<group>"; };
+		4506FC01266884972AE07A99 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		4A265EBF4E683D9CEC67626F /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
+		4A96F0A73274CEA725AFA531 /* ChatRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomView.swift; sourceTree = "<group>"; };
+		4AEE7C6FADB472A00E52D665 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		4BD325CA389EF024FF138E8C /* SquadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadView.swift; sourceTree = "<group>"; };
+		4CCCD7911080AC5ED1942739 /* PhotoDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailScreen.swift; sourceTree = "<group>"; };
+		4DF69CA3DB8479BA94DFFFE0 /* TopkaExperienceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopkaExperienceUITests.swift; sourceTree = "<group>"; };
+		4E041C18AF6FE89F3F58D25D /* NotificationsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsService.swift; sourceTree = "<group>"; };
+		512B6A4EC936B35BAF89294E /* OfferDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailViewModel.swift; sourceTree = "<group>"; };
+		530BBE2EDF2E6F3E9AC4ADCA /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		542582F02A5468CB7C0F5904 /* Offer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Offer.swift; sourceTree = "<group>"; };
+		596AF716711633E4B2B338F4 /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
+		5BF20F1478A0A49A9F30D6FE /* RichLinkText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichLinkText.swift; sourceTree = "<group>"; };
+		5C0F8F743A15DFB78B32B428 /* PhotoPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPreviewCard.swift; sourceTree = "<group>"; };
+		5F5E92D1D21E29B0D01FBBB6 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
+		633320E3E5CC72F3A0245D23 /* DisputeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisputeViews.swift; sourceTree = "<group>"; };
+		66A3663EC64E41342A0E8442 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		66A403B36F74B3362FEC3ED9 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		66B85CA10F98738A52DE017A /* PaymentsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentsService.swift; sourceTree = "<group>"; };
+		68B255992C4566B350A9DF45 /* NextGenProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextGenProfileView.swift; sourceTree = "<group>"; };
+		692B2AB4683D0ECF5E16103E /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
+		6A0B6E0652B6B6FA693CE292 /* Review.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Review.swift; sourceTree = "<group>"; };
+		6BDD8C1B30B38DB61B6A3E0C /* HomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeed.swift; sourceTree = "<group>"; };
+		6C7712881404B22601264BA6 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		6CA38892A45BA925CDAB1255 /* SellerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellerService.swift; sourceTree = "<group>"; };
+		6E52CD5BD13341849C24392A /* CountdownTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownTimer.swift; sourceTree = "<group>"; };
+		732D938C7EACC3414BB1A494 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		77F2A7A5EB0B7545BEA88930 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
+		7FB11CD46BD5E9BC59DF2E9A /* Squad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Squad.swift; sourceTree = "<group>"; };
+		804328AC5CE4B9754C6FC297 /* TierBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierBadge.swift; sourceTree = "<group>"; };
+		868A3666E762AF1C52648951 /* DisputesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisputesService.swift; sourceTree = "<group>"; };
+		86FE1CA4FC12FD30BC6BF0B7 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		887C92FE35639957BC549C1C /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		89DE368568B3B47F9E24D935 /* PurchasedPromocodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasedPromocodeView.swift; sourceTree = "<group>"; };
+		8C710CE4B32AB2BACAA86C98 /* AdminCompaniesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminCompaniesView.swift; sourceTree = "<group>"; };
+		8E71D81F2B581A748397613C /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		93A4230D554C2574C4A88949 /* SquadsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadsService.swift; sourceTree = "<group>"; };
+		97550D59A608DEEC0F42E609 /* GiftCodesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCodesView.swift; sourceTree = "<group>"; };
+		991E173A3E492C5354D60E4A /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
+		9C7CB86C046E0F6969AD9420 /* MapDiscoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDiscoveryView.swift; sourceTree = "<group>"; };
+		9E492DA390D244D6648032B4 /* UserReviewsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserReviewsView.swift; sourceTree = "<group>"; };
+		A12C760E7A1F2E78E5DDCD6A /* TransactionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsService.swift; sourceTree = "<group>"; };
+		A37549E64AEA91B958B49CD4 /* PerklyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyButton.swift; sourceTree = "<group>"; };
+		A6E5305AE3A6A2FA2A1D46AA /* PerklyMoney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyMoney.swift; sourceTree = "<group>"; };
+		A884CF39D417114B7A39F672 /* CartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartViewModel.swift; sourceTree = "<group>"; };
+		A89DF22BABB93AC0BE144029 /* SubscriptionCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionCenterView.swift; sourceTree = "<group>"; };
+		A9076EAC0C3EEF770AFD1327 /* PerklyApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PerklyApp.entitlements; sourceTree = "<group>"; };
+		ADE8563F25E66458F2726F31 /* SellerStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellerStats.swift; sourceTree = "<group>"; };
+		B10ECB0994AA0683180CAE06 /* AppearanceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsView.swift; sourceTree = "<group>"; };
+		B1439E33A4E734CB4DAA462B /* CreateOfferSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateOfferSheet.swift; sourceTree = "<group>"; };
+		B2501B76C3188FB1553E36E4 /* uz */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uz; path = uz.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B76204B7F203557FE07DDD1B /* Dispute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dispute.swift; sourceTree = "<group>"; };
+		B806DBF3BA02608AF7B8033A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B9C305C73D994E18BA40D85D /* SafetyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyService.swift; sourceTree = "<group>"; };
+		BAD5520CE4522EB48F83E2A5 /* PerklyBrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyBrandMark.swift; sourceTree = "<group>"; };
+		BBD17DD3B1EE23DF0018B7E3 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
+		BFA449057FA8A30D2613AE78 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BFDF3F68855FF15876CACB3E /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		C2B9D95B788214263B1AE8B5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		C446C7E2FD4644F286561DC7 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		C4FB8FFBA1A0245E5C356383 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C6D1275E9C1D3FE5C0B70BCA /* SellerDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellerDashboardView.swift; sourceTree = "<group>"; };
+		C6E34CB8DC4CE3ACDCDC891A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C7177368582993601D477184 /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
+		C866DCDF4DE3617E8CBD23CC /* HomeFeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeedService.swift; sourceTree = "<group>"; };
+		C9EC40D9F621CDC5E01725C5 /* SquadViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadViewModel.swift; sourceTree = "<group>"; };
+		CC68DEFAF73FE9AEF329E5F9 /* Colors+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Colors+Extension.swift"; sourceTree = "<group>"; };
+		D15E7A39B87787F5D41C87CA /* PerklyApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PerklyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D741C0D24B78E4932772B404 /* SellerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellerViewModel.swift; sourceTree = "<group>"; };
+		D7FC116896054193419125BB /* CartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartView.swift; sourceTree = "<group>"; };
+		DA391876E0FDEC57E341873B /* CatalogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogViewModel.swift; sourceTree = "<group>"; };
+		E751CFB55677C54D45C3D353 /* PerklyWidgets.debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PerklyWidgets.debug.entitlements; sourceTree = "<group>"; };
+		E7A942A5C1CA6172B0D469CF /* AdminModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminModels.swift; sourceTree = "<group>"; };
+		EACA545CEE4285A7CDBB1227 /* PerklyApp.debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PerklyApp.debug.entitlements; sourceTree = "<group>"; };
+		EB93CD922B68C6864CCA75A2 /* CartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartService.swift; sourceTree = "<group>"; };
+		EC78DE51D3063B06EB64704D /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		EDEAAF911B6BF12FFC87A986 /* TopkaExperienceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopkaExperienceView.swift; sourceTree = "<group>"; };
+		EF49B8686317EB5D7470500F /* NextGenEditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextGenEditProfileView.swift; sourceTree = "<group>"; };
+		EFFA822921680069774E31CD /* SellerOfferEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellerOfferEditSheet.swift; sourceTree = "<group>"; };
+		F346065C47CCAEEC1C86AE90 /* ARDiscoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARDiscoveryView.swift; sourceTree = "<group>"; };
+		F36FEF6934B13BA3FAE75BCD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		F46EA8EFFB035BC94995EB3E /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
+		F591A85A2E5D0B8B47D45478 /* RemoteImageURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImageURL.swift; sourceTree = "<group>"; };
+		F63D598D37BC6D6AE9320BE4 /* PerklyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerklyApp.swift; sourceTree = "<group>"; };
+		F7251BAB82CEB8623D41221B /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
+		F8D46CEBE3FBC26EA06B0B40 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F9F62803BCB528463C8FDE41 /* GradientText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientText.swift; sourceTree = "<group>"; };
+		FBE75C96DFB1B13B8E0E8802 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		FDD52A2354870D8B77F3EF3A /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		FE8D331E67F0D558F7F83177 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0132CAF59FB9AB1226A32031 /* PerklyWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				C6E34CB8DC4CE3ACDCDC891A /* Info.plist */,
+				E751CFB55677C54D45C3D353 /* PerklyWidgets.debug.entitlements */,
+				022CA2E4D3F17544CF206B30 /* PerklyWidgets.entitlements */,
+				277C2DAE5F7C04FAB8631A5B /* PerklyWidgets.swift */,
+				86FE1CA4FC12FD30BC6BF0B7 /* PrivacyInfo.xcprivacy */,
+			);
+			path = PerklyWidgets;
+			sourceTree = "<group>";
+		};
+		0FAC5DE0488207EB2F1774DD /* Catalog */ = {
+			isa = PBXGroup;
+			children = (
+				1BB5965950D2642CDA28CB5C /* CatalogView.swift */,
+				9C7CB86C046E0F6969AD9420 /* MapDiscoveryView.swift */,
+			);
+			path = Catalog;
+			sourceTree = "<group>";
+		};
+		10172715B24856310B4AF436 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				C7177368582993601D477184 /* ChatListView.swift */,
+				4A96F0A73274CEA725AFA531 /* ChatRoomView.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		150C7BF702752AB004994FBD /* Disputes */ = {
+			isa = PBXGroup;
+			children = (
+				633320E3E5CC72F3A0245D23 /* DisputeViews.swift */,
+			);
+			path = Disputes;
+			sourceTree = "<group>";
+		};
+		15DD0BE99ACCAF496191CDE7 /* Feed */ = {
+			isa = PBXGroup;
+			children = (
+				39811269D35957E87C8478ED /* EditEventSheet.swift */,
+				BBD17DD3B1EE23DF0018B7E3 /* FeedView.swift */,
+				4CCCD7911080AC5ED1942739 /* PhotoDetailScreen.swift */,
+				5C0F8F743A15DFB78B32B428 /* PhotoPreviewCard.swift */,
+				37A1B335F76AC53665E4DBA1 /* TopkaExperienceSupport.swift */,
+				EDEAAF911B6BF12FFC87A986 /* TopkaExperienceView.swift */,
+			);
+			path = Feed;
+			sourceTree = "<group>";
+		};
+		2AA4D1C3642D6EBAE8FBABBA /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				B806DBF3BA02608AF7B8033A /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		2E367F181E8ACF50277AE7DE /* Services */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		462FF62D252936B66549CBD7 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				F7251BAB82CEB8623D41221B /* AppAppearance.swift */,
+				CC68DEFAF73FE9AEF329E5F9 /* Colors+Extension.swift */,
+				280B435405CBD71FB2FEDCF4 /* Constants.swift */,
+				66A403B36F74B3362FEC3ED9 /* HapticManager.swift */,
+				BFDF3F68855FF15876CACB3E /* KeychainHelper.swift */,
+				4AEE7C6FADB472A00E52D665 /* Localization.swift */,
+				A6E5305AE3A6A2FA2A1D46AA /* PerklyMoney.swift */,
+				F591A85A2E5D0B8B47D45478 /* RemoteImageURL.swift */,
+				3E2D0153D866D6C6C0BFE1F4 /* WidgetDataManager.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		46C87ACB3261748E219CE301 /* PerklyAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				4DF69CA3DB8479BA94DFFFE0 /* TopkaExperienceUITests.swift */,
+			);
+			path = PerklyAppUITests;
+			sourceTree = "<group>";
+		};
+		470A72E02AFBE6ADA636BCE8 /* Cart */ = {
+			isa = PBXGroup;
+			children = (
+				D7FC116896054193419125BB /* CartView.swift */,
+			);
+			path = Cart;
+			sourceTree = "<group>";
+		};
+		5890E0844D544AD65FC08753 /* Squads */ = {
+			isa = PBXGroup;
+			children = (
+				4BD325CA389EF024FF138E8C /* SquadView.swift */,
+			);
+			path = Squads;
+			sourceTree = "<group>";
+		};
+		6018D3CC098023D45658540F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				530BBE2EDF2E6F3E9AC4ADCA /* AnalyticsService.swift */,
+				887C92FE35639957BC549C1C /* APIClient.swift */,
+				FBE75C96DFB1B13B8E0E8802 /* AuthService.swift */,
+				EB93CD922B68C6864CCA75A2 /* CartService.swift */,
+				F46EA8EFFB035BC94995EB3E /* ChatService.swift */,
+				868A3666E762AF1C52648951 /* DisputesService.swift */,
+				07677B5C5061278257EFC868 /* EventsService.swift */,
+				C866DCDF4DE3617E8CBD23CC /* HomeFeedService.swift */,
+				318E6B39FBE52AD48374B89E /* LocationManager.swift */,
+				4E041C18AF6FE89F3F58D25D /* NotificationsService.swift */,
+				37A9A6DA1EB6C55DA4EA064E /* OffersService.swift */,
+				66B85CA10F98738A52DE017A /* PaymentsService.swift */,
+				0D34E17096F29D3710BD46AB /* RecommendationsService.swift */,
+				1A190A5B4A6D73CAED695A79 /* ReviewsService.swift */,
+				B9C305C73D994E18BA40D85D /* SafetyService.swift */,
+				6CA38892A45BA925CDAB1255 /* SellerService.swift */,
+				93A4230D554C2574C4A88949 /* SquadsService.swift */,
+				A12C760E7A1F2E78E5DDCD6A /* TransactionsService.swift */,
+				3C87A93016E0D1BE877CDBAF /* UsersService.swift */,
+				3DF8952F4BC37074B1DC483A /* WheelService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		727F68A401C0AFC27037CB56 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				C446C7E2FD4644F286561DC7 /* AuthViewModel.swift */,
+				A884CF39D417114B7A39F672 /* CartViewModel.swift */,
+				DA391876E0FDEC57E341873B /* CatalogViewModel.swift */,
+				6C7712881404B22601264BA6 /* ChatViewModel.swift */,
+				77F2A7A5EB0B7545BEA88930 /* FeedViewModel.swift */,
+				F36FEF6934B13BA3FAE75BCD /* HomeViewModel.swift */,
+				512B6A4EC936B35BAF89294E /* OfferDetailViewModel.swift */,
+				692B2AB4683D0ECF5E16103E /* ProfileViewModel.swift */,
+				D741C0D24B78E4932772B404 /* SellerViewModel.swift */,
+				C9EC40D9F621CDC5E01725C5 /* SquadViewModel.swift */,
+				4198E89E2D33AB3253C47071 /* WheelViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		763FFAF361D58065F3FEF2A7 /* PerklyApp */ = {
+			isa = PBXGroup;
+			children = (
+				BFA449057FA8A30D2613AE78 /* AppDelegate.swift */,
+				C4FB8FFBA1A0245E5C356383 /* Assets.xcassets */,
+				F8D46CEBE3FBC26EA06B0B40 /* Info.plist */,
+				EACA545CEE4285A7CDBB1227 /* PerklyApp.debug.entitlements */,
+				A9076EAC0C3EEF770AFD1327 /* PerklyApp.entitlements */,
+				F63D598D37BC6D6AE9320BE4 /* PerklyApp.swift */,
+				C2B9D95B788214263B1AE8B5 /* PrivacyInfo.xcprivacy */,
+				BC35D65666BE995FB1CCBB05 /* Components */,
+				282EC127671BD20D1768B6D3 /* InfoPlist.strings */,
+				D38035CE2EC5EDCCC4FDDBA3 /* Localizable.strings */,
+				BE8F8429B6999E9616F66C12 /* Models */,
+				D5FF3FCA58D48B2F58454B8A /* PerklyApp */,
+				6018D3CC098023D45658540F /* Services */,
+				462FF62D252936B66549CBD7 /* Utils */,
+				727F68A401C0AFC27037CB56 /* ViewModels */,
+				9A602D0E5CA634ECF661F89B /* Views */,
+			);
+			path = PerklyApp;
+			sourceTree = "<group>";
+		};
+		9A482C3313AC88E1AD3E35AB = {
+			isa = PBXGroup;
+			children = (
+				763FFAF361D58065F3FEF2A7 /* PerklyApp */,
+				46C87ACB3261748E219CE301 /* PerklyAppUITests */,
+				0132CAF59FB9AB1226A32031 /* PerklyWidgets */,
+				A8BAD4759E9B62B5942F474A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9A602D0E5CA634ECF661F89B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				66A3663EC64E41342A0E8442 /* MainTabView.swift */,
+				CD13B499B2D37469F75A127F /* Auth */,
+				470A72E02AFBE6ADA636BCE8 /* Cart */,
+				0FAC5DE0488207EB2F1774DD /* Catalog */,
+				10172715B24856310B4AF436 /* Chat */,
+				C0A35876DBED28ECD0E91AEC /* Discovery */,
+				150C7BF702752AB004994FBD /* Disputes */,
+				15DD0BE99ACCAF496191CDE7 /* Feed */,
+				2AA4D1C3642D6EBAE8FBABBA /* Home */,
+				9A762B18DCB2AB16EE82AEAE /* Offer */,
+				9EFEE647A4D6013F935D458E /* Profile */,
+				DDB4D1811251EFBD46271E80 /* Seller */,
+				5890E0844D544AD65FC08753 /* Squads */,
+				F9A56FD508CAA96D37906518 /* Wheel */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9A762B18DCB2AB16EE82AEAE /* Offer */ = {
+			isa = PBXGroup;
+			children = (
+				5F5E92D1D21E29B0D01FBBB6 /* OfferDetailView.swift */,
+				89DE368568B3B47F9E24D935 /* PurchasedPromocodeView.swift */,
+			);
+			path = Offer;
+			sourceTree = "<group>";
+		};
+		9EFEE647A4D6013F935D458E /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				226F258EF9EB1295891C8C9A /* AdminAnalyticsView.swift */,
+				8C710CE4B32AB2BACAA86C98 /* AdminCompaniesView.swift */,
+				21C4DEB8F14BED42824B6632 /* AdminDisputeDetailView.swift */,
+				1EC0006682157A2E8DFED7FD /* AdminModerationView.swift */,
+				154EB0BEA9F8B6ED57858A38 /* AdminOfferEditSheet.swift */,
+				B10ECB0994AA0683180CAE06 /* AppearanceSettingsView.swift */,
+				97550D59A608DEEC0F42E609 /* GiftCodesView.swift */,
+				EF49B8686317EB5D7470500F /* NextGenEditProfileView.swift */,
+				68B255992C4566B350A9DF45 /* NextGenProfileView.swift */,
+				33E511F24679AFC1DFF722D2 /* PerklyPointsCard.swift */,
+				4506FC01266884972AE07A99 /* ProfileView.swift */,
+				A89DF22BABB93AC0BE144029 /* SubscriptionCenterView.swift */,
+				9E492DA390D244D6648032B4 /* UserReviewsView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		A8BAD4759E9B62B5942F474A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D15E7A39B87787F5D41C87CA /* PerklyApp.app */,
+				2EF15316E67FDA462AF3E407 /* PerklyAppUITests.xctest */,
+				0E1F6DA7B1F1EAB99B52F46A /* PerklyWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BC35D65666BE995FB1CCBB05 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				6E52CD5BD13341849C24392A /* CountdownTimer.swift */,
+				991E173A3E492C5354D60E4A /* GlassCard.swift */,
+				F9F62803BCB528463C8FDE41 /* GradientText.swift */,
+				2F7423F53D4A6F755FBABEBD /* OfferRecommendationSection.swift */,
+				BAD5520CE4522EB48F83E2A5 /* PerklyBrandMark.swift */,
+				A37549E64AEA91B958B49CD4 /* PerklyButton.swift */,
+				5BF20F1478A0A49A9F30D6FE /* RichLinkText.swift */,
+				804328AC5CE4B9754C6FC297 /* TierBadge.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		BE8F8429B6999E9616F66C12 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				E7A942A5C1CA6172B0D469CF /* AdminModels.swift */,
+				4A265EBF4E683D9CEC67626F /* Chat.swift */,
+				B76204B7F203557FE07DDD1B /* Dispute.swift */,
+				EC78DE51D3063B06EB64704D /* Event.swift */,
+				6BDD8C1B30B38DB61B6A3E0C /* HomeFeed.swift */,
+				1C3E52C9B40128EC3E04F570 /* Navigation.swift */,
+				542582F02A5468CB7C0F5904 /* Offer.swift */,
+				6A0B6E0652B6B6FA693CE292 /* Review.swift */,
+				ADE8563F25E66458F2726F31 /* SellerStats.swift */,
+				7FB11CD46BD5E9BC59DF2E9A /* Squad.swift */,
+				596AF716711633E4B2B338F4 /* Transaction.swift */,
+				FDD52A2354870D8B77F3EF3A /* User.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C0A35876DBED28ECD0E91AEC /* Discovery */ = {
+			isa = PBXGroup;
+			children = (
+				F346065C47CCAEEC1C86AE90 /* ARDiscoveryView.swift */,
+			);
+			path = Discovery;
+			sourceTree = "<group>";
+		};
+		C2085E3314A73FCC7A1248BD /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CD13B499B2D37469F75A127F /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				FE8D331E67F0D558F7F83177 /* LoginView.swift */,
+				11924D5493E322BF7FB3D06B /* PerklyAuthEntryComponents.swift */,
+				732D938C7EACC3414BB1A494 /* RegisterView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		D5FF3FCA58D48B2F58454B8A /* PerklyApp */ = {
+			isa = PBXGroup;
+			children = (
+				C2085E3314A73FCC7A1248BD /* Models */,
+				2E367F181E8ACF50277AE7DE /* Services */,
+			);
+			path = PerklyApp;
+			sourceTree = "<group>";
+		};
+		DDB4D1811251EFBD46271E80 /* Seller */ = {
+			isa = PBXGroup;
+			children = (
+				B1439E33A4E734CB4DAA462B /* CreateOfferSheet.swift */,
+				C6D1275E9C1D3FE5C0B70BCA /* SellerDashboardView.swift */,
+				EFFA822921680069774E31CD /* SellerOfferEditSheet.swift */,
+			);
+			path = Seller;
+			sourceTree = "<group>";
+		};
+		F9A56FD508CAA96D37906518 /* Wheel */ = {
+			isa = PBXGroup;
+			children = (
+				2401511B078A15ACE75404E2 /* FortuneWheelView.swift */,
+			);
+			path = Wheel;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0EB79A98544520937FC63ED6 /* PerklyApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DDE6863303BDD336442AF462 /* Build configuration list for PBXNativeTarget "PerklyApp" */;
+			buildPhases = (
+				FE6F301736083B59D5946882 /* Sources */,
+				62DCE8328208D5D6BAE2845F /* Resources */,
+				ABF70472847BF95C2DA46F3D /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				21F327757342D6FD0699619A /* PBXTargetDependency */,
+			);
+			name = PerklyApp;
+			packageProductDependencies = (
+			);
+			productName = PerklyApp;
+			productReference = D15E7A39B87787F5D41C87CA /* PerklyApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AF22AD7ABF38447C7C441641 /* PerklyWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FB59F798B4E8A1AAF0ADD3B9 /* Build configuration list for PBXNativeTarget "PerklyWidgets" */;
+			buildPhases = (
+				8FEEB6CA80E3943E8CA0A7B4 /* Sources */,
+				0C3F4287F4731E2E5FA52E9D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PerklyWidgets;
+			packageProductDependencies = (
+			);
+			productName = PerklyWidgets;
+			productReference = 0E1F6DA7B1F1EAB99B52F46A /* PerklyWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		D24109EF09485421DB7DEEE5 /* PerklyAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E2CF9454EB2602E8B402402D /* Build configuration list for PBXNativeTarget "PerklyAppUITests" */;
+			buildPhases = (
+				E951609A8462536137615AF6 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				978111C3C9F3BD1E4F521FCE /* PBXTargetDependency */,
+			);
+			name = PerklyAppUITests;
+			packageProductDependencies = (
+			);
+			productName = PerklyAppUITests;
+			productReference = 2EF15316E67FDA462AF3E407 /* PerklyAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1183B5071AAF2B3C47BDDDA2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					0EB79A98544520937FC63ED6 = {
+						DevelopmentTeam = 7N6P8A9T3V;
+					};
+					AF22AD7ABF38447C7C441641 = {
+						DevelopmentTeam = 7N6P8A9T3V;
+					};
+					D24109EF09485421DB7DEEE5 = {
+						DevelopmentTeam = 7N6P8A9T3V;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 0EB79A98544520937FC63ED6;
+					};
+				};
+			};
+			buildConfigurationList = 5FF09FE5B5797AF90982F2A7 /* Build configuration list for PBXProject "PerklyApp" */;
+			developmentRegion = ru;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				ru,
+				uz,
+			);
+			mainGroup = 9A482C3313AC88E1AD3E35AB;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A8BAD4759E9B62B5942F474A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0EB79A98544520937FC63ED6 /* PerklyApp */,
+				D24109EF09485421DB7DEEE5 /* PerklyAppUITests */,
+				AF22AD7ABF38447C7C441641 /* PerklyWidgets */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0C3F4287F4731E2E5FA52E9D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C35AE6544877695E0351012 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		62DCE8328208D5D6BAE2845F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE343DC7C231A45551C32E7B /* Assets.xcassets in Resources */,
+				FA73BDAC107D444F64DFD65A /* InfoPlist.strings in Resources */,
+				C64301DDB1DB35CCBA645BB6 /* Localizable.strings in Resources */,
+				1D7712BD8A3F545DC4DA76BA /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8FEEB6CA80E3943E8CA0A7B4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				83C9D7067818344F5398EDFF /* PerklyWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E951609A8462536137615AF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				06E6593CDDF983614C2D1DD5 /* TopkaExperienceUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FE6F301736083B59D5946882 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ABA2A862B7350E7527A00EBE /* APIClient.swift in Sources */,
+				B1D398EE70FAA5E8CD48730D /* ARDiscoveryView.swift in Sources */,
+				69F46D803103A3FAE85C1FF5 /* AdminAnalyticsView.swift in Sources */,
+				EDF85C810EE76E959FDCDDB9 /* AdminCompaniesView.swift in Sources */,
+				F0B021E30C7D829879633628 /* AdminDisputeDetailView.swift in Sources */,
+				B050C2C60F1DD598C1C3D1EA /* AdminModels.swift in Sources */,
+				80CF19916980D8E5759E379F /* AdminModerationView.swift in Sources */,
+				A57FCE2EC07E8C4F889CFA1A /* AdminOfferEditSheet.swift in Sources */,
+				3D8CF232FA29AEAE0A258C67 /* AnalyticsService.swift in Sources */,
+				A18C36C2DEFD5D63A2E74BE6 /* AppAppearance.swift in Sources */,
+				7FCC71EA298B6D7DAE4B2D48 /* AppDelegate.swift in Sources */,
+				9E7B5501892A719616BD03C5 /* AppearanceSettingsView.swift in Sources */,
+				F86674A436FF397CA45F0666 /* AuthService.swift in Sources */,
+				E370A80765BA0CD103ED24FD /* AuthViewModel.swift in Sources */,
+				65331B7F878E3FCD7B1C1B78 /* CartService.swift in Sources */,
+				425492F50FFBC31798FC4B10 /* CartView.swift in Sources */,
+				13A8FAF28F167F93844D659F /* CartViewModel.swift in Sources */,
+				BF5327A527D3655C225FD734 /* CatalogView.swift in Sources */,
+				63FD154E8DBB72476701EEED /* CatalogViewModel.swift in Sources */,
+				311CDBFE9A129FF3DA3BE753 /* Chat.swift in Sources */,
+				115263D79639DEF0DA3293A6 /* ChatListView.swift in Sources */,
+				F5EAD4FD19EDB8F4A956E1CE /* ChatRoomView.swift in Sources */,
+				1ADE7550A92E81E6C6D67A38 /* ChatService.swift in Sources */,
+				7007C9D549CE2C1C344210BF /* ChatViewModel.swift in Sources */,
+				4B1BA57BA64F34AE3700E19B /* Colors+Extension.swift in Sources */,
+				D0476C477BBB9D7D872BD756 /* Constants.swift in Sources */,
+				522464F45F282BA6CE13E922 /* CountdownTimer.swift in Sources */,
+				85C8D8CB3DA755A4D1DFE200 /* CreateOfferSheet.swift in Sources */,
+				8B44BF9865D997D879678072 /* Dispute.swift in Sources */,
+				A4C7BC1DF49BABEE5C97BF46 /* DisputeViews.swift in Sources */,
+				0D6991B82D9E56E53677C426 /* DisputesService.swift in Sources */,
+				8DA6AF0365B348B1C4E88F34 /* EditEventSheet.swift in Sources */,
+				99CDC56B04233EBAF07B4C6D /* Event.swift in Sources */,
+				D8369BC4B0DBD7AB3D3A6282 /* EventsService.swift in Sources */,
+				665593979750124C433B39D6 /* FeedView.swift in Sources */,
+				FA6E860ACCC52668805315AA /* FeedViewModel.swift in Sources */,
+				1A87CAEF14909EB64DFED11D /* FortuneWheelView.swift in Sources */,
+				8D50616F8DCAB63C9E7B767B /* GiftCodesView.swift in Sources */,
+				E33CB268037F06E50D0FF113 /* GlassCard.swift in Sources */,
+				12A6DDEC471CC00C8CF7A986 /* GradientText.swift in Sources */,
+				BF85F047B63A55DC58DD2004 /* HapticManager.swift in Sources */,
+				A89A54B6F3166B7B9C2D808C /* HomeFeed.swift in Sources */,
+				AA9B1EE9093C065E4EDADC39 /* HomeFeedService.swift in Sources */,
+				326568295BA30FF35D381E69 /* HomeView.swift in Sources */,
+				B781F29183F3AC87B8A38D4B /* HomeViewModel.swift in Sources */,
+				97E1727EF144C33193D068CE /* KeychainHelper.swift in Sources */,
+				2216743BEE133B0A2940D822 /* Localization.swift in Sources */,
+				4E29440837E0F89C3F77A789 /* LocationManager.swift in Sources */,
+				7654641CDC28368416044EE8 /* LoginView.swift in Sources */,
+				F8F7700880E4703228C6640C /* MainTabView.swift in Sources */,
+				F9AB38F3C060B3CA55BD1A92 /* MapDiscoveryView.swift in Sources */,
+				050BACECD2145D50A881910B /* Navigation.swift in Sources */,
+				DD9B7D73E58BC7326189D669 /* NextGenEditProfileView.swift in Sources */,
+				269B8736B4FF8A1D85F42D34 /* NextGenProfileView.swift in Sources */,
+				A5C165E6ED8EB7F86B0F21BD /* NotificationsService.swift in Sources */,
+				CA71C04A73D78CBD3D868FFA /* Offer.swift in Sources */,
+				080263779CB793DB174D3A7D /* OfferDetailView.swift in Sources */,
+				EF9698A7D72BDC09298E35C7 /* OfferDetailViewModel.swift in Sources */,
+				58D01561D7EAC71D272B27DB /* OfferRecommendationSection.swift in Sources */,
+				4524AA3FF432E8E1D880C650 /* OffersService.swift in Sources */,
+				FE860CB0D9136B764EEF45AE /* PaymentsService.swift in Sources */,
+				E0264C016C917E03440BB47D /* PerklyApp.swift in Sources */,
+				90B2238E0F6F92AF219A741C /* PerklyAuthEntryComponents.swift in Sources */,
+				B54F819521EA408562FC4E79 /* PerklyBrandMark.swift in Sources */,
+				5570A3A62BCB6AA3184F66F8 /* PerklyButton.swift in Sources */,
+				D4F368C5BA451A9278E2300F /* PerklyMoney.swift in Sources */,
+				A61984DA51A62E85FCD44293 /* PerklyPointsCard.swift in Sources */,
+				F649B7E6AAE9D848CCCFF3A8 /* PhotoDetailScreen.swift in Sources */,
+				F7278022AEDBB5CC0F240F04 /* PhotoPreviewCard.swift in Sources */,
+				8463F9738C26AF82DAB7ED64 /* ProfileView.swift in Sources */,
+				F01D083516B9B6747A6CFE44 /* ProfileViewModel.swift in Sources */,
+				5644B58D616BA98F4166C5FB /* PurchasedPromocodeView.swift in Sources */,
+				A78FAD3ABE4308401B0C0504 /* RecommendationsService.swift in Sources */,
+				54876591051C9A950501BBEF /* RegisterView.swift in Sources */,
+				5672FA5A37F67BAE3F86BB4C /* RemoteImageURL.swift in Sources */,
+				4EFF5AA78C891500FDE6A12C /* Review.swift in Sources */,
+				954F62BB650B454AE24F65C7 /* ReviewsService.swift in Sources */,
+				32F05A0152A638A86316AB49 /* RichLinkText.swift in Sources */,
+				4DF2F62AA40AD50E1567FFB6 /* SafetyService.swift in Sources */,
+				133FEA04C83C360AD17B94A0 /* SellerDashboardView.swift in Sources */,
+				5DC53AF23C877F163A6944A5 /* SellerOfferEditSheet.swift in Sources */,
+				AD38914E32DC19F7AE1D35C2 /* SellerService.swift in Sources */,
+				C65368EBC14F0875F77102E6 /* SellerStats.swift in Sources */,
+				E2A544CE5C16094AD253D7A5 /* SellerViewModel.swift in Sources */,
+				75E698D1B607AD137272E203 /* Squad.swift in Sources */,
+				F35F6E5A1E9CFD7C2D8D26BD /* SquadView.swift in Sources */,
+				6C901539C879FFB47EC94FD4 /* SquadViewModel.swift in Sources */,
+				EF4A49D7A2D52A276967C5AA /* SquadsService.swift in Sources */,
+				C3581E087D96C52B1C6D2378 /* SubscriptionCenterView.swift in Sources */,
+				3107446E7DF5CE3FE18897A2 /* TierBadge.swift in Sources */,
+				BFC38EF816E6EF6CD0B69DD2 /* TopkaExperienceSupport.swift in Sources */,
+				F8821CB0787903952759C2CD /* TopkaExperienceView.swift in Sources */,
+				291C01E10DA96CCF3F5AB466 /* Transaction.swift in Sources */,
+				770664325663D3091642CA51 /* TransactionsService.swift in Sources */,
+				4164BBB56E8FCDF2BB94F56A /* User.swift in Sources */,
+				E215C0BBF6F04E49B40F4A43 /* UserReviewsView.swift in Sources */,
+				281C35813F682A7F9A9EE182 /* UsersService.swift in Sources */,
+				A1A2D6D9680B6F9B57975599 /* WheelService.swift in Sources */,
+				DDD9042D0FF1CC4006200E48 /* WheelViewModel.swift in Sources */,
+				484A9EE8728DC158A9E95B60 /* WidgetDataManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		21F327757342D6FD0699619A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AF22AD7ABF38447C7C441641 /* PerklyWidgets */;
+			targetProxy = FAF3D5D6F830B4FAC38F7FFE /* PBXContainerItemProxy */;
+		};
+		978111C3C9F3BD1E4F521FCE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0EB79A98544520937FC63ED6 /* PerklyApp */;
+			targetProxy = 66B7813DEBE6157B3C0E39D3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		282EC127671BD20D1768B6D3 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				8E71D81F2B581A748397613C /* ru */,
+				B2501B76C3188FB1553E36E4 /* uz */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		D38035CE2EC5EDCCC4FDDBA3 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				23AC8B79CCE98C85880BC567 /* ru */,
+				052BFEA82261B91680ECA320 /* uz */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		40E00433DD4AABFEA4AE845F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PerklyWidgets/PerklyWidgets.entitlements;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PerklyWidgets/Info.plist;
+				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.perkly.app.widgets;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		5B863C784C1E7C92106B3B30 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PerklyApp/PerklyApp.debug.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = PerklyApp/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.perkly.app.dev;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6D22CFBFB5E0F5F0297A3238 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PerklyWidgets/PerklyWidgets.debug.entitlements;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PerklyWidgets/Info.plist;
+				INFOPLIST_KEY_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.perkly.app.dev.widgets;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		71211C024B99598565A5A561 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7N6P8A9T3V;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Perkly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		86DF5CB2514947BEDCEFC9BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.perkly.app.dev.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PerklyApp;
+			};
+			name = Debug;
+		};
+		B209596B5B80BA3BC52FC751 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.perkly.app.dev.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PerklyApp;
+			};
+			name = Release;
+		};
+		CDEE49A32B1DDA12C4357FC9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7N6P8A9T3V;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Perkly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		E4885D7A02701D534431CC03 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PerklyApp/PerklyApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = PerklyApp/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.perkly.app;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5FF09FE5B5797AF90982F2A7 /* Build configuration list for PBXProject "PerklyApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CDEE49A32B1DDA12C4357FC9 /* Debug */,
+				71211C024B99598565A5A561 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DDE6863303BDD336442AF462 /* Build configuration list for PBXNativeTarget "PerklyApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B863C784C1E7C92106B3B30 /* Debug */,
+				E4885D7A02701D534431CC03 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E2CF9454EB2602E8B402402D /* Build configuration list for PBXNativeTarget "PerklyAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				86DF5CB2514947BEDCEFC9BA /* Debug */,
+				B209596B5B80BA3BC52FC751 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FB59F798B4E8A1AAF0ADD3B9 /* Build configuration list for PBXNativeTarget "PerklyWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6D22CFBFB5E0F5F0297A3238 /* Debug */,
+				40E00433DD4AABFEA4AE845F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1183B5071AAF2B3C47BDDDA2 /* Project object */;
+}

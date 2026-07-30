@@ -1,0 +1,6 @@
+"CFBundleDisplayName" = "Perkly";
+"NSLocationWhenInUseUsageDescription" = "Yaqiningizdagi chegirmalarni topish uchun joylashuvingizdan foydalanamiz.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Yaqin atrofdagi hamkorlar chegirmalari haqida xabar berish uchun ilovaga fon rejimida joylashuv maʼlumoti kerak.";
+"NSLocationAlwaysUsageDescription" = "Bu yaqin atrofdagi foydali takliflarni oʻtkazib yubormaslikka yordam beradi.";
+"NSCameraUsageDescription" = "Yaqin atrofdagi takliflarni AR orqali topish uchun kamera kerak.";
+"NSFaceIDUsageDescription" = "Face ID Perkly profilingiz, xaridlaringiz va xabarlaringizga kirishni himoya qiladi.";
