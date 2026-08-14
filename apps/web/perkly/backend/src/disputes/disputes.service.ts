@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { sellerPayout } from '../common/money';
 import { BotService } from '../bot/bot.service';
 import { DisputeStatus, TransactionStatus } from '../common/enums';
+import { USER_PUBLIC_SELECT } from '../offers/offer.selects';
 
 @Injectable()
 export class DisputesService {
@@ -36,9 +37,10 @@ export class DisputesService {
     if (transaction.buyerId !== buyerId)
       throw new ForbiddenException('Only the buyer can open a dispute');
 
-    // Cannot dispute a cancelled transaction
-    if ((transaction.status as unknown) === TransactionStatus.CANCELLED) {
-      throw new BadRequestException('Cannot dispute a cancelled transaction');
+    if (transaction.status !== TransactionStatus.ESCROW) {
+      throw new BadRequestException(
+        'Only a transaction currently held in escrow can be disputed',
+      );
     }
 
     // Check if dispute already exists
@@ -59,10 +61,13 @@ export class DisputesService {
         },
       });
 
-      await tx.transaction.update({
-        where: { id: transactionId },
+      const transition = await tx.transaction.updateMany({
+        where: { id: transactionId, status: TransactionStatus.ESCROW },
         data: { status: TransactionStatus.DISPUTED },
       });
+      if (transition.count !== 1) {
+        throw new BadRequestException('Transaction is no longer in escrow');
+      }
 
       // Auto-create a Dispute ChatRoom for both parties
       await tx.chatRoom.create({
@@ -97,7 +102,9 @@ export class DisputesService {
     const dispute = await this.prisma.dispute.findUnique({
       where: { id },
       include: {
-        transaction: { include: { offer: true, buyer: true } },
+        transaction: {
+          include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
+        },
       },
     });
 
@@ -127,7 +134,9 @@ export class DisputesService {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        transaction: { include: { offer: true, buyer: true } },
+        transaction: {
+          include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
+        },
       },
     });
   }

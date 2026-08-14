@@ -15,6 +15,15 @@ export class DiagnosticsService {
     const kind = input.kind?.trim().slice(0, 40);
     const message = input.message?.trim().slice(0, 8_000);
     if (!kind || !message) throw new BadRequestException('kind and message are required');
+    const breadcrumbs = input.breadcrumbs ?? [];
+    if (
+      !Array.isArray(breadcrumbs) ||
+      breadcrumbs.length > 20 ||
+      breadcrumbs.some((item) => typeof item !== 'string' || item.length > 500) ||
+      breadcrumbs.reduce((bytes, item) => bytes + Buffer.byteLength(item, 'utf8'), 0) > 8_000
+    ) {
+      throw new BadRequestException('breadcrumbs payload is too large');
+    }
     const normalized = message.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '<id>').replace(/\d+/g, '#');
     const fingerprint = createHash('sha256').update(`${kind}|${normalized}|${input.appVersion ?? ''}`).digest('hex');
     return this.prisma.diagnosticIssue.upsert({
@@ -22,11 +31,11 @@ export class DiagnosticsService {
       create: {
         fingerprint, kind, message, appVersion: input.appVersion?.slice(0, 40),
         osVersion: input.osVersion?.slice(0, 80), deviceModel: input.deviceModel?.slice(0, 120),
-        userId: input.userId, breadcrumbs: JSON.stringify((input.breadcrumbs ?? []).slice(-20)),
+        userId: undefined, breadcrumbs: JSON.stringify(breadcrumbs),
       },
       update: {
         occurrences: { increment: 1 }, message,
-        breadcrumbs: JSON.stringify((input.breadcrumbs ?? []).slice(-20)), userId: input.userId,
+        breadcrumbs: JSON.stringify(breadcrumbs),
       },
       select: { id: true, fingerprint: true, occurrences: true },
     });

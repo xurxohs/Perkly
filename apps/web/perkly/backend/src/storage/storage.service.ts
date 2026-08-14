@@ -56,6 +56,18 @@ export class StorageService {
     });
   }
 
+  async deletePublicUrl(value: string | null | undefined): Promise<void> {
+    if (!value) return;
+    const base =
+      this.driver === 's3'
+        ? this.publicS3BaseUrl
+        : `${this.publicApiUrl()}/uploads`;
+    if (!base || !value.startsWith(`${base}/`)) return;
+    const key = value.slice(base.length + 1);
+    if (!key || key.includes('..')) return;
+    await this.delete(key);
+  }
+
   private publicApiUrl() {
     return (process.env.PUBLIC_API_URL || process.env.FRONTEND_URL || 'https://perkly.uz')
       .trim()

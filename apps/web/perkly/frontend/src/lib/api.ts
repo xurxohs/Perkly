@@ -581,17 +581,8 @@ export type TopkaPostInput = Partial<Omit<TopkaPost, 'id' | 'createdAt' | 'updat
 
 const API_BASE = typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
-function getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('perkly_token');
-}
-
 function getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {};
-    const token = getToken();
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
     const sessionId = getSessionId();
     if (sessionId) {
         headers['X-Session-Id'] = sessionId;
@@ -609,6 +600,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     const res = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -645,8 +637,14 @@ export const authApi = {
         request<{ token: string; url: string }>('/auth/telegram-init'),
     telegramPoll: (token: string) =>
         request<{ status: string; access_token?: string; user?: { message?: string } }>('/auth/telegram-poll?token=' + token),
+    telegramLinkInit: () =>
+        request<{ token: string; url: string }>('/auth/telegram-link/init', { method: 'POST' }),
+    telegramLinkPoll: (token: string) =>
+        request<{ status: string; user?: { message?: string } }>('/auth/telegram-link/poll?token=' + token),
     me: () =>
         request<User>('/auth/me'),
+    logout: () =>
+        request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
 };
 
 // ===== REVIEWS =====

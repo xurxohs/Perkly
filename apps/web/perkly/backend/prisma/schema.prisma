@@ -440,6 +440,8 @@ model Transaction {
   idempotencyKey        String?          @unique
   promocodeCodeSnapshot String?
   buyerComment          String?
+  rewardPointsAwarded   Int              @default(0)
+  rewardPointsSpent     Int              @default(0)
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   chatRooms             ChatRoom[]
@@ -502,6 +504,7 @@ model Review {
 
   @@index([offerId])
   @@index([authorId])
+  @@unique([authorId, offerId])
 }
 
 model Dispute {
@@ -623,10 +626,19 @@ model AnalyticsEvent {
   sessionId String?
   offerId   String?
   metadata  String?
+  dedupeKey String?  @unique
   createdAt DateTime @default(now())
 
   @@index([userId, eventType, createdAt])
   @@index([eventType, createdAt])
+}
+
+model ConsumedAuthAssertion {
+  digest    String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }
 
 model DiagnosticIssue {

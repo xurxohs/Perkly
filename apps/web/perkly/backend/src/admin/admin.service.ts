@@ -194,13 +194,16 @@ export class AdminService {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.user.findUnique({
         where: { id },
-        select: { balance: true, accountStatus: true },
+        select: { balance: true, accountStatus: true, role: true },
       });
       if (!current) throw new NotFoundException('User not found');
       const user = await tx.user.update({
         where: { id },
         data: {
           ...(data.role !== undefined ? { role: data.role as string } : {}),
+          ...(data.role !== undefined && data.role !== current.role
+            ? { tokensValidAfter: new Date() }
+            : {}),
           ...(data.tier !== undefined ? { tier: data.tier as string } : {}),
           ...(data.balance !== undefined
             ? { balance: data.balance as number }
@@ -221,6 +224,12 @@ export class AdminService {
       if (data.accountStatus === 'SUSPENDED') {
         await tx.userSession.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } });
         await tx.offer.updateMany({ where: { sellerId: id, isActive: true }, data: { isActive: false } });
+      }
+      if (data.role !== undefined && data.role !== current.role) {
+        await tx.userSession.updateMany({
+          where: { userId: id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
       }
       if (data.balance !== undefined && data.balance !== current.balance) {
         await tx.financialEntry.create({

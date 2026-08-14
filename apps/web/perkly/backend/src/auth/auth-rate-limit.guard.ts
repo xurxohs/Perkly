@@ -127,10 +127,7 @@ export class AuthRateLimitGuard implements CanActivate {
   }
 
   private clientIp(request: RateLimitedRequest) {
-    const forwardedFor = request.headers?.['x-forwarded-for'];
-    const raw =
-      Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor || request.ip;
-    return String(raw || 'unknown').split(',')[0].trim();
+    return String(request.ip || 'unknown').trim();
   }
 
   private bodyValue(request: RateLimitedRequest, key: string) {

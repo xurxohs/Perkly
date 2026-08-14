@@ -7,6 +7,7 @@ import { PromocodesService } from './promocodes.service';
 
 describe('PromocodesService', () => {
   let prisma: {
+    $transaction: jest.Mock;
     company: {
       findUnique: jest.Mock;
     };
@@ -38,6 +39,7 @@ describe('PromocodesService', () => {
 
   beforeEach(() => {
     prisma = {
+      $transaction: jest.fn((callback: (tx: unknown) => unknown) => callback(prisma)),
       company: {
         findUnique: jest.fn(),
       },
@@ -356,6 +358,10 @@ describe('PromocodesService', () => {
       },
       select: expect.any(Object),
     });
+    expect(prisma.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ isolationLevel: 'Serializable' }),
+    );
 
     prisma.promocodeActivation.findFirst.mockResolvedValueOnce({
       id: 'activation-1',

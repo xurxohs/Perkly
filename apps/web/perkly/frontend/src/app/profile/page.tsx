@@ -1,18 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Crown, ShoppingBag, Settings, LogOut, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Camera, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Crown, ShoppingBag, Settings, Edit2, Check, X, AlertTriangle, ClipboardList, Store, Key, Copy, EyeOff, CheckCircle, QrCode, MessageCircle, Ticket, Percent, Bookmark, Trash2, Camera, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { usersApi, offersApi, transactionsApi, paymentsApi, authApi, analyticsApi, Transaction, PromocodeActivation, SavedOffer, DailyBonusStatus } from '@/lib/api';
+import { usersApi, offersApi, transactionsApi, paymentsApi, analyticsApi, Transaction, PromocodeActivation, SavedOffer, DailyBonusStatus } from '@/lib/api';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import TopUpModal from '@/components/TopUpModal';
 import { PerklyGlyph } from '@/components/PerklyGlyph';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const TIER_COLORS: Record<string, { bgClass: string; textClass: string; borderClass: string; glowClass: string }> = {
     SILVER: { bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', borderClass: 'border-slate-400/30', glowClass: 'bg-[radial-gradient(circle,_rgba(148,163,184,0.2),_transparent_70%)]' },
@@ -66,7 +65,7 @@ const transactionStatusLabel = (status: string) => {
 
 
 export default function ProfilePage() {
-    const { user, isAuthenticated, loading, logout, refreshUser } = useAuth();
+    const { user, isAuthenticated, loading, refreshUser } = useAuth();
     const { hapticImpact, hapticNotification } = useTelegram();
     const router = useRouter();
 
@@ -76,7 +75,7 @@ export default function ProfilePage() {
     const [editName, setEditName] = useState('');
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [avatarError, setAvatarError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'saved' | 'promocodes' | 'settings'>('history');
+    const [activeTab, setActiveTab] = useState<'history' | 'subscriptions' | 'saved' | 'promocodes'>('history');
     const [subscriptions, setSubscriptions] = useState<Transaction[]>([]);
     const [savedOffers, setSavedOffers] = useState<SavedOffer[]>([]);
     const [savedOffersLoading, setSavedOffersLoading] = useState(false);
@@ -91,22 +90,12 @@ export default function ProfilePage() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [qrModalData, setQrModalData] = useState<{ title: string; data: string } | null>(null);
     const [topUpModalOpen, setTopUpModalOpen] = useState(false);
-    const [mobilePanel, setMobilePanel] = useState<'none' | 'seller' | 'settings'>('none');
+    const [mobilePanel, setMobilePanel] = useState<'none' | 'seller'>('none');
     const [mobilePurchaseLimit, setMobilePurchaseLimit] = useState(4);
-
-    // Telegram binding states
-    const [tgStep, setTgStep] = useState<'idle' | 'waiting' | 'done'>('idle');
-    const [tgUrl, setTgUrl] = useState('');
-    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Daily Bonus states
     const [dailyStatus, setDailyStatus] = useState<DailyBonusStatus | null>(null);
     const [claimingDaily, setClaimingDaily] = useState(false);
-
-    // Clean up polling on unmount
-    useEffect(() => {
-        return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, []);
 
     const handleStartChat = async (sellerId?: string) => {
         if (!sellerId) return;
@@ -343,45 +332,6 @@ export default function ProfilePage() {
         }
     };
 
-    const handleBindTelegram = async () => {
-        setTgStep('waiting');
-        try {
-            const { token, url } = await authApi.telegramInit();
-            setTgUrl(url);
-            window.open(url, '_blank');
-
-            pollRef.current = setInterval(async () => {
-                try {
-                    const pollData = await authApi.telegramPoll(token);
-                    if (pollData.status === 'ok' && pollData.access_token) {
-                        clearInterval(pollRef.current!);
-                        localStorage.setItem('perkly_token', pollData.access_token);
-                        setTgStep('done');
-                        await refreshUser();
-                        alert('✅ Telegram успешно привязан!');
-                    } else if (pollData.status === 'expired') {
-                        clearInterval(pollRef.current!);
-                        setTgStep('idle');
-                        alert('Время ожидания вышло. Попробуйте снова.');
-                    } else if (pollData.status === 'error') {
-                        clearInterval(pollRef.current!);
-                        setTgStep('idle');
-                        alert('Ошибка привязки: ' + (pollData.user?.message || 'Telegram уже привязан к другому аккаунту!'));
-                    }
-                } catch { /* keep polling */ }
-            }, 2000);
-        } catch {
-            setTgStep('idle');
-            alert('Не удалось подключиться. Проверьте соединение.');
-        }
-    };
-
-    const cancelTgBind = () => {
-        if (pollRef.current) clearInterval(pollRef.current);
-        setTgStep('idle');
-        setTgUrl('');
-    };
-
     if (loading || !user) {
         return (
             <div className="max-w-4xl mx-auto px-6 py-12">
@@ -543,11 +493,11 @@ export default function ProfilePage() {
                             <span><strong>Тариф и привилегии</strong><small>Возможности вашего аккаунта</small></span>
                             <span className="profile-mobile-chevron" aria-hidden="true">›</span>
                         </Link>
-                        <button type="button" onClick={() => setMobilePanel((value) => value === 'settings' ? 'none' : 'settings')}>
+                        <Link href="/settings">
                             <span className="profile-mobile-menu-icon"><Settings aria-hidden="true" /></span>
-                            <span><strong>Настройки</strong><small>Язык, безопасность и аккаунт</small></span>
+                            <span><strong>Настройки</strong><small>Язык, оформление, приватность и аккаунт</small></span>
                             <span className="profile-mobile-chevron" aria-hidden="true">›</span>
-                        </button>
+                        </Link>
                     </div>
 
                     {mobilePanel === 'seller' && (
@@ -567,19 +517,6 @@ export default function ProfilePage() {
                         </section>
                     )}
 
-                    {mobilePanel === 'settings' && (
-                        <section className="profile-mobile-subpanel">
-                            <div className="profile-mobile-content-head">
-                                <div><strong>Настройки</strong><span>Язык, защита и аккаунт</span></div>
-                                <button type="button" aria-label="Закрыть" onClick={() => setMobilePanel('none')}><X aria-hidden="true" /></button>
-                            </div>
-                            <div className="profile-mobile-language"><span>Язык</span><LanguageSwitcher /></div>
-                            <Link className="profile-mobile-setting-row" href="/safety"><span>Безопасность</span><span>›</span></Link>
-                            <Link className="profile-mobile-setting-row" href="/notifications"><span>Уведомления</span><span>›</span></Link>
-                            <Link className="profile-mobile-setting-row" href="/support"><span>Поддержка</span><span>›</span></Link>
-                            <button className="profile-mobile-logout" type="button" onClick={() => { logout(); router.push('/'); }}><LogOut aria-hidden="true" /> Выйти</button>
-                        </section>
-                    )}
                 </section>
 
                 <div className="hidden md:block">
@@ -876,12 +813,12 @@ export default function ProfilePage() {
                     >
                         <span className="flex items-center justify-center gap-1.5"><Ticket className="w-4 h-4" /> Промокоды</span>
                     </button>
-                    <button
-                        onClick={() => setActiveTab('settings')}
-                        className={`flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all ${activeTab === 'settings' ? 'text-white bg-purple-500/15' : 'text-white/40 bg-transparent'}`}
+                    <Link
+                        href="/settings"
+                        className="flex-1 py-3 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all text-white/40 bg-transparent no-underline"
                     >
                         <span className="flex items-center justify-center gap-1.5"><Settings className="w-4 h-4" /> Настройки</span>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="profile-desktop-tabs-content">
@@ -1279,82 +1216,6 @@ export default function ProfilePage() {
                     </div>
                 )}
 
-                {activeTab === 'settings' && (
-                    <div className="rounded-2xl p-6 bg-white/[0.02] border border-white/[0.06]">
-                        <div className="mb-6 flex items-center justify-between gap-4 rounded-xl bg-white/[0.03] px-4 py-3">
-                            <div>
-                                <p className="text-sm font-semibold text-white">Язык интерфейса</p>
-                                <p className="mt-0.5 text-xs text-white/40">Русский или O‘zbekcha</p>
-                            </div>
-                            <LanguageSwitcher />
-                        </div>
-                        <div className="mb-6">
-                            <label className="text-sm text-white/50 mb-2 block">Email</label>
-                            <div className="px-4 py-3 rounded-xl text-white/60 text-sm bg-white/[0.03]">
-                                {user.email}
-                            </div>
-                        </div>
-                        <div className="mb-6">
-                            <label className="text-sm text-white/50 mb-2 block">Тариф</label>
-                            <div className={`px-4 py-3 rounded-xl text-sm font-semibold ${tier.bgClass} ${tier.textClass}`}>
-                                {user.tier} — {user.tier === 'SILVER' ? 'Базовый доступ' : user.tier === 'GOLD' ? 'Расширенный доступ' : 'Полный доступ'}
-                            </div>
-                        </div>
-
-                        <div className="mb-10">
-                            <label className="text-sm text-white/50 mb-2 block">Связанные аккаунты</label>
-                            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                                            <Image
-                                                src="/brands/telegram.svg"
-                                                alt=""
-                                                width={40}
-                                                height={40}
-                                                className="h-10 w-10"
-                                                aria-hidden="true"
-                                            />
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-medium mb-0.5">Telegram Бот Perkly</p>
-                                            <p className="text-xs text-white/40">Для авто-выдачи и уведомлений</p>
-                                        </div>
-                                    </div>
-
-                                    {user.telegramId ? (
-                                        <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                                            Привязан
-                                        </span>
-                                    ) : tgStep === 'idle' ? (
-                                        <button
-                                            onClick={handleBindTelegram}
-                                            className="px-4 py-2 rounded-lg text-sm font-bold border-0 cursor-pointer text-white bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 transition-all"
-                                        >
-                                            Привязать
-                                        </button>
-                                    ) : tgStep === 'waiting' ? (
-                                        <div className="text-center">
-                                            <a href={tgUrl} target="_blank" rel="noreferrer" className="text-blue-400 no-underline text-sm block mb-1">Открыть бота</a>
-                                            <button onClick={cancelTgBind} className="text-xs text-white/30 border-0 bg-transparent cursor-pointer">Отменить</button>
-                                        </div>
-                                    ) : (
-                                        <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                                            Готово
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => { logout(); router.push('/'); }}
-                            className="flex items-center gap-2 px-4 py-3 rounded-xl text-red-400 text-sm cursor-pointer bg-transparent transition hover:bg-red-400/5 border border-red-500/[0.15]"
-                        >
-                            <LogOut className="w-4 h-4" /> Выйти из аккаунта
-                        </button>
-                    </div>
-                )}
                 </div>
             </div>
 

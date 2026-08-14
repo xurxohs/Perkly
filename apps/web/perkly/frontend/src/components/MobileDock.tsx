@@ -52,6 +52,8 @@ function DockIcon({ item, isActive, onTap, light = false }: {
         <Link
             href={item.href}
             className="flex min-w-12 flex-col items-center gap-0 no-underline relative select-none"
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={t(item.label)}
             style={{
                 WebkitTapHighlightColor: 'transparent',
             }}
@@ -79,6 +81,7 @@ function DockIcon({ item, isActive, onTap, light = false }: {
             </div>
 
             <span
+                aria-hidden="true"
                 className="-mt-px text-[10px] font-medium leading-[11px]"
                 style={{
                     color: isActive ? activeColor : inactiveColor,

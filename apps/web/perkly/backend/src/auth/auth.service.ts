@@ -1,22 +1,20 @@
 import {
   Injectable,
-  Inject,
-  forwardRef,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Cron } from '@nestjs/schedule';
-import { NotificationsService } from '../notifications/notifications.service';
 import * as jsonwebtoken from 'jsonwebtoken';
 import {
   TelegramLoginFlow,
   TelegramLoginSession,
   TelegramLoginStore,
 } from './telegram-login-store.service';
+import { SessionDevice, SessionService } from './session.service';
+import { TelegramIdentityService } from './telegram-identity.service';
 
 export interface JwtPayload {
   email: string;
@@ -24,12 +22,6 @@ export interface JwtPayload {
   role: string;
   tier: string;
   sid?: string;
-}
-
-export interface SessionDevice {
-  deviceId?: string;
-  deviceName?: string;
-  userAgent?: string;
 }
 
 export interface TelegramWidgetData {
@@ -81,10 +73,9 @@ export class AuthService {
 
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService,
-    @Inject(forwardRef(() => NotificationsService))
-    private notificationsService: NotificationsService,
     private telegramLoginStore: TelegramLoginStore,
+    private sessionService: SessionService,
+    private telegramIdentity: TelegramIdentityService,
   ) {}
 
   async validateUser(
@@ -104,19 +95,7 @@ export class AuthService {
   }
 
   async login(user: Omit<UserRecord, 'passwordHash'>, device: SessionDevice = {}) {
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const session = await this.createUserSession(user.id, device, expiresAt);
-    const payload: JwtPayload = {
-      email: user.email,
-      sub: user.id,
-      role: user.role,
-      tier: user.tier,
-      sid: session.id,
-    };
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: payload,
-    };
+    return this.sessionService.issue(user, device);
   }
 
   async register(data: Record<string, unknown>) {
@@ -130,6 +109,9 @@ export class AuthService {
 
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
+    }
+    if (email.endsWith('@telegram.local') || email.endsWith('@apple.local')) {
+      throw new BadRequestException('This email domain is reserved');
     }
 
     if (password.length < 6) {
@@ -180,10 +162,9 @@ export class AuthService {
         where: { email, deletedAt: null },
       });
       if (existing) {
-        user = await this.prisma.user.update({
-          where: { id: existing.id },
-          data: { appleSub: payload.sub },
-        });
+        throw new BadRequestException(
+          'An account with this email already exists. Sign in with its current method before linking Apple ID.',
+        );
       } else {
         user = await this.prisma.user.create({
           data: {
@@ -460,10 +441,18 @@ export class AuthService {
         });
         if (!existing) {
           const email = `tg_${telegramId}@telegram.local`;
-          user = await this.prisma.user.upsert({
+          const reservedCollision = await this.prisma.user.findUnique({
             where: { email },
-            update: { telegramId, phone },
-            create: { email, telegramId, phone, displayName },
+          });
+          if (reservedCollision) {
+            return this.failTelegramLogin(
+              token,
+              entry,
+              'Не удалось безопасно связать Telegram с существующим профилем.',
+            );
+          }
+          user = await this.prisma.user.create({
+            data: { email, telegramId, phone, displayName },
           });
         } else {
           user = await this.prisma.user.update({
@@ -485,13 +474,9 @@ export class AuthService {
 
       let jwt: string | undefined;
       if (entry.flow === 'login') {
-        const session = await this.createUserSession(
-          user.id,
-          entry.device ?? {},
-          new Date(Date.now() + 24 * 60 * 60 * 1000),
-        );
-        payload.sid = session.id;
-        jwt = this.jwtService.sign(payload);
+        const issued = await this.sessionService.issue(user, entry.device ?? {});
+        payload.sid = issued.user.sid;
+        jwt = issued.access_token;
       }
 
       await this.telegramLoginStore.complete(token, {
@@ -518,85 +503,6 @@ export class AuthService {
         'Не удалось завершить операцию. Попробуйте создать новый запрос.',
       );
     }
-  }
-
-  listSessions(userId: string, currentSessionId?: string) {
-    return this.prisma.userSession.findMany({
-      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
-      orderBy: { lastUsedAt: 'desc' },
-      select: {
-        id: true,
-        deviceName: true,
-        userAgent: true,
-        createdAt: true,
-        lastUsedAt: true,
-        expiresAt: true,
-      },
-    }).then((sessions) => sessions.map((session) => ({
-      ...session,
-      isCurrent: session.id === currentSessionId,
-    })));
-  }
-
-  private async createUserSession(
-    userId: string,
-    device: SessionDevice,
-    expiresAt: Date,
-  ) {
-    const previousSessions = await this.prisma.userSession.count({
-      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
-    });
-    const session = await this.prisma.userSession.create({
-      data: {
-        userId,
-        deviceId: device.deviceId?.slice(0, 120),
-        deviceName: device.deviceName?.slice(0, 120),
-        userAgent: device.userAgent?.slice(0, 300),
-        expiresAt,
-      },
-    });
-
-    if (previousSessions > 0) {
-      const deviceName = device.deviceName?.slice(0, 120) || 'Новое устройство';
-      void this.notificationsService.sendPushNotification(
-        userId,
-        'Новый вход в Perkly',
-        `В аккаунт выполнен вход: ${deviceName}. Если это были не вы, завершите сессию в настройках.`,
-        { notificationType: 'security' },
-        'security',
-      );
-    }
-    return session;
-  }
-
-  async revokeSession(userId: string, sessionId: string) {
-    await this.prisma.userSession.updateMany({
-      where: { id: sessionId, userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-    return { success: true };
-  }
-
-  async revokeCurrentSession(userId: string, sessionId?: string) {
-    if (sessionId) {
-      await this.prisma.userSession.updateMany({
-        where: { id: sessionId, userId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-    }
-    return { success: true };
-  }
-
-  async revokeOtherSessions(userId: string, currentSessionId?: string) {
-    await this.prisma.userSession.updateMany({
-      where: {
-        userId,
-        revokedAt: null,
-        ...(currentSessionId ? { id: { not: currentSessionId } } : {}),
-      },
-      data: { revokedAt: new Date() },
-    });
-    return { success: true };
   }
 
   async pollLoginToken(token: string, expectedUserId?: string) {
@@ -635,111 +541,18 @@ export class AuthService {
   // ======= LEGACY TELEGRAM WIDGET =======
 
   validateTelegramHash(data: TelegramWidgetData): boolean {
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    if (!BOT_TOKEN) {
-      console.warn('TELEGRAM_BOT_TOKEN is not defined in env variables');
-      return false;
-    }
-    const { hash, ...userData } = data;
-    if (!this.isFreshTelegramAuthDate(userData.auth_date)) return false;
-    const secretKey = crypto.createHash('sha256').update(BOT_TOKEN).digest();
-    const dataCheckString = Object.keys(userData)
-      .sort()
-      .map((key) => `${key}=${String(userData[key])}`)
-      .join('\n');
-    const hmac = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
-    return this.safeHashEquals(hmac, hash);
+    return this.telegramIdentity.validateWidget(data);
   }
 
   validateTelegramMiniAppHash(initData: string): TelegramWidgetData | null {
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    if (!BOT_TOKEN) {
-      console.warn('TELEGRAM_BOT_TOKEN is not defined in env variables');
-      return null;
-    }
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    if (!hash) return null;
-    if (!this.isFreshTelegramAuthDate(urlParams.get('auth_date') ?? undefined)) {
-      return null;
-    }
-    urlParams.delete('hash');
-    urlParams.sort();
-    let dataCheckString = '';
-    for (const [key, value] of urlParams.entries()) {
-      dataCheckString += `${key}=${value}\n`;
-    }
-    dataCheckString = dataCheckString.slice(0, -1);
-    const secretKey = crypto
-      .createHmac('sha256', 'WebAppData')
-      .update(BOT_TOKEN)
-      .digest();
-    const hmac = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
-    if (this.safeHashEquals(hmac, hash)) {
-      const userStr = urlParams.get('user');
-      if (userStr) {
-        try {
-          return JSON.parse(userStr) as TelegramWidgetData;
-        } catch {
-          return null;
-        }
-      }
-    }
-    return null;
+    return this.telegramIdentity.validateMiniApp(initData);
   }
 
   async validateOrCreateTelegramUser(telegramData: TelegramWidgetData) {
-    const telegramIdStr = String(telegramData.id);
-    const email = telegramData.username
-      ? `${telegramData.username}@telegram.local`
-      : `${telegramIdStr}@telegram.local`;
-    let user = await this.prisma.user.findUnique({
-      where: { telegramId: telegramIdStr },
-    });
-    if (!user) {
-      user = await this.prisma.user.findUnique({ where: { email } });
-    }
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          email,
-          telegramId: telegramIdStr,
-          displayName:
-            telegramData.first_name ?? telegramData.username ?? 'Telegram User',
-          avatarUrl: telegramData.photo_url ?? null,
-        },
-      });
-    } else if (!user.telegramId) {
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { telegramId: telegramIdStr },
-      });
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash: _pw, ...result } = user;
-    return result;
+    return this.telegramIdentity.resolveUser(telegramData);
   }
 
-  private isFreshTelegramAuthDate(value: string | number | undefined): boolean {
-    const authDate = Number(value);
-    if (!Number.isFinite(authDate) || authDate <= 0) return false;
-    const ageSeconds = Math.floor(Date.now() / 1_000) - authDate;
-    return ageSeconds >= -300 && ageSeconds <= 24 * 60 * 60;
-  }
-
-  private safeHashEquals(actual: string, expected: string): boolean {
-    if (!/^[a-f0-9]{64}$/i.test(expected)) return false;
-    const actualBuffer = Buffer.from(actual, 'hex');
-    const expectedBuffer = Buffer.from(expected, 'hex');
-    return (
-      actualBuffer.length === expectedBuffer.length &&
-      crypto.timingSafeEqual(actualBuffer, expectedBuffer)
-    );
+  async consumeTelegramAssertion(digest: string): Promise<boolean> {
+    return this.telegramIdentity.consume(digest);
   }
 }

@@ -16,7 +16,10 @@ async function bootstrap() {
   // AppModule ниже подключает все бизнес-модули; здесь остаётся только инфраструктура HTTP-сервера.
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ bodyLimit: 25 * 1024 * 1024 }),
+    new FastifyAdapter({
+      bodyLimit: 10 * 1024 * 1024,
+      trustProxy: ['127.0.0.1', '::1'],
+    }),
   );
   const corsOrigins = (
     process.env.CORS_ORIGINS ||

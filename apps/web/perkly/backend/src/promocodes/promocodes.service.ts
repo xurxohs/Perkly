@@ -360,67 +360,79 @@ export class PromocodesService {
     userId: string,
     promocodeId: string,
   ): Promise<PromocodeActivation> {
-    const promocode = await this.prisma.promocode.findUnique({
-      where: { id: promocodeId },
-      include: {
-        offer: {
-          select: { id: true, isActive: true, moderationStatus: true },
-        },
-      },
-    });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await this.prisma.$transaction(
+          async (tx) => {
+            const promocode = await tx.promocode.findUnique({
+              where: { id: promocodeId },
+              include: {
+                offer: {
+                  select: { id: true, isActive: true, moderationStatus: true },
+                },
+              },
+            });
+            if (!promocode) throw new NotFoundException('Promocode not found');
+            this.ensurePromocodeUsable(promocode);
 
-    if (!promocode) throw new NotFoundException('Promocode not found');
-    this.ensurePromocodeUsable(promocode);
+            const [existing, userActivationCount, totalActivationCount] =
+              await Promise.all([
+                tx.promocodeActivation.findFirst({
+                  where: {
+                    userId,
+                    promocodeId,
+                    status: { in: ['ISSUED', 'COPIED'] },
+                  },
+                  orderBy: { createdAt: 'desc' },
+                  select: ACTIVATION_SELECT,
+                }),
+                tx.promocodeActivation.count({ where: { userId, promocodeId } }),
+                promocode.maxActivations
+                  ? tx.promocodeActivation.count({ where: { promocodeId } })
+                  : Promise.resolve(0),
+              ]);
 
-    const [existing, userActivationCount, totalActivationCount] =
-      await Promise.all([
-        this.prisma.promocodeActivation.findFirst({
-          where: {
-            userId,
-            promocodeId,
-            status: { in: ['ISSUED', 'COPIED'] },
+            if (existing) return existing as PromocodeActivation;
+            if (userActivationCount >= promocode.perUserLimit) {
+              throw new BadRequestException('Promocode user limit reached');
+            }
+            if (
+              promocode.maxActivations &&
+              totalActivationCount >= promocode.maxActivations
+            ) {
+              throw new BadRequestException('Promocode activation limit reached');
+            }
+
+            return tx.promocodeActivation.create({
+              data: {
+                user: { connect: { id: userId } },
+                promocode: { connect: { id: promocode.id } },
+                ...(promocode.offerId
+                  ? { offer: { connect: { id: promocode.offerId } } }
+                  : {}),
+                status: 'ISSUED',
+                codeSnapshot: this.createCodeSnapshot(promocode),
+                expiresAt: promocode.validTo,
+              },
+              select: ACTIVATION_SELECT,
+            }) as Promise<PromocodeActivation>;
           },
-          orderBy: { createdAt: 'desc' },
-          select: ACTIVATION_SELECT,
-        }),
-        this.prisma.promocodeActivation.count({
-          where: { userId, promocodeId },
-        }),
-        promocode.maxActivations
-          ? this.prisma.promocodeActivation.count({
-              where: { promocodeId },
-            })
-          : Promise.resolve(0),
-      ]);
-
-    if (existing) {
-      return existing as PromocodeActivation;
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+      } catch (error) {
+        if (
+          attempt < 2 &&
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'P2034'
+        ) {
+          continue;
+        }
+        throw error;
+      }
     }
-
-    if (userActivationCount >= promocode.perUserLimit) {
-      throw new BadRequestException('Promocode user limit reached');
-    }
-
-    if (
-      promocode.maxActivations &&
-      totalActivationCount >= promocode.maxActivations
-    ) {
-      throw new BadRequestException('Promocode activation limit reached');
-    }
-
-    return this.prisma.promocodeActivation.create({
-      data: {
-        user: { connect: { id: userId } },
-        promocode: { connect: { id: promocode.id } },
-        ...(promocode.offerId
-          ? { offer: { connect: { id: promocode.offerId } } }
-          : {}),
-        status: 'ISSUED',
-        codeSnapshot: this.createCodeSnapshot(promocode),
-        expiresAt: promocode.validTo,
-      },
-      select: ACTIVATION_SELECT,
-    }) as Promise<PromocodeActivation>;
+    throw new BadRequestException('Promocode activation could not be reserved');
   }
 
   async copyActivation(

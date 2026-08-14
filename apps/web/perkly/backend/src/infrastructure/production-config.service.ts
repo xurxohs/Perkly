@@ -27,6 +27,15 @@ export class ProductionConfigService implements OnModuleInit {
     if (env.JWT_SECRET && env.JWT_SECRET.length < 32) {
       errors.push('JWT_SECRET must contain at least 32 characters');
     }
+    const normalizedJwtSecret = env.JWT_SECRET?.trim().toLowerCase();
+    if (
+      normalizedJwtSecret &&
+      /^(replace[-_ ]?me|change[-_ ]?me|example|default|secret|your[-_ ]?jwt[-_ ]?secret)([-_ ].*)?$/.test(
+        normalizedJwtSecret,
+      )
+    ) {
+      errors.push('JWT_SECRET must not use an example or placeholder value');
+    }
     if (env.DATABASE_URL && !env.DATABASE_URL.startsWith('postgresql://')) {
       errors.push('DATABASE_URL must use PostgreSQL');
     }

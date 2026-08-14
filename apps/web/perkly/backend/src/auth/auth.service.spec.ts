@@ -5,6 +5,8 @@ import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TelegramLoginStore } from './telegram-login-store.service';
 import * as crypto from 'crypto';
+import { SessionService } from './session.service';
+import { TelegramIdentityService } from './telegram-identity.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -15,8 +17,13 @@ describe('AuthService', () => {
       upsert: jest.Mock;
       create: jest.Mock;
     };
+    consumedAuthAssertion: {
+      create: jest.Mock;
+      deleteMany: jest.Mock;
+    };
   };
   let jwt: { sign: jest.Mock };
+  let telegramIdentity: TelegramIdentityService;
   let telegramStore: {
     get: jest.Mock;
     complete: jest.Mock;
@@ -33,8 +40,13 @@ describe('AuthService', () => {
         upsert: jest.fn(),
         create: jest.fn(),
       },
+      consumedAuthAssertion: {
+        create: jest.fn(),
+        deleteMany: jest.fn(),
+      },
     };
     jwt = { sign: jest.fn() };
+    telegramIdentity = new TelegramIdentityService(prisma as never);
     telegramStore = {
       get: jest.fn(),
       complete: jest.fn(),
@@ -49,6 +61,19 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwt },
         { provide: NotificationsService, useValue: { sendPushNotification: jest.fn() } },
         { provide: TelegramLoginStore, useValue: telegramStore },
+        {
+          provide: SessionService,
+          useValue: {
+            issue: jest.fn().mockResolvedValue({
+              access_token: 'token',
+              user: { sid: 'session-1' },
+            }),
+          },
+        },
+        {
+          provide: TelegramIdentityService,
+          useValue: telegramIdentity,
+        },
       ],
     }).compile();
 
@@ -57,6 +82,24 @@ describe('AuthService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('consumes a Telegram assertion only once', async () => {
+    const digest = 'a'.repeat(64);
+    prisma.consumedAuthAssertion.create
+      .mockResolvedValueOnce({ digest: `telegram:${digest}` })
+      .mockRejectedValueOnce({ code: 'P2002' });
+
+    await expect(service.consumeTelegramAssertion(digest)).resolves.toBe(true);
+    await expect(service.consumeTelegramAssertion(digest)).resolves.toBe(false);
+  });
+
+  it('rejects stale Telegram authentication data', () => {
+    const sixMinutesAgo = Math.floor(Date.now() / 1_000) - 6 * 60;
+    const freshness = telegramIdentity as unknown as {
+      isFresh(value: number): boolean;
+    };
+    expect(freshness.isFresh(sixMinutesAgo)).toBe(false);
   });
 
   it('links Telegram without replacing the existing profile name', async () => {

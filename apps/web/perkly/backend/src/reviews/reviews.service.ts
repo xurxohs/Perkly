@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Review } from '@prisma/client';
+import { Prisma, Review } from '@prisma/client';
 import { assertAcceptableUserContent } from '../common/content-moderation';
 
 export interface CreateReviewInput {
@@ -61,14 +61,24 @@ export class ReviewsService {
       throw new BadRequestException('Вы уже оставили отзыв к этому товару');
     }
 
-    return this.prisma.review.create({
-      data: {
-        offer: { connect: { id: offerId } },
-        author: { connect: { id: authorId } },
-        rating,
-        comment,
-      },
-    });
+    try {
+      return await this.prisma.review.create({
+        data: {
+          offer: { connect: { id: offerId } },
+          author: { connect: { id: authorId } },
+          rating,
+          comment,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException('Вы уже оставили отзыв к этому товару');
+      }
+      throw error;
+    }
   }
 
   async findByOfferId(offerId: string): Promise<Review[]> {

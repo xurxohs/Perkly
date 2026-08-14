@@ -228,7 +228,7 @@ export class ChatService {
           { participants: { some: { id: userId2 } } },
         ],
       },
-      include: { participants: true },
+      include: { participants: { select: CHAT_PARTICIPANT_SELECT } },
     });
 
     const existingRoom = rooms.find((r) => r.participants.length === 2);
@@ -245,7 +245,7 @@ export class ChatService {
           connect: [{ id: userId1 }, { id: userId2 }],
         },
       },
-      include: { participants: true },
+      include: { participants: { select: CHAT_PARTICIPANT_SELECT } },
     });
 
     this.emitEvent({
@@ -279,7 +279,7 @@ export class ChatService {
           connect: [{ id: buyerId }, { id: sellerId }], // Admis can access by role
         },
       },
-      include: { participants: true },
+      include: { participants: { select: CHAT_PARTICIPANT_SELECT } },
     });
 
     this.emitEvent({

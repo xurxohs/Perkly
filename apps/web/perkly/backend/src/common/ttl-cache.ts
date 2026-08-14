@@ -6,6 +6,8 @@
 export class TtlCache {
   private store = new Map<string, { data: unknown; expiresAt: number }>();
 
+  constructor(private readonly maxEntries = 500) {}
+
   get<T>(key: string): T | undefined {
     const entry = this.store.get(key);
     if (!entry) return undefined;
@@ -17,6 +19,12 @@ export class TtlCache {
   }
 
   set<T>(key: string, data: T, ttlMs: number): void {
+    this.pruneExpired();
+    if (!this.store.has(key) && this.store.size >= this.maxEntries) {
+      const oldestKey = this.store.keys().next().value as string | undefined;
+      if (oldestKey) this.store.delete(oldestKey);
+    }
+    this.store.delete(key);
     this.store.set(key, { data, expiresAt: Date.now() + ttlMs });
   }
 
@@ -47,5 +55,12 @@ export class TtlCache {
 
   clear(): void {
     this.store.clear();
+  }
+
+  private pruneExpired() {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      if (entry.expiresAt <= now) this.store.delete(key);
+    }
   }
 }

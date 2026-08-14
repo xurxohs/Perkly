@@ -42,6 +42,14 @@ export class AnalyticsController {
     if (!/^[A-Za-z0-9:_-]{1,80}$/.test(body.eventType ?? '')) {
       throw new BadRequestException('Invalid analytics event type');
     }
+    if (
+      body.eventType === 'offer_purchase_success' ||
+      body.eventType === 'WHEEL_REWARD_CLAIMED' ||
+      body.eventType === 'DAILY_BONUS_CLAIMED' ||
+      body.eventType.startsWith('DAILY_MISSION_CLAIMED:')
+    ) {
+      throw new ForbiddenException('This event type is server-reserved');
+    }
     if (body.offerId && body.offerId.length > 120) {
       throw new BadRequestException('Invalid offer id');
     }

@@ -8,10 +8,8 @@ set -euo pipefail
 
 SERVER_IP="95.130.227.217"
 SERVER_USER="root"
-SERVER_PASS="${SERVER_PASS:-}"
 SERVER_PORT="22"
 PROJECT_DIR="/var/www/perkly"  # Путь к проекту на сервере
-DATABASE_URL_OVERRIDE="${DATABASE_URL:-}"
 BASELINE_MIGRATION="20260630152000_production_baseline"
 
 # Colors
@@ -25,29 +23,19 @@ echo -e "${PURPLE}🚀 Perkly Deploy — подключаюсь к сервер�
 
 SSH_CMD=(ssh -o StrictHostKeyChecking=accept-new -p "${SERVER_PORT}" "${SERVER_USER}@${SERVER_IP}")
 
-if [ -n "$SERVER_PASS" ]; then
-    # Проверяем наличие sshpass только для password-mode
-    if ! command -v sshpass &> /dev/null; then
-        echo -e "${RED}❌ sshpass не установлен. Устанавливаю...${NC}"
-        brew install hudochenkov/sshpass/sshpass 2>/dev/null || {
-            echo -e "${RED}Не удалось установить sshpass автоматически.${NC}"
-            echo -e "Установите вручную: ${BLUE}brew install hudochenkov/sshpass/sshpass${NC}"
-            echo -e "Или используйте SSH-ключи: ${BLUE}ssh-copy-id root@${SERVER_IP}${NC}"
-            exit 1
-        }
-    fi
-    SSH_CMD=(sshpass -p "${SERVER_PASS}" "${SSH_CMD[@]}")
-else
-    echo -e "${BLUE}SERVER_PASS не задан, пробую подключение через SSH-ключ.${NC}"
+if [ -n "${SERVER_PASS:-}" ] || [ -n "${DATABASE_URL:-}" ]; then
+    echo -e "${RED}❌ Не передавайте секреты через переменные командной строки deploy.sh.${NC}"
+    echo -e "${BLUE}Используйте SSH-ключ и храните DATABASE_URL только в ${PROJECT_DIR}/backend/.env на сервере.${NC}"
+    exit 1
 fi
+echo -e "${BLUE}Подключаюсь через SSH-ключ.${NC}"
 
 echo -e "${GREEN}📡 Подключаюсь и деплою...${NC}"
 
 REMOTE_PROJECT_DIR="$(printf "%q" "$PROJECT_DIR")"
-REMOTE_DATABASE_URL_OVERRIDE="$(printf "%q" "$DATABASE_URL_OVERRIDE")"
 
 "${SSH_CMD[@]}" \
-    "PROJECT_DIR=${REMOTE_PROJECT_DIR} DATABASE_URL_OVERRIDE=${REMOTE_DATABASE_URL_OVERRIDE} BASELINE_MIGRATION=${BASELINE_MIGRATION} bash -s" << 'REMOTE_COMMANDS'
+    "PROJECT_DIR=${REMOTE_PROJECT_DIR} BASELINE_MIGRATION=${BASELINE_MIGRATION} bash -s" << 'REMOTE_COMMANDS'
 
 set -euo pipefail
 export NODE_ENV=production
@@ -166,15 +154,10 @@ cd backend
 # NODE_ENV is already production, so request them explicitly for the build.
 npm ci --include=dev
 
-if [ -n "${DATABASE_URL_OVERRIDE:-}" ]; then
-    export DATABASE_URL="$DATABASE_URL_OVERRIDE"
-    echo "🗄 Использую DATABASE_URL, переданный в deploy.sh"
-fi
-
 load_backend_env ".env"
 
 if [ -z "${DATABASE_URL:-}" ]; then
-    echo "❌ DATABASE_URL не найден. Добавьте его в /var/www/perkly/backend/.env или передайте при запуске deploy.sh."
+    echo "❌ DATABASE_URL не найден. Добавьте его в /var/www/perkly/backend/.env."
     exit 1
 fi
 
@@ -206,7 +189,7 @@ rm -rf .next/lock
 # TypeScript and the lint/build toolchain are required during deployment.
 npm ci --include=dev
 npm run build
-pm2 restart frontend --update-env || pm2 start npm --name frontend -- start
+pm2 restart frontend --update-env || pm2 start npm --name frontend -- start -- -H 127.0.0.1
 curl --fail --silent --show-error --retry 10 --retry-delay 3 \
     --retry-connrefused \
     "http://127.0.0.1:3000/admin/login" >/dev/null

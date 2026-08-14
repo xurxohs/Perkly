@@ -9,11 +9,14 @@ import {
   UseGuards,
   Delete,
   Param,
+  Res,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { IssuedSession, SessionService } from './session.service';
+import { TelegramIdentityService } from './telegram-identity.service';
 
 interface TgWidgetBody {
   id: string | number;
@@ -28,15 +31,24 @@ interface TgWidgetBody {
 @Controller('auth')
 @UseGuards(AuthRateLimitGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly sessionService: SessionService,
+    private readonly telegramIdentity: TelegramIdentityService,
+  ) {}
 
   @Post('login')
-  async login(@Body() body: Record<string, string>, @Req() req: FastifyRequest) {
+  async login(
+    @Body() body: Record<string, string>,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.authService.login(user, this.sessionDevice(req));
+    const result = await this.authService.login(user, this.sessionService.device(req));
+    return this.sessionService.present(req, reply, result);
   }
 
   @Post('register')
@@ -68,7 +80,7 @@ export class AuthController {
   }
 
   @Post('apple')
-  appleAuth(
+  async appleAuth(
     @Body()
     body: {
       identityToken?: string;
@@ -76,13 +88,15 @@ export class AuthController {
       displayName?: string;
     },
     @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    return this.authService.loginWithApple(
+    const result = await this.authService.loginWithApple(
       body.identityToken ?? '',
       body.nonce ?? '',
       body.displayName,
-      this.sessionDevice(req),
+      this.sessionService.device(req),
     );
+    return this.sessionService.present(req, reply, result);
   }
 
   // ======= TELEGRAM PHONE LOGIN =======
@@ -92,14 +106,25 @@ export class AuthController {
     return this.authService.createLoginToken(
       'login',
       undefined,
-      this.sessionDevice(req),
+      this.sessionService.device(req),
     );
   }
 
   @Get('telegram-poll')
-  telegramPoll(@Query('token') token: string) {
+  async telegramPoll(
+    @Query('token') token: string,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     if (!token) throw new UnauthorizedException('Missing token');
-    return this.authService.pollLoginToken(token);
+    const result = await this.authService.pollLoginToken(token);
+    if ('access_token' in result && typeof result.access_token === 'string') {
+      if (this.sessionService.isBrowser(req)) {
+        const presented = this.sessionService.present(req, reply, result as IssuedSession);
+        return { status: 'ok', ...presented };
+      }
+    }
+    return result;
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -110,7 +135,7 @@ export class AuthController {
     return this.authService.createLoginToken(
       'link',
       req.user.userId,
-      this.sessionDevice(req),
+      this.sessionService.device(req),
     );
   }
 
@@ -127,44 +152,75 @@ export class AuthController {
   // ======= LEGACY TELEGRAM WIDGET =======
 
   @Post('telegram')
-  async telegramAuth(@Body() telegramData: TgWidgetBody, @Req() req: FastifyRequest) {
-    const isValid = this.authService.validateTelegramHash(telegramData);
-    if (!isValid) {
+  async telegramAuth(
+    @Body() telegramData: TgWidgetBody,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    const isValid = this.telegramIdentity.validateWidget(telegramData);
+    const isFreshUse =
+      isValid &&
+      (await this.telegramIdentity.consume(telegramData.hash));
+    if (!isFreshUse) {
       throw new UnauthorizedException(
         'Invalid Telegram authentication payload',
       );
     }
     const user =
-      await this.authService.validateOrCreateTelegramUser(telegramData);
-    return this.authService.login(user, this.sessionDevice(req));
+      await this.telegramIdentity.resolveUser(telegramData);
+    const result = await this.authService.login(user, this.sessionService.device(req));
+    return this.sessionService.present(req, reply, result);
   }
 
   @Post('telegram-miniapp')
-  async telegramMiniAppAuth(@Body() body: { initData: string }, @Req() req: FastifyRequest) {
+  async telegramMiniAppAuth(
+    @Body() body: { initData: string },
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     if (!body.initData) {
       throw new UnauthorizedException('Missing initData');
     }
-    const telegramData = this.authService.validateTelegramMiniAppHash(
+    const telegramData = this.telegramIdentity.validateMiniApp(
       body.initData,
     );
-    if (!telegramData) {
+    const assertionHash = new URLSearchParams(body.initData).get('hash') ?? '';
+    const isFreshUse =
+      telegramData &&
+      (await this.telegramIdentity.consume(assertionHash));
+    if (!isFreshUse) {
       throw new UnauthorizedException('Invalid Telegram WebApp signature');
     }
     const user =
-      await this.authService.validateOrCreateTelegramUser(telegramData);
-    return this.authService.login(user, this.sessionDevice(req));
+      await this.telegramIdentity.resolveUser(telegramData);
+    const result = await this.authService.login(user, this.sessionService.device(req));
+    return this.sessionService.present(req, reply, result);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('logout')
+  async logout(
+    @Req() req: FastifyRequest & { user: { userId: string; sessionId?: string } },
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    await this.sessionService.revokeCurrent(
+      req.user.userId,
+      req.user.sessionId,
+    );
+    this.sessionService.clearBrowserCookie(reply);
+    return { success: true };
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('sessions')
   sessions(@Req() req: FastifyRequest & { user: { userId: string; sessionId?: string } }) {
-    return this.authService.listSessions(req.user.userId, req.user.sessionId);
+    return this.sessionService.list(req.user.userId, req.user.sessionId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete('sessions/others')
   revokeOtherSessions(@Req() req: FastifyRequest & { user: { userId: string; sessionId?: string } }) {
-    return this.authService.revokeOtherSessions(req.user.userId, req.user.sessionId);
+    return this.sessionService.revokeOthers(req.user.userId, req.user.sessionId);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -172,7 +228,7 @@ export class AuthController {
   revokeCurrentSession(
     @Req() req: FastifyRequest & { user: { userId: string; sessionId?: string } },
   ) {
-    return this.authService.revokeCurrentSession(
+    return this.sessionService.revokeCurrent(
       req.user.userId,
       req.user.sessionId,
     );
@@ -184,7 +240,7 @@ export class AuthController {
     @Req() req: FastifyRequest & { user: { userId: string } },
     @Param('id') id: string,
   ) {
-    return this.authService.revokeSession(req.user.userId, id);
+    return this.sessionService.revoke(req.user.userId, id);
   }
 
   @Get('me')
@@ -192,15 +248,4 @@ export class AuthController {
     return { message: 'Use JWT token to get user info' };
   }
 
-  private sessionDevice(req: FastifyRequest) {
-    const header = (name: string) => {
-      const value = req.headers[name];
-      return Array.isArray(value) ? value[0] : value;
-    };
-    return {
-      deviceId: header('x-device-id'),
-      deviceName: header('x-device-name'),
-      userAgent: header('user-agent'),
-    };
-  }
 }

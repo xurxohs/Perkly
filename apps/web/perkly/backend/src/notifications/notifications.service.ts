@@ -176,6 +176,8 @@ export class NotificationsService {
   // Run every hour to check for expiring flash drops
   @Cron(CronExpression.EVERY_HOUR)
   async checkExpiringFlashDrops() {
+    if (!this.demoTelegramBroadcastsEnabled()) return;
+
     this.logger.log('Checking for expiring flash drops...');
 
     const now = new Date();
@@ -222,6 +224,8 @@ export class NotificationsService {
   // Run daily at 18:00 (6 PM) to remind about the Wheel of Fortune
   @Cron('0 18 * * *')
   async checkDailySpins() {
+    if (!this.demoTelegramBroadcastsEnabled()) return;
+
     this.logger.log('Sending daily wheel of fortune reminders...');
 
     // In a fully implemented app, we would track the last spin date for each user.
@@ -243,5 +247,9 @@ export class NotificationsService {
         );
       }
     }
+  }
+
+  private demoTelegramBroadcastsEnabled(): boolean {
+    return process.env.ENABLE_DEMO_TELEGRAM_BROADCASTS === 'true';
   }
 }

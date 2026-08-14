@@ -11,6 +11,7 @@ import { SavedOffer, SAVED_OFFER_SELECT } from '../offers/offer.selects';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomUUID } from 'crypto';
 import { StorageService } from '../storage/storage.service';
+import type { Subscription } from '@prisma/client';
 import {
   dailyWheelLimitForTier,
   subscriptionCost,
@@ -294,6 +295,11 @@ export class UsersService {
   }
 
   async uploadAvatar(userId: string, dataUrl: string) {
+    const current = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
+    if (!current) throw new NotFoundException('User not found');
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) throw new BadRequestException('Expected a base64 data URL');
 
@@ -337,11 +343,13 @@ export class UsersService {
 
     const key = `avatars/${userId}/${Date.now()}-${randomUUID()}.${extension}`;
     const avatarUrl = await this.storage.put(key, body, outputMime);
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { avatarUrl },
       select: USER_SELECT,
     });
+    await this.storage.deletePublicUrl(current.avatarUrl);
+    return updated;
   }
 
   private hasExpectedImageSignature(buffer: Buffer, mime: string) {
@@ -351,12 +359,19 @@ export class UsersService {
     return false;
   }
 
-  removeAvatar(userId: string) {
-    return this.prisma.user.update({
+  async removeAvatar(userId: string) {
+    const current = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
+    if (!current) throw new NotFoundException('User not found');
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { avatarUrl: null },
       select: USER_SELECT,
     });
+    await this.storage.deletePublicUrl(current.avatarUrl);
+    return updated;
   }
 
   async blockUser(blockerId: string, blockedId: string) {
@@ -667,53 +682,74 @@ export class UsersService {
     }
     const cost = subscriptionCost(pricePerMonth, months);
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.balance < cost) {
-      throw new BadRequestException(
-        `Insufficient balance. Need ${cost.toLocaleString('ru-RU')} UZS, have ${user.balance.toLocaleString('ru-RU')} UZS`,
-      );
-    }
-
     await this.entitlements.getEffectiveEntitlement(userId);
-
-    const now = new Date();
-    const currentSubscription = await this.prisma.subscription.findFirst({
-      where: {
-        userId,
-        isActive: true,
-        endDate: { gt: now },
-      },
-      orderBy: { endDate: 'desc' },
-    });
-    const baseEndDate =
-      currentSubscription?.tier === tier && currentSubscription.endDate > now
-        ? currentSubscription.endDate
-        : now;
-    const endDate = new Date(baseEndDate.getTime() + months * 30 * 86400_000);
-
-    // Deactivate any existing active subscriptions
-    await this.prisma.subscription.updateMany({
-      where: { userId, isActive: true },
-      data: { isActive: false },
-    });
-
-    const [subscription] = await Promise.all([
-      this.prisma.subscription.create({
-        data: { userId, tier, startDate: now, endDate, isActive: true },
-      }),
-      this.prisma.user.update({
-        where: { id: userId },
-        data: { balance: { decrement: cost }, tier },
-      }),
-    ]);
+    let result:
+      | { subscription: Subscription; endDate: Date; startsAt: Date }
+      | undefined;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        result = await this.prisma.$transaction(
+          async (tx) => {
+            const now = new Date();
+            const debit = await tx.user.updateMany({
+              where: { id: userId, balance: { gte: cost } },
+              data: { balance: { decrement: cost }, tier },
+            });
+            if (debit.count !== 1) {
+              throw new BadRequestException(
+                `Insufficient balance. Need ${cost.toLocaleString('ru-RU')} UZS`,
+              );
+            }
+            const currentSubscription = await tx.subscription.findFirst({
+              where: { userId, isActive: true, endDate: { gt: now } },
+              orderBy: { endDate: 'desc' },
+            });
+            const baseEndDate =
+              currentSubscription?.tier === tier && currentSubscription.endDate > now
+                ? currentSubscription.endDate
+                : now;
+            const endDate = new Date(
+              baseEndDate.getTime() + months * 30 * 86400_000,
+            );
+            await tx.subscription.updateMany({
+              where: { userId, isActive: true },
+              data: { isActive: false },
+            });
+            const subscription = await tx.subscription.create({
+              data: { userId, tier, startDate: now, endDate, isActive: true },
+            });
+            const balance = await tx.user.findUniqueOrThrow({
+              where: { id: userId },
+              select: { balance: true },
+            });
+            await tx.financialEntry.create({
+              data: {
+                userId,
+                type: 'SUBSCRIPTION_DEBIT',
+                amount: -cost,
+                balanceAfter: balance.balance,
+                idempotencyKey: `subscription-debit:${subscription.id}`,
+                metadata: JSON.stringify({ tier, months }),
+              },
+            });
+            return { subscription, endDate, startsAt: now };
+          },
+          { isolationLevel: 'Serializable' },
+        );
+        break;
+      } catch (error) {
+        if (attempt < 2 && this.prismaErrorCode(error) === 'P2034') continue;
+        throw error;
+      }
+    }
+    if (!result) throw new BadRequestException('Subscription could not be reserved');
 
     return {
-      subscription,
+      subscription: result.subscription,
       tier,
       status: 'ACTIVE',
-      startsAt: now,
-      endDate,
+      startsAt: result.startsAt,
+      endDate: result.endDate,
       cost,
       autoRenew: false,
       provider: 'MOCK',
@@ -744,37 +780,41 @@ export class UsersService {
   }
 
   async spinWheel(userId: string) {
-    const status = await this.getWheelStatus(userId);
-    if (!status.canSpin) {
+    const userRecord = await this.ensureUserExists(userId);
+    const dailyLimit = dailyWheelLimitForTier(userRecord.tier);
+    const { nextResetAt } = this.getWheelWindow();
+    const reward = this.pickWheelReward();
+    let claimedSlot = -1;
+    let user: Awaited<ReturnType<typeof this.findById>> | null = null;
+    for (let slot = 0; slot < dailyLimit; slot += 1) {
+      try {
+        user = await this.prisma.$transaction(async (tx) => {
+          await tx.analyticsEvent.create({
+            data: {
+              eventType: 'WHEEL_REWARD_CLAIMED',
+              userId,
+              dedupeKey: `wheel:${userId}:${this.dayKey(new Date())}:${slot}`,
+              metadata: JSON.stringify({ reward: reward.label, points: reward.points }),
+            },
+          });
+          return tx.user.update({
+            where: { id: userId },
+            data: { rewardPoints: { increment: reward.points } },
+            select: USER_SELECT,
+          });
+        });
+        claimedSlot = slot;
+        break;
+      } catch (error) {
+        if (this.prismaErrorCode(error) === 'P2002') continue;
+        throw error;
+      }
+    }
+    if (claimedSlot < 0 || !user) {
       throw new BadRequestException(
         'Лимит попыток на сегодня исчерпан. Возвращайтесь после ежедневного обновления.',
       );
     }
-
-    const reward = this.pickWheelReward();
-    const user =
-      reward.points > 0
-        ? await this.prisma.user.update({
-            where: { id: userId },
-            data: {
-              rewardPoints: {
-                increment: reward.points,
-              },
-            },
-            select: USER_SELECT,
-          })
-        : await this.findById(userId);
-
-    await this.prisma.analyticsEvent.create({
-      data: {
-        eventType: 'WHEEL_REWARD_CLAIMED',
-        userId,
-        metadata: JSON.stringify({
-          reward: reward.label,
-          points: reward.points,
-        }),
-      },
-    });
 
     return {
       success: true,
@@ -783,13 +823,10 @@ export class UsersService {
       points: reward.points,
       newRewardPoints: user.rewardPoints,
       newBalance: user.balance,
-      dailyLimit: status.dailyLimit,
-      spinsUsed: status.spinsUsed + 1,
-      spinsRemaining: Math.max(
-        0,
-        status.dailyLimit - (status.spinsUsed + 1),
-      ),
-      resetAt: status.resetAt,
+      dailyLimit,
+      spinsUsed: claimedSlot + 1,
+      spinsRemaining: Math.max(0, dailyLimit - (claimedSlot + 1)),
+      resetAt: nextResetAt.toISOString(),
     };
   }
 
@@ -810,26 +847,30 @@ export class UsersService {
       throw new BadRequestException('Daily bonus already claimed today');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          rewardPoints: {
-            increment: status.todayReward.points,
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.analyticsEvent.create({
+          data: {
+            eventType: DAILY_BONUS_EVENT,
+            userId,
+            dedupeKey: `daily-bonus:${userId}:${this.dayKey(new Date())}`,
+            metadata: JSON.stringify({
+              reward: status.todayReward,
+              streakAfterClaim: status.currentStreak + 1,
+            }),
           },
-        },
-      }),
-      this.prisma.analyticsEvent.create({
-        data: {
-          eventType: DAILY_BONUS_EVENT,
-          userId,
-          metadata: JSON.stringify({
-            reward: status.todayReward,
-            streakAfterClaim: status.currentStreak + 1,
-          }),
-        },
-      }),
-    ]);
+        });
+        await tx.user.update({
+          where: { id: userId },
+          data: { rewardPoints: { increment: status.todayReward.points } },
+        });
+      });
+    } catch (error) {
+      if (this.prismaErrorCode(error) === 'P2002') {
+        throw new BadRequestException('Daily bonus already claimed today');
+      }
+      throw error;
+    }
 
     const updatedStatus = await this.buildDailyBonusStatus(userId);
     return {
@@ -874,6 +915,7 @@ export class UsersService {
         data: {
           eventType: `${DAILY_MISSION_CLAIMED_PREFIX}${mission.id}`,
           userId,
+          dedupeKey: `daily-mission:${userId}:${this.dayKey(new Date())}:${mission.id}`,
           metadata: JSON.stringify({
             rewardPoints: mission.rewardPoints,
             title: mission.title,
@@ -881,6 +923,11 @@ export class UsersService {
         },
       });
       return updatedUser;
+    }).catch((error) => {
+      if (this.prismaErrorCode(error) === 'P2002') {
+        throw new BadRequestException('Daily mission already claimed today');
+      }
+      throw error;
     });
 
     return {
@@ -931,7 +978,6 @@ export class UsersService {
     const multiplier = this.streakMultiplierValue(dailyBonus.currentStreak);
     const offerViews = eventCounts.get('offer_view') ?? 0;
     const promoClicks = eventCounts.get('promo_banner_click') ?? 0;
-    const purchaseSuccess = eventCounts.get('offer_purchase_success') ?? 0;
 
     const missions = [
       {
@@ -993,11 +1039,11 @@ export class UsersService {
         subtitle: 'Покупка в escrow закрывает миссию дня',
         icon: 'checkmark.seal.fill',
         tint: 'gold',
-        progress: Math.max(todayPurchases, purchaseSuccess),
+        progress: todayPurchases,
         goal: 1,
         rewardPoints: this.missionReward(80, multiplier),
         destination: 'catalog',
-        priority: todayPurchases > 0 || purchaseSuccess > 0 ? 60 : 70,
+        priority: todayPurchases > 0 ? 60 : 70,
       },
     ];
 
@@ -1130,6 +1176,12 @@ export class UsersService {
 
   private dayKey(date: Date) {
     return date.toISOString().slice(0, 10);
+  }
+
+  private prismaErrorCode(error: unknown) {
+    return error && typeof error === 'object' && 'code' in error
+      ? String(error.code)
+      : undefined;
   }
 
   private normalizeB2CProfileInput(input: B2CProfileInput) {

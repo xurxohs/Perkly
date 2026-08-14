@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { MobileDock } from '@/components/MobileDock';
 import { Footer } from '@/components/Footer';
 import { SwipeBackGesture } from '@/components/SwipeBackGesture';
+import { MobileTopBar } from '@/components/MobileTopBar';
 
 // Pages where we hide the desktop navbar and footer (app-style fullscreen pages)
 const IMMERSIVE_PAGES = ['/feed', '/map', '/plans', '/search', '/notifications', '/chat'];
@@ -67,6 +68,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                     <Navbar theme={theme} onToggleTheme={toggleTheme} showThemeToggle />
                 </div>
             )}
+            {!isImmersive && <MobileTopBar />}
             <main className={`site-main flex-1 relative overflow-x-hidden ${isImmersive ? 'pb-24 md:pb-0' : 'pb-28 md:mt-16 md:pb-0'}`}>
                 {children}
             </main>

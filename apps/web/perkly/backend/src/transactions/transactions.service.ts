@@ -20,7 +20,7 @@ import { SquadsService } from '../squads/squads.service';
 import { TransactionStatus } from '../common/enums';
 import {
   PURCHASED_OFFER_SELECT,
-  USER_ADMIN_SELECT,
+  USER_PUBLIC_SELECT,
 } from '../offers/offer.selects';
 import { REWARD_POINT_VALUE_UZS, sellerPayout } from '../common/money';
 import { cashbackPointsForPurchase } from '../common/tier-benefits';
@@ -186,8 +186,8 @@ export class TransactionsService {
         const extraPoints = buyer.hasSquadReward
           ? Math.floor(baseRewardPoints * 0.15)
           : 0;
-        await tx.user.update({
-          where: { id: buyerId },
+        const pointsUpdate = await tx.user.updateMany({
+          where: { id: buyerId, rewardPoints: { gte: pointsToSpend } },
           data: {
             rewardPoints: {
               increment: baseRewardPoints + extraPoints - pointsToSpend,
@@ -195,6 +195,9 @@ export class TransactionsService {
             ...(buyer.hasSquadReward ? { hasSquadReward: false } : {}),
           },
         });
+        if (pointsUpdate.count !== 1) {
+          throw new BadRequestException('Not enough reward points');
+        }
 
         // Calculate expiresAt if the offer has a period
         const expiresAt =
@@ -222,6 +225,8 @@ export class TransactionsService {
             promocodeCodeSnapshot: promo?.code,
             idempotencyKey: normalizedIdempotencyKey,
             buyerComment: normalizedBuyerComment,
+            rewardPointsAwarded: baseRewardPoints + extraPoints,
+            rewardPointsSpent: pointsToSpend,
           },
           include: {
             offer: { select: PURCHASED_OFFER_SELECT },
@@ -564,7 +569,7 @@ export class TransactionsService {
       // Update tx
       const completed = await tx.transaction.findUniqueOrThrow({
         where: { id },
-        include: { offer: true, buyer: true },
+        include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
       });
       await tx.financialEntry.create({
         data: {
@@ -600,9 +605,13 @@ export class TransactionsService {
       { transactionId: id, offerId: transaction.offerId, route: 'purchase' },
     );
 
-    // Trigger squad goal check if buyer is in a squad
-    if (updatedTx.buyer.squadId) {
-      await this.squadsService.checkAndTriggerRewards(updatedTx.buyer.squadId);
+    // Keep private membership data out of the transaction response.
+    const buyerSquad = await this.prisma.user.findUnique({
+      where: { id: transaction.buyerId },
+      select: { squadId: true },
+    });
+    if (buyerSquad?.squadId) {
+      await this.squadsService.checkAndTriggerRewards(buyerSquad.squadId);
     }
 
     return updatedTx;
@@ -637,7 +646,7 @@ export class TransactionsService {
       where: { id },
       include: {
         offer: { select: PURCHASED_OFFER_SELECT },
-        buyer: { select: USER_ADMIN_SELECT },
+        buyer: { select: USER_PUBLIC_SELECT },
       },
     });
 
@@ -670,7 +679,7 @@ export class TransactionsService {
   ): Promise<Transaction> {
     const existing = await this.prisma.transaction.findUnique({
       where: { id },
-      include: { offer: true, buyer: true },
+      include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
     });
     if (!existing) throw new NotFoundException('Transaction not found');
 
@@ -697,9 +706,25 @@ export class TransactionsService {
       }
 
       const transaction = await this.prisma.$transaction(async (tx) => {
+        const transition = await tx.transaction.updateMany({
+          where: {
+            id,
+            status: existing.status,
+          },
+          data: { status: TransactionStatus.CANCELLED },
+        });
+        if (transition.count !== 1) {
+          throw new BadRequestException('Transaction cannot be cancelled');
+        }
         const buyer = await tx.user.update({
           where: { id: existing.buyerId },
-          data: { balance: { increment: existing.price } },
+          data: {
+            balance: { increment: existing.price },
+            rewardPoints: {
+              increment:
+                existing.rewardPointsSpent - existing.rewardPointsAwarded,
+            },
+          },
           select: { balance: true },
         });
         await tx.financialEntry.create({
@@ -743,10 +768,25 @@ export class TransactionsService {
           });
         }
 
-        return tx.transaction.update({
+        if (typeof existing.offer.stockQuantity === 'number') {
+          await tx.offer.update({
+            where: { id: existing.offerId },
+            data: { stockQuantity: { increment: 1 } },
+          });
+        }
+        if (existing.promocodeActivationId) {
+          await tx.promocodeActivation.updateMany({
+            where: {
+              id: existing.promocodeActivationId,
+              status: 'USED',
+            },
+            data: { status: 'ISSUED', usedAt: null },
+          });
+        }
+
+        return tx.transaction.findUniqueOrThrow({
           where: { id },
-          data: { status },
-          include: { offer: true, buyer: true },
+          include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
         });
       });
 
@@ -764,7 +804,7 @@ export class TransactionsService {
     return this.prisma.transaction.update({
       where: { id },
       data: { status },
-      include: { offer: true, buyer: true },
+      include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
     });
   }
 
@@ -784,13 +824,19 @@ export class TransactionsService {
         'Вы не можете активировать собственный подарок',
       );
 
-    const updated = await this.prisma.transaction.update({
-      where: { id: transaction.id },
+    const claimed = await this.prisma.transaction.updateMany({
+      where: { id: transaction.id, isGift: true, isRedeemed: false },
       data: {
         buyerId: userId,
         isRedeemed: true,
       },
-      include: { offer: true, buyer: true },
+    });
+    if (claimed.count !== 1) {
+      throw new BadRequestException('Этот подарок уже активирован');
+    }
+    const updated = await this.prisma.transaction.findUniqueOrThrow({
+      where: { id: transaction.id },
+      include: { offer: true, buyer: { select: USER_PUBLIC_SELECT } },
     });
 
     // Notify the redeemer

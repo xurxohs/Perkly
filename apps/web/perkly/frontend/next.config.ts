@@ -28,6 +28,7 @@ const privateOrNonContentRoutes = [
   '/admin/:path*',
   '/vendor/:path*',
   '/profile/:path*',
+  '/settings/:path*',
   '/chat/:path*',
   '/messages/:path*',
   '/notifications/:path*',

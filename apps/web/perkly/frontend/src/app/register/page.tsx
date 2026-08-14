@@ -1,43 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+// Регистрация: один вопрос на экран, без декоративных слоёв.
+// Шаги: способ входа → (email-форма) → о себе → готово.
+
+import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
-  ArrowRight,
   BadgeCheck,
-  CalendarDays,
   Car,
-  CheckCircle,
+  CheckCircle2,
+  ChevronLeft,
   Film,
   Gamepad2,
   GraduationCap,
   Loader2,
-  Lock,
   Mail,
+  ShieldCheck,
   ShoppingBag,
-  Sparkles,
+  Tag,
   Ticket,
+  TriangleAlert,
   Utensils,
-  User,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useTelegram } from "@/hooks/useTelegram";
+
 const API_BASE =
   typeof window !== "undefined"
     ? "/api"
     : process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3001";
 
-type Step = "intro" | "method" | "email" | "birth" | "interests" | "success";
-
-type Vibe = {
-  code: string;
-  title: string;
-  text: string;
-  signal: string;
-};
+type Step = "start" | "email" | "about" | "done";
+type Flow = "telegram" | "email" | null;
 
 const INTERESTS = [
   { id: "food", label: "Еда", icon: Utensils },
@@ -50,110 +47,30 @@ const INTERESTS = [
   { id: "learning", label: "Обучение", icon: GraduationCap },
 ];
 
-function getVibe(year: string): Vibe {
-  const parsed = Number(year);
+const MIN_BIRTH_YEAR = 1940;
+const MIN_AGE = 12;
+const MIN_PASSWORD_LENGTH = 8;
 
-  if (!year || Number.isNaN(parsed) || year.length < 4) {
-    return {
-      code: "Perkly Vibe",
-      title: "Perkly читает твой ритм",
-      text: "Введи год рождения, и мы соберем мягкую персонализацию без лишних вопросов.",
-      signal: "ожидаем год",
-    };
-  }
-
-  if (parsed <= 1989) {
-    return {
-      code: "Value Master",
-      title: "Поколение точной выгоды",
-      text: "Твой Perkly будет чаще поднимать проверенные предложения, понятную экономию и спокойные покупки.",
-      signal: "надежность",
-    };
-  }
-
-  if (parsed <= 1996) {
-    return {
-      code: "Smart Hunter",
-      title: "Ты выбираешь быстро, но не случайно",
-      text: "Perkly видит практичный вайб: меньше шума, больше офферов, которые сразу имеют смысл.",
-      signal: "умная охота",
-    };
-  }
-
-  if (parsed <= 2003) {
-    return {
-      code: "Drop Seeker",
-      title: "Поколение быстрых решений",
-      text: "Тебе ближе дропы, подписки, ивенты и бонусы, которые не надо долго искать.",
-      signal: "скорость",
-    };
-  }
-
-  return {
-    code: "Trend Rider",
-    title: "Твой Perkly-код любит новое",
-    text: "Новые места, Топка, свежие подборки и короткие маршруты к выгоде будут попадаться чаще.",
-    signal: "новизна",
-  };
-}
-
-function currentMaxBirthYear() {
-  return new Date().getFullYear() - 12;
+function maxBirthYear() {
+  return new Date().getFullYear() - MIN_AGE;
 }
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, refreshUser, user } = useAuth();
   const { initData, isTMA, hapticNotification } = useTelegram();
-  const [step, setStep] = useState<Step>("intro");
-  const [formData, setFormData] = useState({
-    displayName: "",
-    email: "",
-    passwordHash: "",
-  });
+
+  const [step, setStep] = useState<Step>("start");
+  const [flow, setFlow] = useState<Flow>(null);
+  const [form, setForm] = useState({ displayName: "", email: "", password: "" });
   const [birthYear, setBirthYear] = useState("");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [tgStep, setTgStep] = useState<"idle" | "waiting">("idle");
+  const [tgWaiting, setTgWaiting] = useState(false);
   const [tgUrl, setTgUrl] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Auto TMA login if inside Telegram WebApp
-  useEffect(() => {
-    if (initData && isTMA && !user) {
-      setLoading(true);
-      fetch(`${API_BASE}/auth/telegram-miniapp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.access_token) {
-            localStorage.setItem("perkly_token", data.access_token);
-            hapticNotification("success");
-            refreshUser().then(() => setStep("birth"));
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    }
-  }, [initData, isTMA, user, refreshUser, hapticNotification]);
-
-  const vibe = useMemo(() => getVibe(birthYear), [birthYear]);
-  const passName =
-    formData.displayName.trim() || user?.displayName || "Новый участник";
-  const passEmail =
-    formData.email.trim() ||
-    (user?.telegramId ? "Telegram подключен" : "perkly.id");
-
-  const birthYearNumber = Number(birthYear);
-  const isBirthYearValid =
-    /^\d{4}$/.test(birthYear) &&
-    birthYearNumber >= 1940 &&
-    birthYearNumber <= currentMaxBirthYear();
 
   useEffect(() => {
     return () => {
@@ -161,771 +78,553 @@ export default function RegisterPage() {
     };
   }, []);
 
+  // Внутри Telegram Mini App вход происходит без единого нажатия.
+  useEffect(() => {
+    if (!initData || !isTMA || user) return;
+    setLoading(true);
+    fetch(`${API_BASE}/auth/telegram-miniapp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ initData }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.user) return;
+        hapticNotification("success");
+        return refreshUser().then(() => {
+          setFlow("telegram");
+          setStep("about");
+        });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [initData, isTMA, user, refreshUser, hapticNotification]);
+
+  const steps: Step[] = flow === "telegram" ? ["start", "about"] : ["start", "email", "about"];
+  const stepIndex = steps.indexOf(step);
+
+  const birthYearNumber = Number(birthYear);
+  const isBirthYearValid =
+    /^\d{4}$/.test(birthYear) &&
+    birthYearNumber >= MIN_BIRTH_YEAR &&
+    birthYearNumber <= maxBirthYear();
+  const isPasswordValid = form.password.length >= MIN_PASSWORD_LENGTH;
+
   const goTo = (next: Step) => {
     setError("");
     setStep(next);
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      await register(
-        formData.email,
-        formData.passwordHash,
-        formData.displayName,
-      );
-      goTo("birth");
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Ошибка регистрации. Возможно, email уже занят.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelTelegramLogin = () => {
+  const stopTelegramPolling = () => {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = null;
-    setTgStep("idle");
-    setTgUrl("");
   };
 
-  const handleTelegramLogin = async () => {
+  const cancelTelegram = () => {
+    stopTelegramPolling();
+    setTgWaiting(false);
+    setTgUrl("");
+    setFlow(null);
+  };
+
+  const handleTelegram = async () => {
+    // Вкладку открываем до fetch, иначе Safari считает её всплывающим окном.
     const telegramWindow = window.open("about:blank", "_blank");
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/auth/telegram-init`);
+      const res = await fetch(`${API_BASE}/auth/telegram-init`, { credentials: "include" });
       if (!res.ok) throw new Error("Telegram init failed");
       const data = await res.json();
       if (!data.token || !data.url) throw new Error("Invalid Telegram login response");
+
       setTgUrl(data.url);
-      setTgStep("waiting");
+      setTgWaiting(true);
+      setFlow("telegram");
       if (telegramWindow) telegramWindow.location.href = data.url;
+
       pollRef.current = setInterval(async () => {
         try {
           const pollRes = await fetch(
             `${API_BASE}/auth/telegram-poll?token=${data.token}`,
+            { credentials: "include" },
           );
           const pollData = await pollRes.json();
-          if (pollData.status === "ok" && pollData.access_token) {
-            if (pollRef.current) clearInterval(pollRef.current);
-            pollRef.current = null;
-            localStorage.setItem("perkly_token", pollData.access_token);
+          if (pollData.status === "ok") {
+            stopTelegramPolling();
             await refreshUser();
             hapticNotification("success");
-            setTgStep("idle");
-            goTo("birth");
+            setTgWaiting(false);
+            goTo("about");
           } else if (pollData.status === "expired") {
-            cancelTelegramLogin();
-            setError("Время ожидания вышло. Попробуйте снова.");
+            cancelTelegram();
+            setError("Время ожидания вышло. Попробуйте ещё раз.");
           } else if (pollData.status === "error") {
-            cancelTelegramLogin();
-            setError(pollData.message || "Ошибка входа через Telegram. Попробуйте снова.");
+            cancelTelegram();
+            setError(pollData.message || "Не удалось войти через Telegram.");
           }
         } catch {
-          // keep polling
+          // Сеть могла моргнуть — продолжаем опрос.
         }
       }, 2000);
     } catch {
       telegramWindow?.close();
+      setFlow(null);
       setError("Не удалось подключиться. Проверьте соединение.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBirthNext = () => {
-    if (!isBirthYearValid) {
-      setError(`Введите год от 1940 до ${currentMaxBirthYear()}.`);
+  const handleEmailSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isPasswordValid) {
+      setError(`Пароль должен быть не короче ${MIN_PASSWORD_LENGTH} символов.`);
       return;
     }
-    goTo("interests");
+    setLoading(true);
+    setError("");
+    try {
+      await register(form.email.trim(), form.password, form.displayName.trim());
+      goTo("about");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Не удалось создать аккаунт. Возможно, этот email уже занят.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleInterest = (interestId: string) => {
-    setSelectedInterests((current) =>
-      current.includes(interestId)
-        ? current.filter((id) => id !== interestId)
-        : [...current, interestId],
+  const toggleInterest = (id: string) => {
+    setInterests((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     );
   };
 
-  const finishOnboarding = () => {
-    const payload = {
-      birthYear,
-      vibeCode: vibe.code,
-      interests: selectedInterests,
-      completedAt: new Date().toISOString(),
-    };
-    localStorage.setItem("perkly_onboarding_profile", JSON.stringify(payload));
-    goTo("success");
+  const finish = () => {
+    if (!isBirthYearValid) {
+      setError(`Укажите год от ${MIN_BIRTH_YEAR} до ${maxBirthYear()}.`);
+      return;
+    }
+    localStorage.setItem(
+      "perkly_onboarding_profile",
+      JSON.stringify({ birthYear, interests, completedAt: new Date().toISOString() }),
+    );
+    goTo("done");
   };
 
-  const selectedInterestLabels = INTERESTS.filter((interest) =>
-    selectedInterests.includes(interest.id),
-  ).map((interest) => interest.label);
-
-  return (
-    <div className="relative flex min-h-[80vh] w-full items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:py-12">
-      <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-purple-400/30 to-transparent" />
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(168,85,247,0.075)_0%,rgba(236,72,153,0.035)_32%,rgba(0,0,0,0)_70%)]" />
-
-      <section className="grid w-full max-w-5xl gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
-        <PerklyPass
-          passName={passName}
-          passEmail={passEmail}
-          vibe={vibe}
-          selectedInterestLabels={selectedInterestLabels}
-          step={step}
-        />
-
-        <div className="glass-card w-full p-5 sm:p-7 lg:p-8">
-          <div className="relative z-10">
-            <StepHeader step={step} />
-            <MobilePass
-              passName={passName}
-              passEmail={passEmail}
-              vibe={vibe}
-              selectedInterestLabels={selectedInterestLabels}
-            />
-
-            {step === "intro" && <IntroStep onNext={() => goTo("method")} />}
-
-            {step === "method" && (
-              <MethodStep
-                loading={loading}
-                tgStep={tgStep}
-                tgUrl={tgUrl}
-                error={error}
-                onTelegram={handleTelegramLogin}
-                onEmail={() => goTo("email")}
-                onCancelTelegram={cancelTelegramLogin}
-              />
-            )}
-
-            {step === "email" && (
-              <EmailStep
-                formData={formData}
-                loading={loading}
-                error={error}
-                onChange={setFormData}
-                onSubmit={handleEmailSubmit}
-                onBack={() => goTo("method")}
-              />
-            )}
-
-            {step === "birth" && (
-              <BirthStep
-                birthYear={birthYear}
-                vibe={vibe}
-                error={error}
-                isValid={isBirthYearValid}
-                onChange={(value) => {
-                  setError("");
-                  setBirthYear(value.replace(/\D/g, "").slice(0, 4));
-                }}
-                onNext={handleBirthNext}
-              />
-            )}
-
-            {step === "interests" && (
-              <InterestsStep
-                selectedInterests={selectedInterests}
-                onToggle={toggleInterest}
-                onSkip={finishOnboarding}
-                onFinish={finishOnboarding}
-              />
-            )}
-
-            {step === "success" && (
-              <SuccessStep
-                vibe={vibe}
-                selectedInterestCount={selectedInterests.length}
-                onGoHome={() => router.push("/")}
-              />
-            )}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function StepHeader({ step }: { step: Step }) {
-  const copy: Record<Step, { eyebrow: string; title: string; text: string }> = {
-    intro: {
-      eyebrow: "Perkly Pass",
-      title: "Активируй доступ",
-      text: "Скидки, купоны, дропы и бонусы в одном аккаунте.",
-    },
-    method: {
-      eyebrow: "Быстрый старт",
-      title: "Как войдем?",
-      text: "Telegram быстрее. Email оставили как спокойную альтернативу.",
-    },
-    email: {
-      eyebrow: "Email ID",
-      title: "Создай профиль",
-      text: "Три поля, без лишней анкеты.",
-    },
-    birth: {
-      eyebrow: "Perkly Vibe",
-      title: "Твой год рождения",
-      text: "Perkly подстроит подборки, события и бонусы под твой ритм.",
-    },
-    interests: {
-      eyebrow: "Персонализация",
-      title: "Что тебе ближе?",
-      text: "Выбери несколько направлений. Это можно пропустить.",
-    },
-    success: {
-      eyebrow: "Готово",
-      title: "Pass активирован",
-      text: "Твой Perkly уже собрал первые сигналы.",
-    },
+  const goBack = () => {
+    if (step === "email") {
+      setFlow(null);
+      goTo("start");
+      return;
+    }
+    if (step === "about" && flow === "email") goTo("email");
   };
 
-  const current = copy[step];
+  const canGoBack = step === "email" || (step === "about" && flow === "email");
 
   return (
-    <div className="mb-7 flex items-center justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-          {current.title}
-        </h1>
-        <p className="mt-2 max-w-sm text-sm leading-6 text-white/48">
-          {current.text}
-        </p>
-      </div>
-      <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-gradient shadow-primary-glow sm:flex">
-        <Sparkles className="h-7 w-7 text-white" />
-      </div>
-    </div>
-  );
-}
-
-function PerklyPass({
-  passName,
-  passEmail,
-  vibe,
-  selectedInterestLabels,
-  step,
-}: {
-  passName: string;
-  passEmail: string;
-  vibe: Vibe;
-  selectedInterestLabels: string[];
-  step: Step;
-}) {
-  return (
-    <div className="glass-card hidden min-h-[650px] flex-col justify-between p-7 md:flex">
-      <div className="relative z-10">
-        <div className="mb-7 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 no-underline">
-            <span className="h-8 w-8 rounded-full bg-primary-gradient shadow-primary-glow" />
-            <span className="text-xl font-bold tracking-tight text-white">
-              Perkly
+    <div className="pk pk-screen">
+      {step !== "done" && (
+        <>
+          <div className="pk-nav">
+            {canGoBack ? (
+              <button type="button" onClick={goBack} className="pk-nav-back">
+                <ChevronLeft aria-hidden="true" />
+                Назад
+              </button>
+            ) : (
+              <Link href="/" className="pk-nav-back">
+                <ChevronLeft aria-hidden="true" />
+                Perkly
+              </Link>
+            )}
+            <span className="pk-nav-step">
+              Шаг {stepIndex + 1} из {steps.length}
             </span>
-          </Link>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/60">
-            ID Preview
-          </span>
-        </div>
-
-        <div className="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-[linear-gradient(135deg,rgba(168,85,247,0.38),rgba(236,72,153,0.2)_52%,rgba(34,211,238,0.18))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-          <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-white/10 blur-3xl" />
-          <div className="relative z-10 flex min-h-[230px] flex-col justify-between">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/55">
-                  Perkly Pass
-                </p>
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
-                  Silver
-                </h2>
-              </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-black/25 ring-1 ring-white/15">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-            </div>
-
-            <div>
-              <p className="truncate text-lg font-bold text-white">
-                {passName}
-              </p>
-              <p className="mt-1 truncate text-sm text-white/55">{passEmail}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-black">
-                  {vibe.code}
-                </span>
-                <span className="rounded-full border border-white/15 bg-black/20 px-3 py-1 text-xs font-bold text-white/70">
-                  +50 welcome points
-                </span>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="relative z-10 grid gap-3">
-        <div className="rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/[0.06]">
-          <div className="mb-2 flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-purple-300" />
-            <p className="text-sm font-bold text-white">{vibe.title}</p>
+          <div className="pk-steps" aria-hidden="true">
+            {steps.map((item, index) => (
+              <i key={item} className={index <= stepIndex ? "is-done" : ""} />
+            ))}
           </div>
-          <p className="text-xs leading-5 text-white/42">{vibe.text}</p>
-        </div>
+        </>
+      )}
 
-        <div className="rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/[0.06]">
-          <p className="text-sm font-bold text-white">Интересы</p>
-          <p className="mt-1 text-xs leading-5 text-white/42">
-            {selectedInterestLabels.length > 0
-              ? selectedInterestLabels.join(", ")
-              : step === "interests"
-                ? "выбери то, что хочется видеть чаще"
-                : "появятся после выбора"}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+      {step === "start" && (
+        <StartStep
+          loading={loading}
+          waiting={tgWaiting}
+          tgUrl={tgUrl}
+          error={error}
+          onTelegram={handleTelegram}
+          onEmail={() => {
+            setFlow("email");
+            goTo("email");
+          }}
+          onCancel={cancelTelegram}
+        />
+      )}
 
-function MobilePass({
-  passName,
-  passEmail,
-  vibe,
-  selectedInterestLabels,
-}: {
-  passName: string;
-  passEmail: string;
-  vibe: Vibe;
-  selectedInterestLabels: string[];
-}) {
-  return (
-    <div className="mb-6 rounded-[1.25rem] bg-[linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.12),rgba(34,211,238,0.1))] p-4 ring-1 ring-white/10 md:hidden">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/45">
-            Perkly Pass
-          </p>
-          <p className="mt-2 truncate text-base font-bold text-white">
-            {passName}
-          </p>
-          <p className="truncate text-xs text-white/45">{passEmail}</p>
-        </div>
-        <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-black">
-          {vibe.code}
-        </span>
-      </div>
-      {selectedInterestLabels.length > 0 && (
-        <p className="mt-3 truncate text-xs text-white/45">
-          {selectedInterestLabels.join(", ")}
-        </p>
+      {step === "email" && (
+        <EmailStep
+          form={form}
+          loading={loading}
+          error={error}
+          passwordValid={isPasswordValid}
+          onChange={setForm}
+          onSubmit={handleEmailSubmit}
+        />
+      )}
+
+      {step === "about" && (
+        <AboutStep
+          birthYear={birthYear}
+          interests={interests}
+          error={error}
+          isBirthYearValid={isBirthYearValid}
+          onBirthYearChange={(value) => {
+            setError("");
+            setBirthYear(value.replace(/\D/g, "").slice(0, 4));
+          }}
+          onToggleInterest={toggleInterest}
+          onFinish={finish}
+        />
+      )}
+
+      {step === "done" && (
+        <DoneStep
+          interestCount={interests.length}
+          onGoHome={() => router.push("/")}
+          onOpenSettings={() => router.push("/settings")}
+        />
       )}
     </div>
   );
 }
 
-function IntroStep({ onNext }: { onNext: () => void }) {
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          ["Дропы", "ранний доступ"],
-          ["Купоны", "быстрая выгода"],
-          ["Топка", "места и события"],
-        ].map(([title, text]) => (
-          <div
-            key={title}
-            className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"
-          >
-            <p className="font-bold text-white">{title}</p>
-            <p className="mt-1 text-xs leading-5 text-white/42">{text}</p>
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={onNext}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 bg-primary-gradient px-4 py-4 font-bold text-white shadow-primary-glow transition-all hover:opacity-90"
-      >
-        Активировать Pass <ArrowRight className="h-5 w-5" />
-      </button>
-
-      <p className="text-center text-sm text-white/48">
-        Уже есть аккаунт?{" "}
-        <Link
-          href="/login"
-          className="font-semibold text-purple-300 transition-colors hover:text-purple-200"
-        >
-          Войти
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-function MethodStep({
+function StartStep({
   loading,
-  tgStep,
+  waiting,
   tgUrl,
   error,
   onTelegram,
   onEmail,
-  onCancelTelegram,
+  onCancel,
 }: {
   loading: boolean;
-  tgStep: "idle" | "waiting";
+  waiting: boolean;
   tgUrl: string;
   error: string;
   onTelegram: () => void;
   onEmail: () => void;
-  onCancelTelegram: () => void;
+  onCancel: () => void;
 }) {
-  if (tgStep === "waiting") {
+  if (waiting) {
     return (
-      <div className="rounded-2xl border border-[#0088cc]/20 bg-[#0088cc]/10 p-5 text-center">
-        <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-blue-400" />
-        <p className="mb-1 font-semibold text-white">
-          Подтвердите вход в Telegram
+      <>
+        <h1 className="pk-title">Подтвердите вход</h1>
+        <p className="pk-subtitle">
+          Мы открыли бота Perkly в Telegram. Нажмите в нём кнопку подтверждения — этот экран
+          обновится сам.
         </p>
-        <p className="mb-4 text-sm leading-6 text-white/42">
-          Откройте бот и нажмите кнопку подтверждения номера.
-        </p>
-        <a
-          href={tgUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-blue-300 underline"
-        >
-          Открыть бот <ArrowRight className="h-3 w-3" />
-        </a>
-        <div>
-          <button
-            onClick={onCancelTelegram}
-            className="cursor-pointer border-0 bg-transparent text-xs text-white/32 transition hover:text-white/60"
-          >
+        <div className="pk-status" style={{ marginTop: 32 }}>
+          <span className="pk-status-mark pk-status-mark--wait">
+            <Loader2 className="animate-spin" aria-hidden="true" />
+          </span>
+        </div>
+        <div className="pk-actions">
+          <a href={tgUrl} target="_blank" rel="noreferrer" className="pk-btn pk-btn--secondary">
+            Открыть Telegram ещё раз
+          </a>
+          <button type="button" onClick={onCancel} className="pk-btn pk-btn--plain">
             Отменить
           </button>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <button
-        onClick={onTelegram}
-        disabled={loading}
-        className="shadow-telegram-glow flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border-0 bg-telegram-gradient px-4 py-4 text-base font-bold text-white transition-all hover:opacity-90 disabled:opacity-70"
-      >
-        <Image
-          src="/brands/telegram.svg"
-          alt=""
-          width={24}
-          height={24}
-          className="h-6 w-6 shrink-0"
-          aria-hidden="true"
-        />
-        Быстро через Telegram
-      </button>
+    <>
+      <h1 className="pk-title">Создайте Perkly ID</h1>
+      <p className="pk-subtitle">
+        Один аккаунт для промокодов, подписок и цифровых товаров.
+      </p>
 
-      <button
-        onClick={onEmail}
-        className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-4 text-base font-bold text-white transition-all hover:bg-white/[0.07]"
-      >
-        <Mail className="h-5 w-5 text-white/70" />
-        Продолжить по email
-      </button>
+      <div className="pk-features">
+        <div className="pk-feature">
+          <Tag aria-hidden="true" />
+          <div>
+            <strong>Понятные условия</strong>
+            <span>Цена, срок действия и способ выдачи видны до покупки.</span>
+          </div>
+        </div>
+        <div className="pk-feature">
+          <Zap aria-hidden="true" />
+          <div>
+            <strong>Мгновенная выдача</strong>
+            <span>Коды и ключи приходят сразу после оплаты — в аккаунт и в Telegram.</span>
+          </div>
+        </div>
+        <div className="pk-feature">
+          <ShieldCheck aria-hidden="true" />
+          <div>
+            <strong>Защита платежа</strong>
+            <span>Деньги удерживаются до подтверждения заказа. Спор — в один шаг.</span>
+          </div>
+        </div>
+      </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-center text-sm font-medium text-rose-300">
+        <p className="pk-alert">
+          <TriangleAlert aria-hidden="true" />
           {error}
-        </div>
+        </p>
       )}
-    </div>
+
+      <div className="pk-actions">
+        <button
+          type="button"
+          onClick={onTelegram}
+          disabled={loading}
+          className="pk-btn pk-btn--telegram"
+        >
+          {loading ? (
+            <Loader2 className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Image
+              src="/brands/telegram.svg"
+              alt=""
+              width={20}
+              height={20}
+              aria-hidden="true"
+            />
+          )}
+          Продолжить с Telegram
+        </button>
+        <button type="button" onClick={onEmail} className="pk-btn pk-btn--secondary">
+          <Mail aria-hidden="true" />
+          Продолжить с email
+        </button>
+      </div>
+
+      <p className="pk-note pk-note--center">
+        Уже есть аккаунт? <Link href="/login">Войти</Link>
+      </p>
+      <p className="pk-footnote">
+        Продолжая, вы принимаете <Link href="/terms">условия</Link> и{" "}
+        <Link href="/privacy">политику конфиденциальности</Link>.
+      </p>
+    </>
   );
 }
 
 function EmailStep({
-  formData,
+  form,
   loading,
   error,
+  passwordValid,
   onChange,
   onSubmit,
-  onBack,
 }: {
-  formData: { displayName: string; email: string; passwordHash: string };
+  form: { displayName: string; email: string; password: string };
   loading: boolean;
   error: string;
-  onChange: (data: {
-    displayName: string;
-    email: string;
-    passwordHash: string;
-  }) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onBack: () => void;
+  passwordValid: boolean;
+  onChange: (value: { displayName: string; email: string; password: string }) => void;
+  onSubmit: (event: React.FormEvent) => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
-      <FieldIcon icon={<User className="h-5 w-5" />}>
-        <input
-          type="text"
-          required
-          placeholder="Ваш никнейм"
-          className={fieldClassName}
-          value={formData.displayName}
-          onChange={(e) =>
-            onChange({ ...formData, displayName: e.target.value })
-          }
-        />
-      </FieldIcon>
+    <form onSubmit={onSubmit}>
+      <h1 className="pk-title">Ваши данные</h1>
+      <p className="pk-subtitle">Три поля — и аккаунт готов.</p>
 
-      <FieldIcon icon={<Mail className="h-5 w-5" />}>
-        <input
-          type="email"
-          required
-          placeholder="E-mail адрес"
-          className={fieldClassName}
-          value={formData.email}
-          onChange={(e) => onChange({ ...formData, email: e.target.value })}
-        />
-      </FieldIcon>
+      <div className="pk-fields">
+        <label className="pk-field">
+          <span>Имя</span>
+          <input
+            type="text"
+            required
+            autoComplete="nickname"
+            placeholder="Как к вам обращаться"
+            className="pk-input"
+            value={form.displayName}
+            onChange={(event) => onChange({ ...form, displayName: event.target.value })}
+          />
+        </label>
 
-      <FieldIcon icon={<Lock className="h-5 w-5" />}>
-        <input
-          type="password"
-          required
-          placeholder="Придумайте пароль"
-          className={fieldClassName}
-          value={formData.passwordHash}
-          onChange={(e) =>
-            onChange({ ...formData, passwordHash: e.target.value })
-          }
-        />
-      </FieldIcon>
+        <label className="pk-field">
+          <span>Email</span>
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+            className="pk-input"
+            value={form.email}
+            onChange={(event) => onChange({ ...form, email: event.target.value })}
+          />
+        </label>
+
+        <label className="pk-field">
+          <span>Пароль</span>
+          <input
+            type="password"
+            required
+            autoComplete="new-password"
+            minLength={MIN_PASSWORD_LENGTH}
+            placeholder="Не менее 8 символов"
+            className="pk-input"
+            value={form.password}
+            onChange={(event) => onChange({ ...form, password: event.target.value })}
+          />
+          <span className="pk-field-hint">
+            {form.password.length === 0
+              ? "Минимум 8 символов."
+              : passwordValid
+                ? "Длина достаточная."
+                : `Ещё ${MIN_PASSWORD_LENGTH - form.password.length} символов.`}
+          </span>
+        </label>
+      </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-center text-sm font-medium text-rose-300">
+        <p className="pk-alert">
+          <TriangleAlert aria-hidden="true" />
           {error}
-        </div>
+        </p>
       )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 bg-primary-gradient px-4 py-4 font-bold text-white shadow-primary-glow transition-all hover:opacity-90 disabled:opacity-50"
-      >
-        {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <>
-            Создать аккаунт <ArrowRight className="h-5 w-5" />
-          </>
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={onBack}
-        className="mx-auto flex cursor-pointer items-center gap-2 border-0 bg-transparent text-sm font-semibold text-white/45 transition hover:text-white/70"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Назад
-      </button>
+      <div className="pk-actions">
+        <button type="submit" disabled={loading} className="pk-btn pk-btn--primary">
+          {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : "Создать аккаунт"}
+        </button>
+      </div>
     </form>
   );
 }
 
-function BirthStep({
+function AboutStep({
   birthYear,
-  vibe,
+  interests,
   error,
-  isValid,
-  onChange,
-  onNext,
-}: {
-  birthYear: string;
-  vibe: Vibe;
-  error: string;
-  isValid: boolean;
-  onChange: (value: string) => void;
-  onNext: () => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.035] p-5">
-        <label className="block text-center">
-          <span className="mb-3 block text-xs font-bold uppercase tracking-[0.2em] text-white/35">
-            год рождения
-          </span>
-          <input
-            inputMode="numeric"
-            autoComplete="bday-year"
-            placeholder="2001"
-            value={birthYear}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full border-0 bg-transparent text-center text-5xl font-black tracking-tight text-white outline-none placeholder:text-white/16 sm:text-6xl"
-          />
-        </label>
-      </div>
-
-      <div className="rounded-[1.25rem] border border-purple-400/15 bg-[linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.08),rgba(255,255,255,0.025))] p-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-300" />
-            <p className="text-sm font-black text-gradient">{vibe.code}</p>
-          </div>
-          <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-bold text-white/45">
-            {vibe.signal}
-          </span>
-        </div>
-        <p className="text-base font-bold text-white">{vibe.title}</p>
-        <p className="mt-2 text-sm leading-6 text-white/48">{vibe.text}</p>
-        <p className="mt-4 text-xs text-white/28">
-          Это не астрология. Просто немного магии интерфейса.
-        </p>
-      </div>
-
-      {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-center text-sm font-medium text-rose-300">
-          {error}
-        </div>
-      )}
-
-      <button
-        onClick={onNext}
-        className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 px-4 py-4 font-bold text-white transition-all ${
-          isValid
-            ? "bg-primary-gradient shadow-primary-glow hover:opacity-90"
-            : "bg-white/[0.08] text-white/45"
-        }`}
-      >
-        Продолжить <ArrowRight className="h-5 w-5" />
-      </button>
-    </div>
-  );
-}
-
-function InterestsStep({
-  selectedInterests,
-  onToggle,
-  onSkip,
+  isBirthYearValid,
+  onBirthYearChange,
+  onToggleInterest,
   onFinish,
 }: {
-  selectedInterests: string[];
-  onToggle: (interestId: string) => void;
-  onSkip: () => void;
+  birthYear: string;
+  interests: string[];
+  error: string;
+  isBirthYearValid: boolean;
+  onBirthYearChange: (value: string) => void;
+  onToggleInterest: (id: string) => void;
   onFinish: () => void;
 }) {
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
+    <>
+      <h1 className="pk-title">Немного о вас</h1>
+      <p className="pk-subtitle">
+        Это влияет только на подборки. Изменить можно в любой момент.
+      </p>
+
+      <div className="pk-fields">
+        <label className="pk-field">
+          <span>Год рождения</span>
+          <input
+            inputMode="numeric"
+            autoComplete="bday-year"
+            placeholder={String(maxBirthYear() - 8)}
+            className="pk-input"
+            value={birthYear}
+            onChange={(event) => onBirthYearChange(event.target.value)}
+          />
+          <span className="pk-field-hint">
+            Нужен для возрастных ограничений. Другим пользователям он не виден.
+          </span>
+        </label>
+      </div>
+
+      <p className="pk-section">Интересы — необязательно</p>
+      <div className="pk-grid">
         {INTERESTS.map((interest) => {
           const Icon = interest.icon;
-          const active = selectedInterests.includes(interest.id);
-
+          const active = interests.includes(interest.id);
           return (
             <button
               key={interest.id}
-              onClick={() => onToggle(interest.id)}
-              className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-left transition-all ${
-                active
-                  ? "border-purple-400/35 bg-purple-500/15 text-white shadow-[0_0_24px_rgba(168,85,247,0.12)]"
-                  : "border-white/10 bg-white/[0.035] text-white/60 hover:bg-white/[0.06]"
-              }`}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggleInterest(interest.id)}
+              className="pk-chip"
             >
-              <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                  active ? "bg-primary-gradient" : "bg-white/[0.06]"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-              </span>
-              <span className="text-sm font-bold">{interest.label}</span>
+              <Icon aria-hidden="true" />
+              <span>{interest.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      {error && (
+        <p className="pk-alert">
+          <TriangleAlert aria-hidden="true" />
+          {error}
+        </p>
+      )}
+
+      <div className="pk-actions">
         <button
+          type="button"
           onClick={onFinish}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 bg-primary-gradient px-4 py-4 font-bold text-white shadow-primary-glow transition-all hover:opacity-90"
+          disabled={!isBirthYearValid}
+          className="pk-btn pk-btn--primary"
         >
-          Готово <ArrowRight className="h-5 w-5" />
-        </button>
-        <button
-          onClick={onSkip}
-          className="cursor-pointer rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-4 font-bold text-white/55 transition hover:bg-white/[0.06] hover:text-white/75"
-        >
-          Пропустить
+          Готово
         </button>
       </div>
-    </div>
+    </>
   );
 }
 
-function SuccessStep({
-  vibe,
-  selectedInterestCount,
+function DoneStep({
+  interestCount,
   onGoHome,
+  onOpenSettings,
 }: {
-  vibe: Vibe;
-  selectedInterestCount: number;
+  interestCount: number;
   onGoHome: () => void;
+  onOpenSettings: () => void;
 }) {
   return (
-    <div className="space-y-5 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-green-400/20 bg-green-500/10 shadow-[0_0_30px_rgba(34,197,94,0.12)]">
-        <CheckCircle className="h-9 w-9 text-green-400" />
+    <div style={{ paddingTop: 48 }}>
+      <div className="pk-status">
+        <span className="pk-status-mark">
+          <CheckCircle2 aria-hidden="true" />
+        </span>
       </div>
+      <h1 className="pk-title" style={{ textAlign: "center" }}>
+        Аккаунт создан
+      </h1>
+      <p className="pk-subtitle" style={{ margin: "10px auto 0", textAlign: "center" }}>
+        {interestCount > 0
+          ? `Подборки настроены по ${interestCount} направлениям. Начислено 50 приветственных баллов.`
+          : "Начислено 50 приветственных баллов."}
+      </p>
 
-      <div>
-        <p className="text-2xl font-black text-white">
-          Твой Perkly Pass активен
-        </p>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/48">
-          {vibe.code}, Silver, +50 welcome points
-          {selectedInterestCount > 0
-            ? ` и ${selectedInterestCount} интересов для подборок.`
-            : "."}
-        </p>
+      <div className="pk-actions">
+        <button type="button" onClick={onGoHome} className="pk-btn pk-btn--primary">
+          Перейти к предложениям
+        </button>
+        <button type="button" onClick={onOpenSettings} className="pk-btn pk-btn--plain">
+          Открыть настройки
+        </button>
       </div>
-
-      <button
-        onClick={onGoHome}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-0 bg-white px-4 py-4 font-black text-black transition hover:bg-white/90"
-      >
-        Смотреть предложения <ArrowRight className="h-5 w-5" />
-      </button>
     </div>
-  );
-}
-
-const fieldClassName =
-  "w-full rounded-2xl border border-white/10 bg-white/[0.045] py-3.5 pl-11 pr-4 font-medium text-white outline-none transition-all placeholder:text-white/30 focus:border-purple-400/35 focus:bg-white/[0.07] focus:ring-2 focus:ring-purple-500/20";
-
-function FieldIcon({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="relative block">
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/38">
-        {icon}
-      </span>
-      {children}
-    </label>
   );
 }

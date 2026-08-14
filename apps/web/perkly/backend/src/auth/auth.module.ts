@@ -8,6 +8,8 @@ import { JwtStrategy } from './jwt.strategy';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TelegramLoginStore } from './telegram-login-store.service';
+import { SessionService } from './session.service';
+import { TelegramIdentityService } from './telegram-identity.service';
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -33,7 +35,9 @@ function getJwtSecret() {
     TelegramLoginStore,
     JwtStrategy,
     AuthRateLimitGuard,
+    SessionService,
+    TelegramIdentityService,
   ],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, SessionService, TelegramIdentityService, JwtModule, JwtStrategy],
 })
 export class AuthModule {}

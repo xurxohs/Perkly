@@ -21,31 +21,28 @@ interface User {
 
 interface AuthCtx {
     user: User | null;
-    token: string | null;
     isAuthenticated: boolean;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, displayName?: string) => Promise<void>;
     loginWithTelegram: (telegramData: Record<string, unknown>) => Promise<void>;
-    logout: () => void;
+    logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx>({
     user: null,
-    token: null,
     isAuthenticated: false,
     loading: true,
     login: async () => { },
     register: async () => { },
     loginWithTelegram: async () => { },
-    logout: () => { },
+    logout: async () => { },
     refreshUser: async () => { },
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     const { isTMA, initData, expand } = useTelegram();
@@ -58,25 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const restoreSession = async () => {
-            const savedToken = localStorage.getItem('perkly_token');
-            if (savedToken) {
-                setToken(savedToken);
-                try {
-                    const u = await usersApi.getMe() as User;
-                    setUser(u);
-                } catch (err) {
-                    console.error("Session restore failed:", err);
-                    localStorage.removeItem('perkly_token');
-                    setToken(null);
-                } finally {
-                    setLoading(false);
-                }
-            } else if (isTMA && initData) {
+            try {
+                const u = await usersApi.getMe() as User;
+                setUser(u);
+                setLoading(false);
+                return;
+            } catch {
+                setUser(null);
+            }
+            if (isTMA && initData) {
                 // Auto login via TMA
                 try {
-                    const res = (await authApi.telegramMiniapp(initData)) as { access_token: string };
-                    localStorage.setItem('perkly_token', res.access_token);
-                    setToken(res.access_token);
+                    await authApi.telegramMiniapp(initData);
                     const profile = await usersApi.getMe() as User;
                     setUser(profile);
                 } catch (err) {
@@ -93,9 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [isTMA, initData, expand]);
 
     const login = async (email: string, password: string) => {
-        const res = (await authApi.login({ email, password })) as { access_token: string };
-        localStorage.setItem('perkly_token', res.access_token);
-        setToken(res.access_token);
+        await authApi.login({ email, password });
         const profile = await usersApi.getMe() as User;
         setUser(profile);
     };
@@ -106,16 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const loginWithTelegram = async (telegramData: Record<string, unknown>) => {
-        const res = (await authApi.telegramLogin(telegramData)) as { access_token: string };
-        localStorage.setItem('perkly_token', res.access_token);
-        setToken(res.access_token);
+        await authApi.telegramLogin(telegramData);
         const profile = await usersApi.getMe() as User;
         setUser(profile);
     };
 
-    const logout = () => {
-        localStorage.removeItem('perkly_token');
-        setToken(null);
+    const logout = async () => {
+        await authApi.logout().catch(() => undefined);
         setUser(null);
     };
 
@@ -129,7 +114,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (
         <AuthContext.Provider value={{
             user,
-            token,
             isAuthenticated: !!user,
             loading,
             login,

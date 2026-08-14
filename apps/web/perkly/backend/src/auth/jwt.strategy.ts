@@ -13,18 +13,52 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request) => {
+          const cookie = request?.headers?.cookie;
+          if (typeof cookie !== 'string') return null;
+          const value = cookie
+            .split(';')
+            .map((part: string) => part.trim())
+            .find((part: string) => part.startsWith('perkly_session='))
+            ?.slice('perkly_session='.length);
+          return value ? decodeURIComponent(value) : null;
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey: secret || 'test-only-jwt-secret',
     });
   }
 
   async validate(payload: any) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: payload.sub, deletedAt: null },
-      select: { id: true, tokensValidAfter: true, accountStatus: true, suspendedUntil: true },
+    if (!payload.sid) throw new UnauthorizedException('Session is required');
+    const session = await this.prisma.userSession.findFirst({
+      where: {
+        id: payload.sid,
+        userId: payload.sub,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+        user: { deletedAt: null },
+      },
+      select: {
+        id: true,
+        lastUsedAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            tier: true,
+            tokensValidAfter: true,
+            accountStatus: true,
+            suspendedUntil: true,
+          },
+        },
+      },
     });
-    if (!user) throw new UnauthorizedException('Account unavailable');
+    if (!session) throw new UnauthorizedException('Session expired');
+    const { user } = session;
     if (user.accountStatus === 'SUSPENDED' && (!user.suspendedUntil || user.suspendedUntil > new Date())) {
       throw new UnauthorizedException('Account suspended');
     }
@@ -35,29 +69,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Token revoked');
     }
 
-    if (payload.sid) {
-      const session = await this.prisma.userSession.findFirst({
-        where: {
-          id: payload.sid,
-          userId: payload.sub,
-          revokedAt: null,
-          expiresAt: { gt: new Date() },
-        },
-        select: { id: true, lastUsedAt: true },
+    if (Date.now() - session.lastUsedAt.getTime() > 5 * 60_000) {
+      await this.prisma.userSession.update({
+        where: { id: session.id },
+        data: { lastUsedAt: new Date() },
       });
-      if (!session) throw new UnauthorizedException('Session expired');
-      if (Date.now() - session.lastUsedAt.getTime() > 5 * 60_000) {
-        await this.prisma.userSession.update({
-          where: { id: session.id },
-          data: { lastUsedAt: new Date() },
-        });
-      }
     }
     return {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
-      tier: payload.tier,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tier: user.tier,
       sessionId: payload.sid,
     };
   }

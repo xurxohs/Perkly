@@ -1,63 +1,69 @@
-#!/ :1: b:1: a:1: s:1: h:1: 
-2: 
-3: # === Perky VPS Setup Script (Eskiz.uz) ===
-4: # This script installs Node.js, Nginx, PM2, and configures everything for perkly.uz
-5: 
-6: set -e
-7: 
-8: echo "--- Updating system ---"
-9: apt update && apt upgrade -y
-10: 
-11: echo "--- Installing Node.js 20 ---"
-12: curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-13: apt install -y nodejs
-14: 
-15: echo "--- Installing Nginx and PM2 ---"
-16: apt install -y nginx
-17: npm install -g pm2
-18: 
-19: echo "--- Configuring Nginx ---"
-20: cat > /etc/nginx/sites-available/perkly <<EOF
-21: server {
-22:     listen 80;
-23:     server_name perkly.uz www.perkly.uz;
-24: 
-25:     # Backend API
-26:     location /api/ {
-27:         proxy_pass http://localhost:3001/;
-28:         proxy_http_version 1.1;
-29:         proxy_set_header Upgrade \$http_upgrade;
-30:         proxy_set_header Connection 'upgrade';
-31:         proxy_set_header Host \$host;
-32:         proxy_cache_bypass \$http_upgrade;
-33:         proxy_set_header X-Real-IP \$remote_addr;
-34:         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-35:         proxy_set_header X-Forwarded-Proto \$scheme;
-36:     }
-37: 
-38:     # Frontend (Next.js)
-39:     location / {
-40:         proxy_pass http://localhost:3000;
-41:         proxy_http_version 1.1;
-42:         proxy_set_header Upgrade \$http_upgrade;
-43:         proxy_set_header Connection 'upgrade';
-44:         proxy_set_header Host \$host;
-45:         proxy_cache_bypass \$http_upgrade;
-46:         proxy_set_header X-Real-IP \$remote_addr;
-47:         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-48:         proxy_set_header X-Forwarded-Proto \$scheme;
-49:     }
-50: }
-51: EOF
-52: 
-53: ln -sf /etc/nginx/sites-available/perkly /etc/nginx/sites-enabled/
-54: rm -f /etc/nginx/sites-enabled/default
-55: nginx -t
-56: systemctl restart nginx
-57: 
-58: echo "--- Setup complete! ---"
-59: echo "Next steps (run from your app folder):"
-60: echo "1. scp your code to the server"
-61: echo "2. cd backend && npm install && npm run build && pm2 start dist/src/main.js --name perkly-backend"
-62: echo "3. cd ../frontend && npm install && npm run build && pm2 start npm --name perkly-frontend -- start"
-63: echo "4. Optional: sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d perkly.uz -d www.perkly.uz"
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bootstrap a Debian/Ubuntu VPS for Perkly's existing PM2 deployment.
+# The application itself is deployed from the repository root with deploy.sh.
+
+if [[ "${EUID}" -ne 0 ]]; then
+    echo "Run this script as root (or with sudo)." >&2
+    exit 1
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+
+echo "--- Updating system ---"
+apt-get update
+apt-get upgrade -y
+
+echo "--- Installing Node.js 20 ---"
+apt-get install -y ca-certificates curl
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
+echo "--- Installing Nginx and PM2 ---"
+apt-get install -y nginx
+npm install --global pm2
+
+echo "--- Configuring Nginx ---"
+cat > /etc/nginx/sites-available/perkly <<'NGINX_CONFIG'
+server {
+    listen 80;
+    server_name perkly.uz www.perkly.uz;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+NGINX_CONFIG
+
+ln -sfn /etc/nginx/sites-available/perkly /etc/nginx/sites-enabled/perkly
+rm -f /etc/nginx/sites-enabled/default
+nginx -t
+systemctl restart nginx
+
+echo "--- Setup complete ---"
+echo "Next steps:"
+echo "1. Place the repository at /var/www/perkly."
+echo "2. Configure backend/.env."
+echo "3. Run deploy.sh from your workstation; it keeps the existing PM2 process names perkly-backend and frontend."
+echo "4. Enable HTTPS with Certbot, then install nginx/perkly.conf as the production Nginx configuration."

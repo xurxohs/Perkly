@@ -6,6 +6,14 @@ const SELLER_PUBLIC_SELECT = {
   avatarUrl: true,
 } satisfies Prisma.UserSelect;
 
+export const USER_PUBLIC_SELECT = {
+  id: true,
+  displayName: true,
+  avatarUrl: true,
+  role: true,
+  tier: true,
+} satisfies Prisma.UserSelect;
+
 export const USER_ADMIN_SELECT = {
   id: true,
   email: true,

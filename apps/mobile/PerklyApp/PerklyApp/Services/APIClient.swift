@@ -101,6 +101,7 @@ final class APIClient {
         request.httpMethod = method
         request.setValue(deviceId, forHTTPHeaderField: "X-Device-ID")
         request.setValue(deviceName, forHTTPHeaderField: "X-Device-Name")
+        request.setValue("ios", forHTTPHeaderField: "X-Client-Platform")
         
         if let token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

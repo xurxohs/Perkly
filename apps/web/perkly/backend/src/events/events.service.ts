@@ -361,20 +361,42 @@ export class EventsService {
     cacheControl?: string | null;
   }> {
     const target = this.resolveParserMediaUrl(url);
-    if (!this.isAllowedParserUrl(target)) {
+    if (!this.isAllowedParserMediaUrl(target)) {
       throw new Error('Unsupported media URL');
     }
-
-    const response = await fetch(target);
+    const response = await fetch(target, {
+      signal: AbortSignal.timeout(8_000),
+      redirect: 'manual',
+    });
     if (!response.ok) {
       throw new Error(`Media fetch failed with status ${response.status}`);
     }
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.toLowerCase().startsWith('image/')) {
+      throw new Error('Parser response is not an image');
+    }
+    const declaredLength = Number(response.headers.get('content-length') ?? 0);
+    const maxBytes = 5 * 1024 * 1024;
+    if (declaredLength > maxBytes) throw new Error('Media response is too large');
+    if (!response.body) throw new Error('Media response body is missing');
+    const reader = response.body.getReader();
+    const chunks: Buffer[] = [];
+    let totalBytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new Error('Media response is too large');
+      }
+      chunks.push(Buffer.from(value));
+    }
 
     return {
-      contentType:
-        response.headers.get('content-type') || 'application/octet-stream',
+      contentType,
       cacheControl: response.headers.get('cache-control'),
-      buffer: Buffer.from(await response.arrayBuffer()),
+      buffer: Buffer.concat(chunks, totalBytes),
     };
   }
 
@@ -867,6 +889,23 @@ export class EventsService {
       );
 
       return allowedHosts.has(target.host);
+    } catch {
+      return false;
+    }
+  }
+
+  private isAllowedParserMediaUrl(value: string): boolean {
+    if (!this.isAllowedParserUrl(value)) return false;
+    try {
+      const target = new URL(value);
+      if (target.username || target.password) return false;
+      const path = target.pathname.toLowerCase();
+      return (
+        path.startsWith('/media/') ||
+        path.startsWith('/uploads/') ||
+        path.startsWith('/static/') ||
+        /\.(?:avif|gif|jpe?g|png|webp)$/.test(path)
+      );
     } catch {
       return false;
     }

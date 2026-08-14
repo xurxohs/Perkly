@@ -49,7 +49,7 @@ export function Navbar({ theme = 'dark', onToggleTheme, showThemeToggle = false 
 
     return (
         <nav 
-            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-[calc(100%-2rem)] max-w-7xl z-50 liquid-glass-nav px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-[1.65rem] sm:rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
+            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%_-_2rem)] sm:w-[calc(100%_-_2rem)] max-w-7xl z-50 liquid-glass-nav px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-[1.65rem] sm:rounded-[2rem] flex items-center justify-between transition-all duration-300 top-safe"
         >
             <div className="flex items-center gap-1 shrink-0">
                 <Link href="/" className="flex items-center gap-2 no-underline shrink-0">
